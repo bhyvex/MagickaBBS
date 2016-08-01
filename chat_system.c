@@ -172,7 +172,7 @@ void chat_system(int sock, struct user_record *user) {
 				len = read(sock, &c, 1);
 				if (len == 0) {
 					raw("QUIT\r\n");
-					disconnect(sock);
+					disconnect(sock, "Socket closed");
 				}
 				
 				if (c == '\r') {

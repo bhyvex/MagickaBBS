@@ -9,6 +9,7 @@ last10.dat
 ansis/*
 config/*
 illusion/*
+scripts/*
 logs/*
 *.a
 lua/lua

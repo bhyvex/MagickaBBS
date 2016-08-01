@@ -204,7 +204,7 @@ void rundoor(int socket, struct user_record *user, char *cmd, int stdio) {
 							len = read(socket, &c, 1);
 							if (len == 0) {
 								close(master);
-								disconnect(socket);
+								disconnect(socket, "Socket Closed");
 								return;
 							}
 							if (c == '\n' || c == '\0') {

@@ -128,7 +128,7 @@ int doIO(ZModem *zm) {
 		} else if (i > 0) {
 			len = read(zm->ifd, buffer, 2048);
 			if (len == 0) {
-				disconnect(zm->ifd);
+				disconnect(zm->ifd, "Socket closed");
 			}
 			
 			pos = 0;

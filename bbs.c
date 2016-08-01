@@ -119,7 +119,7 @@ void timer_handler(int signum) {
 			
 			if (gUser->timeleft <= 0) {
 				s_putstring(gSocket, "\r\n\r\nSorry, you're out of time today..\r\n");
-				disconnect(gSocket);
+				disconnect(gSocket, "Out of Time");
 			}
 			
 
@@ -129,7 +129,7 @@ void timer_handler(int signum) {
 		}
 		if (usertimeout <= 0) {
 			s_putstring(gSocket, "\r\n\r\nTimeout waiting for input..\r\n");
-			disconnect(gSocket);
+			disconnect(gSocket, "Timeout");
 		}		
 	}
 }
@@ -464,24 +464,24 @@ char s_getchar(int socket) {
 		len = read(socket, &c, 1);
 
 		if (len == 0) {
-			disconnect(socket);
+			disconnect(socket, "Socket Closed");
 		}
 			
 		while (c == 255) {
 			len = read(socket, &c, 1);
 			if (len == 0) {
-				disconnect(socket);
+				disconnect(socket, "Socket Closed");
 			} else if (c == 255) {
 				usertimeout = 10;
 				return c;
 			}
 			len = read(socket, &c, 1);
 			if (len == 0) {
-				disconnect(socket);
+				disconnect(socket, "Socket Closed");
 			}
 			len = read(socket, &c, 1);
 			if (len == 0) {
-				disconnect(socket);
+				disconnect(socket, "Socket Closed");
 			}		
 		}
 
@@ -489,7 +489,7 @@ char s_getchar(int socket) {
 		
 		if (c == '\r') {
 			if (len == 0) {
-				disconnect(socket);
+				disconnect(socket, "Socket Closed");
 			}
 		}
 	} while (c == '\n');
@@ -551,12 +551,12 @@ void s_readpass(int socket, char *buffer, int max) {
 	}
 }
 
-void disconnect(int socket) {
+void disconnect(int socket, char *calledby) {
 	char buffer[256];
 	if (gUser != NULL) {
 		save_user(gUser);
 	}
-	dolog("Node %d disconnected", mynode);
+	dolog("Node %d disconnected (%s)", mynode, calledby);
 	sprintf(buffer, "%s/nodeinuse.%d", conf.bbs_path, mynode);
 	remove(buffer);
 	close(socket);
@@ -842,8 +842,6 @@ void runbbs(int socket, char *config_path, char *ip) {
 	
 	s_displayansi(socket, "issue");
 	
-
-	
 	s_putstring(socket, "\e[0mEnter your Login Name or NEW to create an account\r\n");
 	s_putstring(socket, "Login:> ");
 	
@@ -857,7 +855,7 @@ void runbbs(int socket, char *config_path, char *ip) {
 		user = check_user_pass(socket, buffer, password);
 		if (user == NULL) {
 			s_putstring(socket, "\r\nIncorrect Login.\r\n");
-			disconnect(socket);
+			disconnect(socket, "Incorrect Login");
 		}
 		
 		for (i=1;i<=conf.nodes;i++) {
@@ -866,14 +864,14 @@ void runbbs(int socket, char *config_path, char *ip) {
 				nodefile = fopen(buffer, "r");
 				if (!nodefile) {
 					printf("Error opening nodefile!\n");
-					disconnect(socket);
+					disconnect(socket, "Error opening nodefile!");
 				}
 				fgets(buffer, 256, nodefile);
 					
 				if (strcasecmp(user->loginname, buffer) == 0) {
 					fclose(nodefile);
 					s_putstring(socket, "\r\nYou are already logged in.\r\n");
-					disconnect(socket);
+					disconnect(socket, "Already Logged in");
 				} 
 				fclose(nodefile);
 			}
@@ -966,5 +964,5 @@ void runbbs(int socket, char *config_path, char *ip) {
 	
 	s_displayansi(socket, "goodbye");
 	dolog("%s is logging out, on node %d", user->loginname, mynode);
-	disconnect(socket);
+	disconnect(socket, "Log out");
 }

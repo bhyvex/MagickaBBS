@@ -64,6 +64,13 @@ int main(int argc, char **argv) {
 	c = sizeof(struct sockaddr_in);
 	
 	while ((client_sock = accept(socket_desc, (struct sockaddr *)&client, (socklen_t *)&c))) {
+		if (client_sock == -1) {
+			if (errno == EINTR) {	
+				continue;
+			} else {
+				exit(-1);
+			}
+		}
 		pid = fork();
 		
 		if (pid < 0) {

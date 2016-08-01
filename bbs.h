@@ -147,7 +147,7 @@ extern char s_getchar(int socket);
 extern void s_readpass(int socket, char *buffer, int max);
 extern void s_readstring(int socket, char *buffer, int max);
 extern char s_getc(int socket);
-extern void disconnect(int socket);
+extern void disconnect(int socket, char *calledby);
 extern void display_info(int socket);
 extern void display_last10_callers(int socket, struct user_record *user);
 
