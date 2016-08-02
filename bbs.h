@@ -82,7 +82,7 @@ struct file_directory {
 struct bbs_config {
 	char *bbs_name;
 	char *sysop_name;
-	
+	char *pid_file;
 	char *ansi_path;
 	char *bbs_path;
 	char *log_path;
@@ -90,14 +90,15 @@ struct bbs_config {
 	char *echomail_sem;
 	char *netmail_sem;
 	char *default_tagline;
-	
+
 	char *irc_server;
 	int irc_port;
 	char *irc_channel;
-	
+
 	char *external_editor_cmd;
 	int external_editor_stdio;
-	
+	int fork;
+
 	int nodes;
 	int newuserlvl;
 	int automsgwritelvl;
@@ -137,7 +138,7 @@ struct user_record {
 extern void automessage_write(int socket, struct user_record *user);
 extern void automessage_display(int socket);
 extern void dolog(char *fmt, ...);
-extern void runbbs(int sock, char *config, char *ipaddress);
+extern void runbbs(int sock, char *ipaddress);
 extern struct fido_addr *parse_fido_addr(const char *str);
 extern void s_putchar(int socket, char c);
 extern void s_putstring(int socket, char *c);
