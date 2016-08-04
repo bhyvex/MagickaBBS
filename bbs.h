@@ -120,6 +120,7 @@ struct user_record {
 	int id;
 	char *loginname;
 	char *password;
+	char *salt;
 	char *firstname;
 	char *lastname;
 	char *email;
