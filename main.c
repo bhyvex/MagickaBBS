@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 #include <signal.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -323,6 +324,7 @@ void server(int port) {
 	int socket_desc, client_sock, c, *new_sock;
 	int pid;
 	struct sockaddr_in server, client;
+	struct stat s;
 
 	sa.sa_handler = sigchld_handler; // reap all dead processes
 	sigemptyset(&sa.sa_mask);
@@ -438,6 +440,11 @@ int main(int argc, char **argv) {
 	port = atoi(argv[2]);
 
 	if (conf.fork) {
+		if (stat(conf.pid_file, &s) == 0) {
+			fprintf(stderr, "Magicka already running or stale pid file at: %s\n", conf.pid_file);
+			exit(-1);
+		}
+
 		main_pid = fork();
 
 		if (main_pid < 0) {
