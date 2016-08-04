@@ -225,7 +225,8 @@ struct user_record *check_user_pass(int socket, char *loginname, char *password)
 	sqlite3 *db;
   sqlite3_stmt *res;
   int rc;
-  char *sql = "SELECT * FROM users WHERE loginname LIKE ?";
+  char *sql = "SELECT loginname, password, salt, firstname,"
+					   "lastname, email, location, sec_level, last_on, time_left, cur_mail_conf, cur_mail_area, cur_file_dir, cur_file_sub, times_on FROM users WHERE loginname LIKE ?";
 	char *pass_hash;
 
 	sprintf(buffer, "%s/users.sq3", conf.bbs_path);
