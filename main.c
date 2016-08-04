@@ -324,7 +324,6 @@ void server(int port) {
 	int socket_desc, client_sock, c, *new_sock;
 	int pid;
 	struct sockaddr_in server, client;
-	struct stat s;
 
 	sa.sa_handler = sigchld_handler; // reap all dead processes
 	sigemptyset(&sa.sa_mask);
@@ -393,6 +392,7 @@ int main(int argc, char **argv) {
 	int i;
 	int main_pid;
 	FILE *fptr;
+	struct stat s;
 
 	if (argc < 3) {
 		fprintf(stderr, "Usage ./magicka config/bbs.ini port\n");
