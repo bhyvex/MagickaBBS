@@ -43,7 +43,7 @@ bbs_write_string("\027[1;32mBBS Name    : \027[1;37m" .. bbsname .. "\r\n");
 bbs_write_string("\027[1;32mSysOp Name  : \027[1;37m" .. sysopname .. "\r\n");
 bbs_write_string("\027[1;32mNode        : \027[1;37m" .. string.format("%d", bbs_node()) .. "\r\n");
 bbs_write_string("\027[1;32mBBS Version : \027[1;37m" .. bbs_version() .. "\r\n");
-bbs_write_string("\027[1;32mSystem      : \027[1;37m" .. systemname .. " (" .. machinename .. ")"\r\n");
+bbs_write_string("\027[1;32mSystem      : \027[1;37m" .. systemname .. " (" .. machinename .. ")\r\n");
 bbs_write_string("\027[1;30m----------------------------------------------\r\n");
 bbs_write_string("\027[0mPress any key to continue...\r\n");
 bbs_read_char();
