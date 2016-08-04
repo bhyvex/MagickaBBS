@@ -341,7 +341,7 @@ void server(int port) {
 
 	socket_desc = socket(AF_INET, SOCK_STREAM, 0);
 	if (socket_desc == -1) {
-		printf("Couldn't create socket..\n");
+		fprintf(stderr, "Couldn't create socket..\n");
 		exit(1);
 	}
 
@@ -393,7 +393,7 @@ int main(int argc, char **argv) {
 	FILE *fptr;
 
 	if (argc < 3) {
-		printf("Usage ./magicka config/bbs.ini port\n");
+		fprintf(stderr, "Usage ./magicka config/bbs.ini port\n");
 		exit(1);
 	}
 
@@ -412,26 +412,26 @@ int main(int argc, char **argv) {
 
 	// Load BBS data
 	if (ini_parse(argv[1], handler, &conf) <0) {
-		printf("Unable to load configuration ini (%s)!\n", argv[1]);
+		fprintf(stderr, "Unable to load configuration ini (%s)!\n", argv[1]);
 		exit(-1);
 	}
 	// Load mail Areas
 	for (i=0;i<conf.mail_conference_count;i++) {
 		if (ini_parse(conf.mail_conferences[i]->path, mail_area_handler, conf.mail_conferences[i]) <0) {
-			printf("Unable to load configuration ini (%s)!\n", conf.mail_conferences[i]->path);
+			fprintf(stderr, "Unable to load configuration ini (%s)!\n", conf.mail_conferences[i]->path);
 			exit(-1);
 		}
 	}
 	// Load file Subs
 	for (i=0;i<conf.file_directory_count;i++) {
 		if (ini_parse(conf.file_directories[i]->path, file_sub_handler, conf.file_directories[i]) <0) {
-			printf("Unable to load configuration ini (%s)!\n", conf.file_directories[i]->path);
+			fprintf(stderr, "Unable to load configuration ini (%s)!\n", conf.file_directories[i]->path);
 			exit(-1);
 		}
 	}
 
 	if (ini_parse("config/doors.ini", door_config_handler, &conf) <0) {
-		printf("Unable to load configuration ini (doors.ini)!\n");
+		fprintf(stderr, "Unable to load configuration ini (doors.ini)!\n");
 		exit(-1);
 	}
 

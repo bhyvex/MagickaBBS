@@ -28,7 +28,7 @@ int tagged_count = 0;
 
 int ZXmitStr(u_char *str, int len, ZModem *info) {
 	int i;
-	
+
 	for (i=0;i<len;i++) {
 		if (str[i] == 255) {
 			if (write(info->ofd, &str[i], 1) == 0) {
@@ -39,7 +39,7 @@ int ZXmitStr(u_char *str, int len, ZModem *info) {
 			return ZmErrSys;
 		}
 	}
-	
+
 	return 0;
 }
 
@@ -57,7 +57,7 @@ int ZAttn(ZModem *info) {
 
 	for(ptr = info->attn; *ptr != '\0'; ++ptr) {
 		if( *ptr == ATTNBRK ) {
-			
+
 		} else if( *ptr == ATTNPSE ) {
 			sleep(1);
 		} else {
@@ -78,18 +78,17 @@ char *upload_path;
 char upload_filename[1024];
 
 FILE *ZOpenFile(char *name, u_long crc, ZModem *info) {
-	
+
 	FILE *fptr;
 	struct stat s;
-	
+
 	snprintf(upload_filename, 1023, "%s/%s", upload_path, basename(name));
-	fprintf(stderr, "%s\n", upload_filename);
 	if (stat(upload_filename, &s) == 0) {
 		return NULL;
 	}
-	
+
 	fptr = fopen(upload_filename, "wb");
-	
+
 	return fptr;
 }
 
@@ -115,14 +114,14 @@ int doIO(ZModem *zm) {
 	int done = 0;
 	int	i;
 	int j;
-	
+
 	while(!done) {
 		FD_ZERO(&readfds);
 		FD_SET(zm->ifd, &readfds) ;
 		timeout.tv_sec = zm->timeout ;
 		timeout.tv_usec = 0 ;
 		i = select(zm->ifd+1, &readfds,NULL,NULL, &timeout) ;
-		
+
 		if( i==0 ) {
 			done = ZmodemTimeout(zm) ;
 		} else if (i > 0) {
@@ -130,7 +129,7 @@ int doIO(ZModem *zm) {
 			if (len == 0) {
 				disconnect(zm->ifd, "Socket closed");
 			}
-			
+
 			pos = 0;
 			for (j=0;j<len;j++) {
 				if (buffer[j] == 255) {
@@ -153,7 +152,7 @@ int doIO(ZModem *zm) {
 		} else {
 			// SIG INT catch
 			if (errno != EINTR) {
-				printf("SELECT ERROR %s\n", strerror(errno));
+				dolog("SELECT ERROR %s", strerror(errno));
 			}
 		}
 	}
@@ -166,19 +165,19 @@ void upload_zmodem(int socket, struct user_record *user) {
 
 
 	upload_path = conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->upload_path;
-	
+
 	zm.attn = NULL;
 	zm.windowsize = 0;
 	zm.bufsize = 0;
-	
+
 	zm.ifd = socket;
 	zm.ofd = socket;
-	
+
 	zm.zrinitflags = 0;
 	zm.zsinitflags = 0;
-	
+
 	zm.packetsize = 1024;
-	
+
 	done = ZmodemRInit(&zm);
 
 	doIO(&zm);
@@ -202,9 +201,9 @@ void upload(int socket, struct user_record *user) {
     int rc;
     struct stat s;
     char *err_msg = NULL;
-    
+
 	upload_zmodem(socket, user);
-	
+
 	s_putstring(socket, "\r\nPlease enter a description:\r\n");
 	buffer[0] = '\0';
 	for (i=0;i<5;i++) {
@@ -217,45 +216,45 @@ void upload(int socket, struct user_record *user) {
 		strcat(buffer, buffer2);
 		strcat(buffer, "\n");
 	}
-	
+
 	sprintf(buffer3, "%s/%s.sq3", conf.bbs_path, conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->database);
-	
+
 	rc = sqlite3_open(buffer3, &db);
-	
+
 	if (rc != SQLITE_OK) {
-        fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
+        dolog("Cannot open database: %s", sqlite3_errmsg(db));
         sqlite3_close(db);
         exit(1);
     }
-    
+
     rc = sqlite3_exec(db, create_sql, 0, 0, &err_msg);
-    if (rc != SQLITE_OK ) { 
-        fprintf(stderr, "SQL error: %s\n", err_msg);      
-        sqlite3_free(err_msg);        
+    if (rc != SQLITE_OK ) {
+        dolog("SQL error: %s", err_msg);
+        sqlite3_free(err_msg);
         sqlite3_close(db);
         return;
-    } 
+    }
     rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
-    
-    if (rc == SQLITE_OK) {  
+
+    if (rc == SQLITE_OK) {
 		stat(upload_filename, &s);
-		  
+
         sqlite3_bind_text(res, 1, upload_filename, -1, 0);
         sqlite3_bind_text(res, 2, buffer, -1, 0);
-        sqlite3_bind_int(res, 3, s.st_size);      
+        sqlite3_bind_int(res, 3, s.st_size);
     } else {
-        fprintf(stderr, "Failed to execute statement: %s\n", sqlite3_errmsg(db));
+      	dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
 		sqlite3_finalize(res);
-		sqlite3_close(db);    
-		return;    
+		sqlite3_close(db);
+		return;
     }
-    
+
     rc = sqlite3_step(res);
-    
+
     if (rc != SQLITE_DONE) {
-        printf("execution failed: %s", sqlite3_errmsg(db));
+	      dolog("execution failed: %s", sqlite3_errmsg(db));
         sqlite3_finalize(res);
-		sqlite3_close(db);    
+		sqlite3_close(db);
 		return;
     }
     sqlite3_finalize(res);
@@ -271,43 +270,43 @@ void download_zmodem(int socket, struct user_record *user, char *filename) {
 	int j;
 	int	len;
 	int pos;
-	
+
 	u_char buffer[2048];
 	u_char buffer2[1024];
-	
-	printf("Attempting to upload %s\n", filename);
-	
+
+	dolog("Attempting to upload %s", filename);
+
 	zm.attn = NULL;
 	zm.windowsize = 0;
 	zm.bufsize = 0;
-	
+
 	zm.ifd = socket;
 	zm.ofd = socket;
-	
+
 	zm.zrinitflags = 0;
 	zm.zsinitflags = 0;
-	
+
 	zm.packetsize = 1024;
-	
-	
+
+
 	ZmodemTInit(&zm) ;
 	done = doIO(&zm);
 	if ( done != ZmDone ) {
 		return;
 	}
-	
+
 	done = ZmodemTFile(filename, basename(filename), ZCBIN,0,0,0,0,0, &zm) ;
-	
+
 	switch( done ) {
-	  case 0:	  	  
+	  case 0:
 	    break ;
 
 	  case ZmErrCantOpen:
-	    fprintf(stderr, "cannot open file \"%s\": %s\n", filename, strerror(errno)) ;
+	    dolog("cannot open file \"%s\": %s\n", filename, strerror(errno)) ;
 	    return;
 
 	  case ZmFileTooLong:
-	    fprintf(stderr, "filename \"%s\" too long, skipping...\n", filename) ;
+	    dolog("filename \"%s\" too long, skipping...\n", filename) ;
 	    return;
 
 	  case ZmDone:
@@ -316,17 +315,17 @@ void download_zmodem(int socket, struct user_record *user, char *filename) {
 	  default:
 	    return;
 	}
-	
+
 	if (!done) {
 		done = doIO(&zm);
 	}
-	
+
 	if ( done != ZmDone ) {
 		return;
-	}	
-	
+	}
+
 	done = ZmodemTFinish(&zm);
-	
+
 	if (!done) {
 		done = doIO(&zm);
 	}
@@ -342,55 +341,55 @@ void download(int socket, struct user_record *user) {
 	sqlite3 *db;
     sqlite3_stmt *res;
     int rc;
-    
+
 	for (i=0;i<tagged_count;i++) {
 		download_zmodem(socket, user, tagged_files[i]);
-	
+
 		sprintf(buffer, "%s/%s.sq3", conf.bbs_path, conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->database);
-		
+
 		rc = sqlite3_open(buffer, &db);
-		
+
 		if (rc != SQLITE_OK) {
-			fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
+			dolog("Cannot open database: %s", sqlite3_errmsg(db));
 			sqlite3_close(db);
 			exit(1);
 		}
 		rc = sqlite3_prepare_v2(db, ssql, -1, &res, 0);
-		
-		if (rc == SQLITE_OK) {    
+
+		if (rc == SQLITE_OK) {
 			sqlite3_bind_text(res, 1, tagged_files[i], -1, 0);
 		} else {
-			fprintf(stderr, "Failed to execute statement: %s\n", sqlite3_errmsg(db));
+			dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
 		}
-			
-		rc = sqlite3_step(res);  
-		
+
+		rc = sqlite3_step(res);
+
 		if (rc != SQLITE_ROW) {
-			fprintf(stderr, "Downloaded a file not in database!!!!!");
+			dolog("Downloaded a file not in database!!!!!");
 			sqlite3_finalize(res);
 			sqlite3_close(db);
 			exit(1);
 		}
-		
+
 		dloads = sqlite3_column_int(res, 0);
 		dloads++;
 		sqlite3_finalize(res);
-		
+
 		rc = sqlite3_prepare_v2(db, usql, -1, &res, 0);
-		
-		if (rc == SQLITE_OK) {    
+
+		if (rc == SQLITE_OK) {
 			sqlite3_bind_int(res, 1, dloads);
 			sqlite3_bind_text(res, 2, tagged_files[i], -1, 0);
 		} else {
-			fprintf(stderr, "Failed to execute statement: %s\n", sqlite3_errmsg(db));
+			dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
 		}
-			
-		rc = sqlite3_step(res);  
-		
+
+		rc = sqlite3_step(res);
+
 		sqlite3_finalize(res);
 		sqlite3_close(db);
 	}
-	
+
 	for (i=0;i<tagged_count;i++) {
 		free(tagged_files[i]);
 	}
@@ -414,28 +413,28 @@ void list_files(int socket, struct user_record *user) {
 	int z;
 	int k;
 	int match;
-	
+
 	struct file_entry **files_e;
-	
+
 	sprintf(buffer, "%s/%s.sq3", conf.bbs_path, conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->database);
 
 	rc = sqlite3_open(buffer, &db);
 	if (rc != SQLITE_OK) {
-        fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
+        dolog("Cannot open database: %s", sqlite3_errmsg(db));
         sqlite3_close(db);
-        
+
         exit(1);
     }
     rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
-    
-    if (rc != SQLITE_OK) {    
+
+    if (rc != SQLITE_OK) {
         sqlite3_finalize(res);
 		sqlite3_close(db);
-		s_putstring(socket, "\r\nNo files in this area!\r\n");	
-		return;	        
+		s_putstring(socket, "\r\nNo files in this area!\r\n");
+		return;
     }
-    
-   
+
+
     files_c = 0;
 
 	while (sqlite3_step(res) == SQLITE_ROW) {
@@ -449,15 +448,15 @@ void list_files(int socket, struct user_record *user) {
 		files_e[files_c]->description = strdup((char *)sqlite3_column_text(res, 1));
 		files_e[files_c]->size = sqlite3_column_int(res, 2);
 		files_e[files_c]->dlcount = sqlite3_column_int(res, 3);
-		
+
 		files_c++;
 	}
 	sqlite3_finalize(res);
-	sqlite3_close(db);	
-	
+	sqlite3_close(db);
+
 	if (files_c == 0) {
-		s_putstring(socket, "\r\nNo files in this area!\r\n");	
-		return;	  
+		s_putstring(socket, "\r\nNo files in this area!\r\n");
+		return;
 	}
 	s_putstring(socket, "\r\n");
 	for (i=0;i<files_c;i++) {
@@ -534,7 +533,7 @@ void list_files(int socket, struct user_record *user) {
 			} else {
 				s_putchar(socket, files_e[i]->description[j]);
 			}
-		}	
+		}
 	}
 	while (1) {
 		s_putstring(socket, "\r\n\e[0mEnter # to tag, Enter to quit: ");
@@ -576,7 +575,7 @@ void list_files(int socket, struct user_record *user) {
 					s_putstring(socket, "\r\nSorry, you don't have permission to download from this area\r\n");
 				}
 			}
-		} 
+		}
 	}
 }
 
@@ -592,7 +591,7 @@ int file_menu(int socket, struct user_record *user) {
 	char *lRet;
 	lua_State *L;
 	int result;
-	
+
 	if (conf.script_path != NULL) {
 		sprintf(prompt, "%s/filemenu.lua", conf.script_path);
 		if (stat(prompt, &s) == 0) {
@@ -603,7 +602,7 @@ int file_menu(int socket, struct user_record *user) {
 			do_internal_menu = 0;
 			result = lua_pcall(L, 0, 1, 0);
 			if (result) {
-				fprintf(stderr, "Failed to run script: %s\n", lua_tostring(L, -1));
+				dolog("Failed to run script: %s", lua_tostring(L, -1));
 				do_internal_menu = 1;
 			}
 		} else {
@@ -612,27 +611,27 @@ int file_menu(int socket, struct user_record *user) {
 	} else {
 		do_internal_menu = 1;
 	}
-	
+
 	while (!dofiles) {
 		if (do_internal_menu == 1) {
 			s_displayansi(socket, "filemenu");
-			
+
 			sprintf(prompt, "\e[0m\r\nDir: (%d) %s\r\nSub: (%d) %s\r\nTL: %dm :> ", user->cur_file_dir, conf.file_directories[user->cur_file_dir]->name, user->cur_file_sub, conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->name, user->timeleft);
 			s_putstring(socket, prompt);
-			
+
 			c = s_getc(socket);
 		} else {
 			lua_getglobal(L, "menu");
 			result = lua_pcall(L, 0, 1, 0);
 			if (result) {
-				fprintf(stderr, "Failed to run script: %s\n", lua_tostring(L, -1));
+				dolog("Failed to run script: %s", lua_tostring(L, -1));
 				do_internal_menu = 1;
 				lua_close(L);
 				continue;
 			}
 			lRet = (char *)lua_tostring(L, -1);
 			lua_pop(L, 1);
-			c = lRet[0];			
+			c = lRet[0];
 		}
 		switch(tolower(c)) {
 			case 'i':
@@ -686,7 +685,7 @@ int file_menu(int socket, struct user_record *user) {
 						}
 					}
 				}
-				break;			
+				break;
 			case 'l':
 				list_files(socket, user);
 				break;
@@ -704,7 +703,7 @@ int file_menu(int socket, struct user_record *user) {
 				break;
 			case 'c':
 				{
-					// Clear tagged files	
+					// Clear tagged files
 					if (tagged_count > 0) {
 						for (i=0;i<tagged_count;i++) {
 							free(tagged_files[i]);

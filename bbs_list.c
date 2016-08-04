@@ -15,7 +15,7 @@ void add_bbs(int socket, struct user_record *user) {
 						"sysop TEXT,"
 						"telnet TEXT,"
 						"owner INTEGER);";
-						
+
 	char *insert_sql = "INSERT INTO bbslist (bbsname, sysop, telnet, owner) VALUES(?,?, ?, ?)";
 
 	char bbsname[19];
@@ -23,20 +23,20 @@ void add_bbs(int socket, struct user_record *user) {
 	char telnet[39];
 	char buffer[256];
 	char c;
-	char *err_msg = 0;	
+	char *err_msg = 0;
 	sqlite3 *db;
     sqlite3_stmt *res;
-    int rc; 
-    
+    int rc;
+
 	s_putstring(socket, "\r\n\e[1;37mEnter the BBS Name: \e[0m");
 	s_readstring(socket, bbsname, 18);
-	
+
 	s_putstring(socket, "\r\n\e[1;37mEnter the Sysop's Name: \e[0m");
 	s_readstring(socket, sysop, 16);
-	
+
 	s_putstring(socket, "\r\n\e[1;37mEnter the Telnet URL: \e[0m");
 	s_readstring(socket, telnet, 38);
-	
+
 	s_putstring(socket, "\r\nYou entered:\r\n");
 	s_putstring(socket, "\e[1;30m----------------------------------------------\e[0m\r\n");
 	sprintf(buffer, "\e[1;37mBBS Name: \e[1;32m%s\r\n", bbsname);
@@ -47,55 +47,55 @@ void add_bbs(int socket, struct user_record *user) {
 	s_putstring(socket, buffer);
 	s_putstring(socket, "\e[1;30m----------------------------------------------\e[0m\r\n");
 	s_putstring(socket, "Is this correct? (Y/N) :");
-	
+
 	c = s_getc(socket);
 	if (tolower(c) == 'y') {
 		sprintf(buffer, "%s/bbslist.sq3", conf.bbs_path);
-		
+
 		rc = sqlite3_open(buffer, &db);
-		
+
 		if (rc != SQLITE_OK) {
-			fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
+			dolog("Cannot open database: %s", sqlite3_errmsg(db));
 			sqlite3_close(db);
-			
+
 			exit(1);
 		}
-		
+
 		rc = sqlite3_exec(db, create_sql, 0, 0, &err_msg);
 		if (rc != SQLITE_OK ) {
-			
-			fprintf(stderr, "SQL error: %s\n", err_msg);
-			
-			sqlite3_free(err_msg);        
+
+			dolog("SQL error: %s", err_msg);
+
+			sqlite3_free(err_msg);
 			sqlite3_close(db);
-			
+
 			return;
-		} 
-		
+		}
+
 		rc = sqlite3_prepare_v2(db, insert_sql, -1, &res, 0);
-		
-		if (rc == SQLITE_OK) {    
+
+		if (rc == SQLITE_OK) {
 			sqlite3_bind_text(res, 1, bbsname, -1, 0);
 			sqlite3_bind_text(res, 2, sysop, -1, 0);
 			sqlite3_bind_text(res, 3, telnet, -1, 0);
 			sqlite3_bind_int(res, 4, user->id);
 
-			
+
 		} else {
-			fprintf(stderr, "Failed to execute statement: %s\n", sqlite3_errmsg(db));
+			dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
 		}
-		
-		
+
+
 		rc = sqlite3_step(res);
-		
+
 		if (rc != SQLITE_DONE) {
-			
-			printf("execution failed: %s", sqlite3_errmsg(db));
-			sqlite3_close(db);    
+
+			dolog("execution failed: %s", sqlite3_errmsg(db));
+			sqlite3_close(db);
 			exit(1);
 		}
-	    sqlite3_finalize(res);   
-		sqlite3_close(db); 
+	    sqlite3_finalize(res);
+		sqlite3_close(db);
 		s_putstring(socket, "\r\n\e[1;32mAdded!\e[0m\r\n");
 	} else {
 		s_putstring(socket, "\r\n\e[1;31mAborted!\e[0m\r\n");
@@ -111,13 +111,13 @@ void delete_bbs(int socket, struct user_record *user) {
     char *dsql = "DELETE FROM bbslist WHERE id=?";
     int i;
     char c;
-    
+
     s_putstring(socket, "\r\nPlease enter the id of the BBS you want to delete: ");
     s_readstring(socket, buffer, 5);
     i = atoi(buffer);
-    
+
     sprintf(buffer, "%s/bbslist.sq3", conf.bbs_path);
-    
+
     rc = sqlite3_open(buffer, &db);
 	if (rc != SQLITE_OK) {
 		return;
@@ -165,12 +165,12 @@ void list_bbses(int socket) {
     int rc;
     char *sql = "SELECT id,bbsname,sysop,telnet FROM bbslist";
     int i;
-    
+
     sprintf(buffer, "%s/bbslist.sq3", conf.bbs_path);
-    
+
     rc = sqlite3_open(buffer, &db);
 	if (rc != SQLITE_OK) {
-        fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
+        dolog("Cannot open database: %s", sqlite3_errmsg(db));
         sqlite3_close(db);
         exit(1);
     }
@@ -190,29 +190,29 @@ void list_bbses(int socket) {
 		if (i == 20) {
 			sprintf(buffer, "Press any key to continue...\r\n");
 			s_putstring(socket, buffer);
-			s_getc(socket);	
+			s_getc(socket);
 			i = 0;
-		}		
+		}
 	}
-	
+
 	s_putstring(socket, "\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
     sqlite3_finalize(res);
     sqlite3_close(db);
-    
+
     sprintf(buffer, "Press any key to continue...\r\n");
 	s_putstring(socket, buffer);
-	s_getc(socket);	
+	s_getc(socket);
 }
 
 void bbs_list(int socket, struct user_record *user) {
 	int doquit = 0;
 	char c;
-	
+
 	while(!doquit) {
 		s_putstring(socket, "\r\n\e[1;32mBBS Listings: \e[1;37m(\e[1;33mL\e[1;37m) \e[1;32mList, \e[1;37m(\e[1;33mA\e[1;37m) \e[1;32mAdd \e[1;37m(\e[1;33mD\e[1;37m) \e[1;32mDelete \e[1;37m(\e[1;33mQ\e[1;37m) \e[1;32mQuit\e[0m\r\n");
-		
+
 		c = s_getc(socket);
-		
+
 		switch(tolower(c)) {
 			case 'l':
 				list_bbses(socket);

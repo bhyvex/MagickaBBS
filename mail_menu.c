@@ -48,7 +48,7 @@ s_JamBase *open_jam_base(char *path) {
 			}
 		} else {
 			free(jb);
-			printf("Got %d\n", ret);
+			dolog("Got %d", ret);
 			return NULL;
 		}
 	}
@@ -104,7 +104,7 @@ struct msg_headers *read_message_headers(int msgconf, int msgarea, struct user_r
 
 	jb = open_jam_base(conf.mail_conferences[msgconf]->mail_areas[msgarea]->path);
 	if (!jb) {
-		printf("Error opening JAM base.. %s\n", conf.mail_conferences[msgconf]->mail_areas[msgarea]->path);
+		dolog("Error opening JAM base.. %s", conf.mail_conferences[msgconf]->mail_areas[msgarea]->path);
 		return NULL;
 	}
 
@@ -119,7 +119,7 @@ struct msg_headers *read_message_headers(int msgconf, int msgarea, struct user_r
 			memset(&jmh, 0, sizeof(s_JamMsgHeader));
 			z = JAM_ReadMsgHeader(jb, i, &jmh, &jsp);
 			if (z != 0) {
-				printf("Failed to read msg header: %d Erro %d\n", z, JAM_Errno(jb));
+				dolog("Failed to read msg header: %d Erro %d", z, JAM_Errno(jb));
 				continue;
 			}
 
@@ -730,7 +730,7 @@ void read_message(int socket, struct user_record *user, struct msg_headers *msgh
 
 	jb = open_jam_base(conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
 	if (!jb) {
-		printf("Error opening JAM base.. %s\n", conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
+		dolog("Error opening JAM base.. %s", conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
 		return;
 	}
 
@@ -961,7 +961,7 @@ void read_message(int socket, struct user_record *user, struct msg_headers *msgh
 
 					jb = open_jam_base(conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
 					if (!jb) {
-						printf("Error opening JAM base.. %s\n", conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
+						dolog("Error opening JAM base.. %s", conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
 						free(replybody);
 						free(body);
 						free(subject);
@@ -1135,12 +1135,12 @@ void read_message(int socket, struct user_record *user, struct msg_headers *msgh
 							free(subject);
 							free(to);
 							free(from);
-							printf("Failed to lock msg base!\n");
+							dolog("Failed to lock msg base!");
 							return;
 						}
 					}
 					if (JAM_AddMessage(jb, &jmh, jsp, (char *)replybody, strlen(replybody))) {
-						printf("Failed to add message\n");
+						dolog("Failed to add message");
 					} else {
 						if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NETMAIL_AREA) {
 							if (conf.netmail_sem != NULL) {
@@ -1252,7 +1252,7 @@ int mail_menu(int socket, struct user_record *user) {
 			do_internal_menu = 0;
 			result = lua_pcall(L, 0, 1, 0);
 			if (result) {
-				fprintf(stderr, "Failed to run script: %s\n", lua_tostring(L, -1));
+				dolog("Failed to run script: %s", lua_tostring(L, -1));
 				do_internal_menu = 1;
 			}
 		} else {
@@ -1275,7 +1275,7 @@ int mail_menu(int socket, struct user_record *user) {
 			lua_getglobal(L, "menu");
 			result = lua_pcall(L, 0, 1, 0);
 			if (result) {
-				fprintf(stderr, "Failed to run script: %s\n", lua_tostring(L, -1));
+				dolog("Failed to run script: %s", lua_tostring(L, -1));
 				do_internal_menu = 1;
 				lua_close(L);
 				continue;
@@ -1293,7 +1293,7 @@ int mail_menu(int socket, struct user_record *user) {
 					if (msghs != NULL && msghs->msg_count > 0) {
 						jb = open_jam_base(conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
 						if (!jb) {
-							printf("Error opening JAM base.. %s\n", conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
+							dolog("Error opening JAM base.. %s", conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
 							break;
 						} else {
 							all_unread = 0;
@@ -1402,7 +1402,7 @@ int mail_menu(int socket, struct user_record *user) {
 					if (msg != NULL) {
 						jb = open_jam_base(conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
 						if (!jb) {
-							printf("Error opening JAM base.. %s\n", conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
+							dolog("Error opening JAM base.. %s", conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
 							free(msg);
 							free(to);
 							free(subject);
@@ -1557,7 +1557,7 @@ int mail_menu(int socket, struct user_record *user) {
 								free(msg);
 								free(to);
 								free(subject);
-								printf("Failed to lock msg base!\n");
+								dolog("Failed to lock msg base!");
 								break;
 							}
 						}
@@ -1567,7 +1567,7 @@ int mail_menu(int socket, struct user_record *user) {
 						}
 
 						if (JAM_AddMessage(jb, &jmh, jsp, (char *)msg, strlen(msg))) {
-							printf("Failed to add message\n");
+							dolog("Failed to add message");
 						} else {
 							if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NETMAIL_AREA) {
 								if (conf.netmail_sem != NULL) {
@@ -1600,7 +1600,7 @@ int mail_menu(int socket, struct user_record *user) {
 					if (msghs != NULL && msghs->msg_count > 0) {
 						jb = open_jam_base(conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
 						if (!jb) {
-							printf("Error opening JAM base.. %s\n", conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
+							dolog("Error opening JAM base.. %s", conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
 							break;
 						} else {
 							all_unread = 0;
@@ -1854,7 +1854,7 @@ void mail_scan(int socket, struct user_record *user) {
 				}
 				jb = open_jam_base(conf.mail_conferences[i]->mail_areas[j]->path);
 				if (!jb) {
-					printf("Unable to open message base\n");
+					dolog("Unable to open message base");
 					continue;
 				}
 				if (JAM_ReadMBHeader(jb, &jbh) != 0) {

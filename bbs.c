@@ -41,7 +41,7 @@ void dolog(char *fmt, ...) {
 	snprintf(buffer, 512, "%s/%04d%02d%02d.log", conf.log_path, time_now.tm_year + 1900, time_now.tm_mon + 1, time_now.tm_mday);
 	logfptr = fopen(buffer, "a");
     if (!logfptr) {
-		printf("Error opening log file!\n");
+		dolog("Error opening log file!");
 		return;
 	}
     va_list ap;
@@ -422,7 +422,7 @@ void automessage_write(int socket, struct user_record *user) {
 			fwrite(automsg, strlen(automsg), 1, fptr);
 			fclose(fptr);
 		} else {
-			printf("Unable to open automessage.txt for writing\n");
+			dolog("Unable to open automessage.txt for writing");
 		}
 	}
 }
@@ -446,7 +446,7 @@ void automessage_display(int socket) {
 			}
 			fclose(fptr);
 		} else {
-			printf("Error opening automessage.txt\n");
+			dolog("Error opening automessage.txt");
 		}
 	} else {
 		s_putstring(socket, "No automessage!\r\n");
@@ -491,7 +491,7 @@ void runbbs(int socket, char *ip) {
 			mynode = i;
 			nodefile = fopen(buffer, "w");
 			if (!nodefile) {
-				printf("Error opening nodefile!\n");
+				dolog("Error opening nodefile!");
 				close(socket);
 				exit(1);
 			}
@@ -548,7 +548,7 @@ void runbbs(int socket, char *ip) {
 			if (stat(buffer, &s) == 0) {
 				nodefile = fopen(buffer, "r");
 				if (!nodefile) {
-					printf("Error opening nodefile!\n");
+					dolog("Error opening nodefile!");
 					disconnect(socket, "Error opening nodefile!");
 				}
 				fgets(buffer, 256, nodefile);
@@ -566,7 +566,7 @@ void runbbs(int socket, char *ip) {
 	sprintf(buffer, "%s/nodeinuse.%d", conf.bbs_path, mynode);
 	nodefile = fopen(buffer, "w");
 	if (!nodefile) {
-		printf("Error opening nodefile!\n");
+		dolog("Error opening nodefile!");
 		close(socket);
 		exit(1);
 	}

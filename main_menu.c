@@ -8,7 +8,7 @@
 #include "lua/lualib.h"
 #include "lua/lauxlib.h"
 
-extern struct bbs_config conf; 
+extern struct bbs_config conf;
 
 void main_menu(int socket, struct user_record *user) {
 	int doquit = 0;
@@ -21,7 +21,7 @@ void main_menu(int socket, struct user_record *user) {
 	char *lRet;
 	lua_State *L;
 	int result;
-	
+
 	if (conf.script_path != NULL) {
 		sprintf(buffer, "%s/mainmenu.lua", conf.script_path);
 		if (stat(buffer, &s) == 0) {
@@ -32,7 +32,7 @@ void main_menu(int socket, struct user_record *user) {
 			do_internal_menu = 0;
 			result = lua_pcall(L, 0, 1, 0);
 			if (result) {
-				fprintf(stderr, "Failed to run script: %s\n", lua_tostring(L, -1));
+				dolog("Failed to run script: %s", lua_tostring(L, -1));
 				do_internal_menu = 1;
 			}
 		} else {
@@ -41,22 +41,22 @@ void main_menu(int socket, struct user_record *user) {
 	} else {
 		do_internal_menu = 1;
 	}
-	
+
 	while (!doquit) {
-		
+
 		if (do_internal_menu == 1) {
 			s_displayansi(socket, "mainmenu");
-		
-		
+
+
 			sprintf(prompt, "\r\n\e[0mTL: %dm :> ", user->timeleft);
 			s_putstring(socket, prompt);
-		
+
 			c = s_getc(socket);
 		} else {
 			lua_getglobal(L, "menu");
 			result = lua_pcall(L, 0, 1, 0);
 			if (result) {
-				fprintf(stderr, "Failed to run script: %s\n", lua_tostring(L, -1));
+				dolog("Failed to run script: %s", lua_tostring(L, -1));
 				do_internal_menu = 1;
 				lua_close(L);
 				continue;
@@ -65,7 +65,7 @@ void main_menu(int socket, struct user_record *user) {
 			lua_pop(L, 1);
 			c = lRet[0];
 		}
-		
+
 		switch(tolower(c)) {
 			case 'o':
 				{
@@ -75,11 +75,11 @@ void main_menu(int socket, struct user_record *user) {
 			case 'a':
 				{
 					if (conf.text_file_count > 0) {
-						
+
 						while(1) {
 							s_putstring(socket, "\r\n\e[1;32mText Files Collection\r\n");
 							s_putstring(socket, "\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
-							
+
 							for (i=0;i<conf.text_file_count;i++) {
 								sprintf(buffer, "\e[1;30m[\e[1;34m%3d\e[1;30m] \e[1;37m%s\r\n", i, conf.text_files[i]->name);
 								s_putstring(socket, buffer);
@@ -126,7 +126,7 @@ void main_menu(int socket, struct user_record *user) {
 				{
 					i = 0;
 					sprintf(buffer, "%s/bulletin%d.ans", conf.ansi_path, i);
-					
+
 					while (stat(buffer, &s) == 0) {
 						sprintf(buffer, "bulletin%d", i);
 						s_displayansi(socket, buffer);
@@ -135,7 +135,7 @@ void main_menu(int socket, struct user_record *user) {
 						s_getc(socket);
 						i++;
 						sprintf(buffer, "%s/bulletin%d.ans", conf.ansi_path, i);
-					}					
+					}
 				}
 				break;
 			case '1':

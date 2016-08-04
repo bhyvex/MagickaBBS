@@ -42,22 +42,22 @@ int write_door32sys(int socket, struct user_record *user) {
 	FILE *fptr;
 	char *ptr;
 	int i;
-	
+
 	sprintf(buffer, "%s/node%d", conf.bbs_path, mynode);
-	
+
 	if (stat(buffer, &s) != 0) {
 		mkdir(buffer, 0755);
 	}
-	
+
 	sprintf(buffer, "%s/node%d/door32.sys", conf.bbs_path, mynode);
-	
+
 	fptr = fopen(buffer, "w");
-	
+
 	if (!fptr) {
-		printf("Unable to open %s for writing!\n", buffer);
+		dolog("Unable to open %s for writing!", buffer);
 		return 1;
 	}
-	
+
 	fprintf(fptr, "2\n"); // telnet type
 	fprintf(fptr, "%d\n", socket); // socket
 	fprintf(fptr, "38400\n"); // baudrate
@@ -69,30 +69,30 @@ int write_door32sys(int socket, struct user_record *user) {
 	fprintf(fptr, "%d\n", user->timeleft);
 	fprintf(fptr, "1\n"); // ansi emulation = 1
 	fprintf(fptr, "%d\n", mynode);
-	
+
 	fclose(fptr);
-	
+
 	// create dorinfo1.def
-	
+
 	sprintf(buffer, "%s/node%d", conf.bbs_path, mynode);
-	
+
 	if (stat(buffer, &s) != 0) {
 		mkdir(buffer, 0755);
 	}
-	
+
 	sprintf(buffer, "%s/node%d/dorinfo1.def", conf.bbs_path, mynode);
-	
+
 	fptr = fopen(buffer, "w");
-	
+
 	if (!fptr) {
-		printf("Unable to open %s for writing!\n", buffer);
+		dolog("Unable to open %s for writing!", buffer);
 		return 1;
 	}
-	
+
 	strcpy(buffer, conf.sysop_name);
-	
+
 	ptr = NULL;
-	
+
 	for (i=0;i<strlen(buffer);i++) {
 		if (buffer[i] == ' ') {
 			ptr = &buffer[i+1];
@@ -100,7 +100,7 @@ int write_door32sys(int socket, struct user_record *user) {
 			break;
 		}
 	}
-	
+
 	fprintf(fptr, "%s\n", conf.bbs_name); // telnet type
 	fprintf(fptr, "%s\n", buffer);
 	if (ptr != NULL) {
@@ -119,10 +119,10 @@ int write_door32sys(int socket, struct user_record *user) {
 	fprintf(fptr, "%d\n", user->timeleft);
 	fprintf(fptr, "-1\n");
 
-	
+
 	fclose(fptr);
-	
-	
+
+
 	return 0;
 }
 
@@ -140,27 +140,27 @@ void rundoor(int socket, struct user_record *user, char *cmd, int stdio) {
 	int t;
 	struct winsize ws;
 	struct sigaction sa;
-	
+
 	timeoutpaused = 1;
-	
+
 	if (write_door32sys(socket, user) != 0) {
 		return;
 	}
-	
+
 	if (stdio) {
-		
+
 		arguments[0] = strdup(cmd);
 		sprintf(buffer, "%d", mynode);
 		arguments[1] = strdup(buffer);
 		sprintf(buffer, "%d", socket);
 		arguments[2] = strdup(buffer);
 		arguments[3] = NULL;
-		
+
 		ws.ws_row = 24;
 		ws.ws_col = 80;
-		
+
 		running_door = 1;
-		
+
 		if (openpty(&master, &slave, NULL, NULL, &ws) == 0) {
 			sa.sa_handler = doorchld_handler;
 			sigemptyset(&sa.sa_mask);
@@ -169,26 +169,26 @@ void rundoor(int socket, struct user_record *user, char *cmd, int stdio) {
 				perror("sigaction");
 				exit(1);
 			}
-			
+
 			pid = fork();
 			if (pid < 0) {
 				return;
 			} else if (pid == 0) {
-				
+
 				close(master);
 				dup2(slave, 0);
 				dup2(slave, 1);
-				
+
 				close(slave);
-				
+
 				setsid();
-				
+
 				ioctl(0, TIOCSCTTY, 1);
-				
+
 				execvp(cmd, arguments);
 			} else {
 				running_door_pid = pid;
-				
+
 				while(running_door != 0) {
 					FD_ZERO(&fdset);
 					FD_SET(master, &fdset);
@@ -245,7 +245,7 @@ int door_menu(int socket, struct user_record *user) {
 	char *lRet;
 	lua_State *L;
 	int result;
-	
+
 	if (conf.script_path != NULL) {
 		sprintf(buffer, "%s/doors.lua", conf.script_path);
 		if (stat(buffer, &s) == 0) {
@@ -256,7 +256,7 @@ int door_menu(int socket, struct user_record *user) {
 			do_internal_menu = 0;
 			result = lua_pcall(L, 0, 1, 0);
 			if (result) {
-				fprintf(stderr, "Failed to run script: %s\n", lua_tostring(L, -1));
+				dolog("Failed to run script: %s", lua_tostring(L, -1));
 				do_internal_menu = 1;
 			}
 		} else {
@@ -269,16 +269,16 @@ int door_menu(int socket, struct user_record *user) {
 	while (!dodoors) {
 		if (do_internal_menu == 1) {
 			s_displayansi(socket, "doors");
-			
+
 			sprintf(prompt, "\e[0m\r\nTL: %dm :> ", user->timeleft);
 			s_putstring(socket, prompt);
-			
+
 			c = s_getc(socket);
 		} else {
 			lua_getglobal(L, "menu");
 			result = lua_pcall(L, 0, 1, 0);
 			if (result) {
-				fprintf(stderr, "Failed to run script: %s\n", lua_tostring(L, -1));
+				dolog("Failed to run script: %s", lua_tostring(L, -1));
 				do_internal_menu = 1;
 				lua_close(L);
 				continue;
@@ -292,7 +292,7 @@ int door_menu(int socket, struct user_record *user) {
 				dodoors = 1;
 				break;
 			case 'g':
-				{	
+				{
 					s_putstring(socket, "\r\nAre you sure you want to log off? (Y/N)");
 					c = s_getc(socket);
 					if (tolower(c) == 'y') {

@@ -12,12 +12,12 @@ static int secLevel(void* user, const char* section, const char* name,
                    const char* value)
 {
 	struct sec_level_t *conf = (struct sec_level_t *)user;
-	
+
 	if (strcasecmp(section, "main") == 0) {
 		if (strcasecmp(name, "time per day") == 0) {
 			conf->timeperday = atoi(value);
-		} 
-	} 	
+		}
+	}
 	return 1;
 }
 
@@ -26,25 +26,25 @@ int save_user(struct user_record *user) {
 	sqlite3 *db;
     sqlite3_stmt *res;
 	int rc;
- 						
+
 	char *update_sql = "UPDATE users SET password=?, firstname=?,"
 					   "lastname=?, email=?, location=?, sec_level=?, last_on=?, time_left=?, cur_mail_conf=?, cur_mail_area=?, cur_file_dir=?, cur_file_sub=?, times_on=? where loginname LIKE ?";
     char *err_msg = 0;
-     
+
  	sprintf(buffer, "%s/users.sq3", conf.bbs_path);
-	
+
 	rc = sqlite3_open(buffer, &db);
-	
+
 	if (rc != SQLITE_OK) {
-        fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
+        dolog("Cannot open database: %s", sqlite3_errmsg(db));
         sqlite3_close(db);
-        
+
         exit(1);
     }
 
     rc = sqlite3_prepare_v2(db, update_sql, -1, &res, 0);
-    
-    if (rc == SQLITE_OK) {    
+
+    if (rc == SQLITE_OK) {
         sqlite3_bind_text(res, 1, user->password, -1, 0);
         sqlite3_bind_text(res, 2, user->firstname, -1, 0);
         sqlite3_bind_text(res, 3, user->lastname, -1, 0);
@@ -60,16 +60,16 @@ int save_user(struct user_record *user) {
         sqlite3_bind_int(res, 13, user->timeson);
         sqlite3_bind_text(res, 14, user->loginname, -1, 0);
     } else {
-        fprintf(stderr, "Failed to execute statement: %s\n", sqlite3_errmsg(db));
+        dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
     }
-    
-    
+
+
     rc = sqlite3_step(res);
-    
+
     if (rc != SQLITE_DONE) {
-        
-        printf("execution failed: %s", sqlite3_errmsg(db));
-		sqlite3_close(db);    
+
+        dolog("execution failed: %s", sqlite3_errmsg(db));
+		sqlite3_close(db);
 		exit(1);
     }
 	sqlite3_close(db);
@@ -98,36 +98,36 @@ int inst_user(struct user_record *user) {
 						"cur_file_sub INTEGER,"
 						"cur_file_dir INTEGER,"
 						"times_on INTEGER);";
-						
+
 	char *insert_sql = "INSERT INTO users (loginname, password, firstname,"
 					   "lastname, email, location, sec_level, last_on, time_left, cur_mail_conf, cur_mail_area, cur_file_dir, cur_file_sub, times_on) VALUES(?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     char *err_msg = 0;
-     
+
  	sprintf(buffer, "%s/users.sq3", conf.bbs_path);
-	
+
 	rc = sqlite3_open(buffer, &db);
-	
+
 	if (rc != SQLITE_OK) {
-        fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
+        dolog("Cannot open database: %s", sqlite3_errmsg(db));
         sqlite3_close(db);
-        
+
         exit(1);
     }
-    
+
     rc = sqlite3_exec(db, create_sql, 0, 0, &err_msg);
     if (rc != SQLITE_OK ) {
-        
-        fprintf(stderr, "SQL error: %s\n", err_msg);
-        
-        sqlite3_free(err_msg);        
+
+        dolog("SQL error: %s", err_msg);
+
+        sqlite3_free(err_msg);
         sqlite3_close(db);
-        
+
         return 1;
-    } 
-    
+    }
+
     rc = sqlite3_prepare_v2(db, insert_sql, -1, &res, 0);
-    
-    if (rc == SQLITE_OK) {    
+
+    if (rc == SQLITE_OK) {
         sqlite3_bind_text(res, 1, user->loginname, -1, 0);
         sqlite3_bind_text(res, 2, user->password, -1, 0);
         sqlite3_bind_text(res, 3, user->firstname, -1, 0);
@@ -142,24 +142,24 @@ int inst_user(struct user_record *user) {
         sqlite3_bind_int(res, 12, user->cur_file_dir);
         sqlite3_bind_int(res, 13, user->cur_file_sub);
         sqlite3_bind_int(res, 14, user->timeson);
-        
+
     } else {
-        fprintf(stderr, "Failed to execute statement: %s\n", sqlite3_errmsg(db));
+        dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
     }
-    
-    
+
+
     rc = sqlite3_step(res);
-    
+
     if (rc != SQLITE_DONE) {
-        
-        printf("execution failed: %s", sqlite3_errmsg(db));
-		sqlite3_close(db);    
+
+        dolog("execution failed: %s", sqlite3_errmsg(db));
+		sqlite3_close(db);
 		exit(1);
     }
-    
+
     user->id = sqlite3_last_insert_rowid(db);
-    
-    sqlite3_finalize(res);   
+
+    sqlite3_finalize(res);
 	sqlite3_close(db);
 	return 1;
 }
@@ -171,30 +171,30 @@ struct user_record *check_user_pass(int socket, char *loginname, char *password)
     sqlite3_stmt *res;
     int rc;
     char *sql = "SELECT * FROM users WHERE loginname LIKE ?";
-    
+
 	sprintf(buffer, "%s/users.sq3", conf.bbs_path);
-	
+
 	rc = sqlite3_open(buffer, &db);
 	if (rc != SQLITE_OK) {
-        fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
+        dolog("Cannot open database: %s", sqlite3_errmsg(db));
         sqlite3_close(db);
-        
+
         exit(1);
     }
     rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
-    
-    if (rc == SQLITE_OK) {    
+
+    if (rc == SQLITE_OK) {
         sqlite3_bind_text(res, 1, loginname, -1, 0);
     } else {
-        fprintf(stderr, "Failed to execute statement: %s\n", sqlite3_errmsg(db));
+        dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
 		sqlite3_finalize(res);
-		sqlite3_close(db);	
-		return NULL;	        
+		sqlite3_close(db);
+		return NULL;
     }
-    
+
     int step = sqlite3_step(res);
-    
-    if (step == SQLITE_ROW) { 
+
+    if (step == SQLITE_ROW) {
 		user = (struct user_record *)malloc(sizeof(struct user_record));
 		user->id = sqlite3_column_int(res, 0);
 		user->loginname = strdup((char *)sqlite3_column_text(res, 1));
@@ -211,7 +211,7 @@ struct user_record *check_user_pass(int socket, char *loginname, char *password)
 		user->cur_file_dir = sqlite3_column_int(res, 13);
 		user->cur_file_sub = sqlite3_column_int(res, 12);
 		user->timeson = sqlite3_column_int(res, 14);
-		
+
 		if (strcmp(password, user->password) != 0) {
 			free(user->loginname);
 			free(user->firstname);
@@ -220,33 +220,33 @@ struct user_record *check_user_pass(int socket, char *loginname, char *password)
 			free(user->location);
 			free(user);
 		    sqlite3_finalize(res);
-			sqlite3_close(db);	
+			sqlite3_close(db);
 			return NULL;
 		}
     } else {
 		sqlite3_finalize(res);
-		sqlite3_close(db);	
-		return NULL;		
-	} 
-  
+		sqlite3_close(db);
+		return NULL;
+	}
+
     sqlite3_finalize(res);
     sqlite3_close(db);
-    
+
     user->sec_info = (struct sec_level_t *)malloc(sizeof(struct sec_level_t));
-    
+
     sprintf(buffer, "%s/config/s%d.ini", conf.bbs_path, user->sec_level);
     if (ini_parse(buffer, secLevel, user->sec_info) <0) {
-		printf("Unable to load sec Level ini (%s)!\n", buffer);
+		dolog("Unable to load sec Level ini (%s)!", buffer);
 		exit(-1);
-	}	
-	
+	}
+
 	if (user->cur_mail_conf > conf.mail_conference_count) {
 		user->cur_mail_conf = 0;
 	}
 	if (user->cur_file_dir > conf.file_directory_count) {
 		user->cur_file_dir = 0;
 	}
-	
+
 	if (user->cur_mail_area > conf.mail_conferences[user->cur_mail_conf]->mail_area_count) {
 		user->cur_mail_area = 0;
 	}
@@ -255,8 +255,8 @@ struct user_record *check_user_pass(int socket, char *loginname, char *password)
 		user->cur_file_sub = 0;
 	}
 
-	
-    return user;		   
+
+    return user;
 }
 
 void list_users(int socket, struct user_record *user) {
@@ -265,21 +265,21 @@ void list_users(int socket, struct user_record *user) {
     sqlite3_stmt *res;
     int rc;
     int i;
-   	
+
 	char *sql = "SELECT loginname,location,times_on FROM users";
-	
+
 	sprintf(buffer, "%s/users.sq3", conf.bbs_path);
-	
+
 	rc = sqlite3_open(buffer, &db);
-	
+
 	if (rc != SQLITE_OK) {
-        fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
+        dolog("Cannot open database: %s", sqlite3_errmsg(db));
         sqlite3_close(db);
         exit(1);
     }
     rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
 	if (rc != SQLITE_OK) {
-        fprintf(stderr, "Cannot prepare statement: %s\n", sqlite3_errmsg(db));
+        dolog("Cannot prepare statement: %s", sqlite3_errmsg(db));
         sqlite3_close(db);
         exit(1);
     }
@@ -290,22 +290,22 @@ void list_users(int socket, struct user_record *user) {
     while (sqlite3_step(res) == SQLITE_ROW) {
 		sprintf(buffer, "\e[1;37m%-16s \e[1;36m%-32s \e[1;32m%5d\r\n", sqlite3_column_text(res, 0), sqlite3_column_text(res, 1), sqlite3_column_int(res, 2));
 		s_putstring(socket, buffer);
-		
+
 		i++;
 		if (i == 20) {
 			sprintf(buffer, "Press any key to continue...\r\n");
 			s_putstring(socket, buffer);
-			s_getc(socket);	
+			s_getc(socket);
 			i = 0;
 		}
 	}
     s_putstring(socket, "\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
     sqlite3_finalize(res);
     sqlite3_close(db);
-    
+
     sprintf(buffer, "Press any key to continue...\r\n");
 	s_putstring(socket, buffer);
-	s_getc(socket);	
+	s_getc(socket);
 }
 
 int check_user(char *loginname) {
@@ -314,33 +314,33 @@ int check_user(char *loginname) {
     sqlite3_stmt *res;
     int rc;
     char *sql = "SELECT * FROM users WHERE loginname = ?";
-    
+
 	sprintf(buffer, "%s/users.sq3", conf.bbs_path);
-	
+
 	rc = sqlite3_open(buffer, &db);
-	
+
 	if (rc != SQLITE_OK) {
-        fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
+        dolog("Cannot open database: %s", sqlite3_errmsg(db));
         sqlite3_close(db);
-        
+
         exit(1);
     }
     rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
-    
-    if (rc == SQLITE_OK) {    
+
+    if (rc == SQLITE_OK) {
         sqlite3_bind_text(res, 1, loginname, -1, 0);
     } else {
-        fprintf(stderr, "Failed to execute statement: %s\n", sqlite3_errmsg(db));
+        dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
     }
-    
+
     int step = sqlite3_step(res);
-    
+
     if (step == SQLITE_ROW) {
 		sqlite3_finalize(res);
 		sqlite3_close(db);
 		return 0;
-    }   
-    
+    }
+
     sqlite3_finalize(res);
     sqlite3_close(db);
     return 1;
@@ -354,11 +354,11 @@ struct user_record *new_user(int socket) {
 	int nameok = 0;
 	int passok = 0;
 	int i;
-	
+
 	user = (struct user_record *)malloc(sizeof(struct user_record));
 	s_putstring(socket, "\r\n\r\n");
 	s_displayansi(socket, "newuser");
-	
+
 	do {
 		passok = 0;
 		nameok = 0;
@@ -370,12 +370,12 @@ struct user_record *new_user(int socket) {
 				s_putstring(socket, "Sorry, that name is too short.\r\n");
 				continue;
 			}
-			
+
 			for (i=0;i<strlen(buffer);i++) {
 				if (!(tolower(buffer[i]) >= 97 && tolower(buffer[i]) <= 122)) {
 					s_putstring(socket, "Sorry, invalid character, can only use alpha characters.\r\n");
 					nameok = 1;
-					break;			
+					break;
 				}
 			}
 			if (nameok == 1) {
@@ -384,16 +384,16 @@ struct user_record *new_user(int socket) {
 			}
 			if (strcasecmp(buffer, "unknown") == 0) {
 				s_putstring(socket, "Sorry, that name is reserved.\r\n");
-				continue;				
+				continue;
 			}
 			if (strcasecmp(buffer, "all") == 0) {
 				s_putstring(socket, "Sorry, that name is reserved.\r\n");
-				continue;				
+				continue;
 			}
 			if (strcasecmp(buffer, "new") == 0) {
 				s_putstring(socket, "Sorry, that name is reserved.\r\n");
-				continue;				
-			}			
+				continue;
+			}
 			user->loginname = strdup(buffer);
 			nameok = check_user(user->loginname);
 			if (!nameok) {
@@ -407,7 +407,7 @@ struct user_record *new_user(int socket) {
 		s_readstring(socket, buffer, 32);
 		s_putstring(socket, "\r\n");
 		user->firstname = strdup(buffer);
-		
+
 		s_putstring(socket, "What is your last name: ");
 		memset(buffer, 0, 256);
 		s_readstring(socket, buffer, 32);
@@ -424,7 +424,7 @@ struct user_record *new_user(int socket) {
 		memset(buffer, 0, 256);
 		s_readstring(socket, buffer, 32);
 		s_putstring(socket, "\r\n");
-		user->location = strdup(buffer);	
+		user->location = strdup(buffer);
 
 		do {
 			s_putstring(socket, "What password would you like (at least 8 characters): ");
@@ -438,7 +438,7 @@ struct user_record *new_user(int socket) {
 			}
 		} while (!passok);
 		user->password = strdup(buffer);
-		
+
 		s_putstring(socket, "You Entered:\r\n");
 		s_putstring(socket, "-------------------------------------\r\n");
 		s_putstring(socket, "Login Name: ");
@@ -459,7 +459,7 @@ struct user_record *new_user(int socket) {
 		while (tolower(c) != 'y' && tolower(c) != 'n') {
 			c = s_getchar(socket);
 		}
-		
+
 		if (tolower(c) == 'y') {
 			done = 1;
 		}
@@ -467,13 +467,13 @@ struct user_record *new_user(int socket) {
 	user->sec_level = conf.newuserlvl;
 
 	user->sec_info = (struct sec_level_t *)malloc(sizeof(struct sec_level_t));
-	
+
 	sprintf(buffer, "%s/config/s%d.ini", conf.bbs_path, user->sec_level);
-	
+
 	if (ini_parse(buffer, secLevel, user->sec_info) <0) {
-		printf("Unable to load sec Level ini (%s)!\n", buffer);
+		dolog("Unable to load sec Level ini (%s)!", buffer);
 		exit(-1);
-	}	
+	}
 
 	user->laston = time(NULL);
 	user->timeleft = user->sec_info->timeperday;
@@ -483,6 +483,6 @@ struct user_record *new_user(int socket) {
 	user->cur_mail_conf = 0;
 	user->timeson = 0;
 	inst_user(user);
-	
+
 	return user;
 }
