@@ -1,3 +1,16 @@
+# README!!
+
+If you are upgrading from a version prior to 73aa146b8470727f036f732d2c9c267048ee455b You will need to make and run the update_pass utility on your
+user database. This will convert all plain text passwords to sha256 hashed and salted passwords.
+
+eg.
+
+		cd utils/update_pass
+		make
+		./update_pass ../../users.sq3
+
+Although you probably should make a backup of your database first in case things go wrong...
+
 # MagickaBBS
 Linux/FreeBSD bulletin board system (Should also work on NetBSD and OpenBSD, if it doesn't it's a bug)
 
@@ -9,38 +22,38 @@ while still retaining the classic BBS feel. ANSI & Telnet, and good old ZModem.
 
 If you want to install Magicka BBS, follow these steps.
 
-1. Ensure you have git, c compiler, libsqlite3-dev, libreadline-dev and gnu make
-   
-   `sudo apt-get install build-essential libsqlite3-dev libreadline-dev git`
-   
+1. Ensure you have git, c compiler, libsqlite3-dev, libreadline-dev, libssl-dev and gnu make
+
+   `sudo apt-get install build-essential libsqlite3-dev libreadline-dev git libssl-dev`
+
    should work on debian and debian derivatives.
 2. Clone the repo `git clone https://github.com/apamment/MagickaBBS`
 3. Build JamLib
 
   `cd MagickaBBS/jamlib`
-  
- 
+
+
   `make -f Makefile.linux` (Linux) `gmake -f Makefile.linux` (*BSD)
 
 3. Build libzmodem
 
   `cd MagickaBBS/Xmodem`
-  
- 
+
+
   `make` (Linux) `gmake` (*BSD)
-  
+
 4. Build LUA
 
 	`cd MagickaBBS/lua`
 
 	`make linux` (Linux) `gmake freebsd` (FreeBSD)
-  
+
 5. Build the BBS (You may have to adjust the Makefile for your system)
 
   `make -f Makefile.linux` (Linux) `gmake -f Makefile.freebsd` (FreeBSD)
-     
+
 6. Make a directory for logs.
-	
+
 	`mkdir logs`
 
 7. Copy the config-default directory to a config directory.
@@ -51,7 +64,7 @@ If you want to install Magicka BBS, follow these steps.
 9. Copy the ansi-default directory to the one specified in your system path
 
   eg.
-  
+
   `cp -r ansi_default ansis`
 
 
@@ -59,8 +72,8 @@ If you want to install Magicka BBS, follow these steps.
 10. Run Magicka BBS on a port over 1024 (Below require root, and we're not ready for that).
 
   `./magicka config/bbs.ini 2300`
-  
-11. Your BBS is now running on port 2300, log in and create yourself an account! (By default there is only one security level, you can add more, 
+
+11. Your BBS is now running on port 2300, log in and create yourself an account! (By default there is only one security level, you can add more,
 but you will need to use an SQLite Manager to modify users.sq3 and set security levels, as there is no user editor yet.
 
 For information on how to configure your BBS, check the wiki https://github.com/apamment/MagickaBBS/wiki
