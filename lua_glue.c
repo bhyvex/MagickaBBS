@@ -1,3 +1,4 @@
+#include <sys/utsname.h>
 #include "bbs.h"
 #include "lua/lua.h"
 #include "lua/lauxlib.h"
@@ -10,57 +11,57 @@ extern int gSocket;
 
 int l_bbsWString(lua_State *L) {
 	char *str = (char *)lua_tostring(L, -1);
-	
+
 	s_putstring(gSocket, str);
-	
+
 	return 0;
 }
 
 int l_bbsRString(lua_State *L) {
 	char buffer[256];
 	int len = lua_tonumber(L, -1);
-	
+
 	if (len > 256) {
 		len = 256;
 	}
-	
+
 	s_readstring(gSocket, buffer, len);
-	
+
 	lua_pushstring(L, buffer);
-	
+
 	return 1;
 }
 
 int l_bbsRChar(lua_State *L) {
 	char c;
-	
+
 	c = s_getc(gSocket);
-	
+
 	lua_pushlstring(L, &c, 1);
-	
+
 	return 1;
 }
 
 int l_bbsDisplayAnsi(lua_State *L) {
 	char *str = (char *)lua_tostring(L, -1);
-	
+
 	s_displayansi(gSocket, str);
-	
+
 	return 0;
 }
 
 int l_bbsVersion(lua_State *L) {
 	char buffer[64];
 	snprintf(buffer, 64, "Magicka BBS v%d.%d (%s)", VERSION_MAJOR, VERSION_MINOR, VERSION_STR);
-	
+
 	lua_pushstring(L, buffer);
-	
+
 	return 1;
 }
 
 int l_bbsNode(lua_State *L) {
 	lua_pushnumber(L, mynode);
-	
+
 	return 1;
 }
 
@@ -68,7 +69,7 @@ int l_bbsReadLast10(lua_State *L) {
 	int offset = lua_tonumber(L, -1);
 	struct last10_callers l10;
 	FILE *fptr;
-	
+
 	fptr = fopen("last10.dat", "rb");
 	if (!fptr) {
 		return 0;
@@ -78,17 +79,17 @@ int l_bbsReadLast10(lua_State *L) {
 		return 0;
 	}
 	fclose(fptr);
-	
+
 	lua_pushstring(L, l10.name);
 	lua_pushstring(L, l10.location);
 	lua_pushnumber(L, l10.time);
-	
+
 	return 3;
 }
 
 int l_bbsGetEmailCount(lua_State *L) {
 	lua_pushnumber(L, mail_getemailcount(gUser));
-	
+
 	return 1;
 }
 
@@ -100,15 +101,15 @@ int l_bbsMailScan(lua_State *L) {
 int l_bbsRunDoor(lua_State *L) {
 	char *cmd = (char *)lua_tostring(L, 1);
 	int stdio = lua_toboolean(L, 2);
-	
+
 	rundoor(gSocket, gUser, cmd, stdio);
-	
+
 	return 0;
 }
 
 int l_bbsTimeLeft(lua_State *L) {
 	lua_pushnumber(L, gUser->timeleft);
-	
+
 	return 1;
 }
 
@@ -122,7 +123,7 @@ int l_getMailAreaInfo(lua_State *L) {
 	lua_pushstring(L, conf.mail_conferences[gUser->cur_mail_conf]->name);
 	lua_pushnumber(L, gUser->cur_mail_area);
 	lua_pushstring(L, conf.mail_conferences[gUser->cur_mail_conf]->mail_areas[gUser->cur_mail_area]->name);
-	
+
 	return 4;
 }
 
@@ -131,7 +132,20 @@ int l_getFileAreaInfo(lua_State *L) {
 	lua_pushstring(L, conf.file_directories[gUser->cur_file_dir]->name);
 	lua_pushnumber(L, gUser->cur_file_sub);
 	lua_pushstring(L, conf.file_directories[gUser->cur_file_dir]->file_subs[gUser->cur_file_sub]->name);
-	
+
+	return 4;
+}
+
+int l_getBBSInfo(lua_State *L) {
+	struct utsname name;
+
+	uname(&name);
+
+	lua_pushstring(L, conf.bbs_name);
+	lua_pushstring(L, conf.sysop_name);
+	lua_pushstring(L, name.sysname);
+	lua_pushstring(L, name.machine);
+
 	return 4;
 }
 
@@ -159,9 +173,11 @@ void lua_push_cfunctions(lua_State *L) {
 	lua_pushcfunction(L, l_bbsTimeLeft);
 	lua_setglobal(L, "bbs_time_left");
 	lua_pushcfunction(L, l_getMailAreaInfo);
-	lua_setglobal(L, "bbs_cur_mailarea_info");	
+	lua_setglobal(L, "bbs_cur_mailarea_info");
 	lua_pushcfunction(L, l_getFileAreaInfo);
-	lua_setglobal(L, "bbs_cur_filearea_info");		
+	lua_setglobal(L, "bbs_cur_filearea_info");
 	lua_pushcfunction(L, l_bbsDisplayAutoMsg);
 	lua_setglobal(L, "bbs_display_automsg");
+	lua_pushcfunction(L, l_getBBSInfo);
+	lua_setglobal(L, "bbs_get_info");
 }
