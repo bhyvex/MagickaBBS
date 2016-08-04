@@ -241,6 +241,7 @@ void s_readstring(int socket, char *buffer, int max) {
 			s_putstring(socket, "\e[D \e[D");
 			continue;
 		} else if (c == '\b' || c == 127) {
+			i -= 1;
 			continue;
 		}
 
@@ -266,6 +267,7 @@ void s_readpass(int socket, char *buffer, int max) {
 			s_putstring(socket, "\e[D \e[D");
 			continue;
 		} else if (c == '\b' || c == 127) {
+			i -= 1;
 			continue;
 		}
 
