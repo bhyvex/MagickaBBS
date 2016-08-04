@@ -240,6 +240,8 @@ void s_readstring(int socket, char *buffer, int max) {
 			i -= 2;
 			s_putstring(socket, "\e[D \e[D");
 			continue;
+		} else if (c == '\b' || c == 127) {
+			continue;
 		}
 
 		if (c == '\n' || c == '\r') {
@@ -262,6 +264,8 @@ void s_readpass(int socket, char *buffer, int max) {
 			buffer[i-1] = '\0';
 			i-=2;
 			s_putstring(socket, "\e[D \e[D");
+			continue;
+		} else if (c == '\b' || c == 127) {
 			continue;
 		}
 
