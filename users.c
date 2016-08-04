@@ -500,7 +500,7 @@ struct user_record *new_user(int socket) {
 			}
 		} while (!passok);
 		gen_salt(&user->salt);
-		user->password = hash_sha256(buffer, salt);
+		user->password = hash_sha256(buffer, user->salt);
 
 		s_putstring(socket, "You Entered:\r\n");
 		s_putstring(socket, "-------------------------------------\r\n");
