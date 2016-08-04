@@ -153,6 +153,8 @@ extern void disconnect(int socket, char *calledby);
 extern void display_info(int socket);
 extern void display_last10_callers(int socket, struct user_record *user);
 
+extern void gen_salt(char **s);
+extern char *hash_sha256(char *pass, char *salt);
 extern int save_user(struct user_record *user);
 extern int check_user(char *loginname);
 extern struct user_record *new_user(int socket);

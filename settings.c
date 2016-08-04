@@ -8,7 +8,8 @@ void settings_menu(int sock, struct user_record *user) {
 	char buffer[256];
 	int dosettings = 0;
 	char c;
-	
+	char *hash;
+
 	while (!dosettings) {
 		s_putstring(sock, "\e[2J\e[1;32mYour Settings\r\n");
 		s_putstring(sock, "\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
@@ -17,21 +18,25 @@ void settings_menu(int sock, struct user_record *user) {
 		s_putstring(sock, buffer);
 		s_putstring(sock, "\e[0;36mQ. \e[1;37mQuit to Main Menu\r\n");
 		s_putstring(sock, "\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
-		
+
 		c = s_getc(sock);
-		
+
 		switch(tolower(c)) {
 			case 'p':
 				{
 					s_putstring(sock, "\r\nEnter your current password: ");
 					s_readpass(sock, buffer, 16);
-					if (strcmp(buffer, user->password) == 0) {
+					hash = hash_sha256(buffer, user->salt);
+					if (strcmp(hash, user->password) == 0) {
 						s_putstring(sock, "\r\nEnter your new password (8 chars min): ");
 						s_readstring(sock, buffer, 16);
 						if (strlen(buffer) >= 8) {
 							free(user->password);
-							user->password = (char *)malloc(strlen(buffer) + 1);
-							strcpy(user->password, buffer);
+							free(user->salt);
+
+							gen_salt(&user->salt);
+							user->password = hash_sha256(buffer, user->salt);
+
 							save_user(user);
 							s_putstring(sock, "\r\nPassword Changed!\r\n");
 						} else {
