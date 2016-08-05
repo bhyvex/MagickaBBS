@@ -150,7 +150,7 @@ void s_displayansi_p(int socket, char *file) {
 		return;
 	}
 	c = fgetc(fptr);
-	while (!feof(fptr)) {
+	while (!feof(fptr) && c != 0x1a) {
 		s_putchar(socket, c);
 		c = fgetc(fptr);
 	}
@@ -171,7 +171,7 @@ void s_displayansi(int socket, char *file) {
 		return;
 	}
 	c = fgetc(fptr);
-	while (!feof(fptr)) {
+	while (!feof(fptr) && c != 0x1a) {
 		s_putchar(socket, c);
 		c = fgetc(fptr);
 	}
