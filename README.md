@@ -1,6 +1,6 @@
 # README!!
 
-If you are upgrading from a version prior to 73aa146b8470727f036f732d2c9c267048ee455b You will need to make and run the update_pass utility on your
+If you are upgrading from a version prior to apamment/MagickaBBS@73aa146b8470727f036f732d2c9c267048ee455b You will need to make and run the update_pass utility on your
 user database. This will convert all plain text passwords to sha256 hashed and salted passwords.
 
 eg.
