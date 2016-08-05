@@ -170,7 +170,7 @@ void show_email(int socket, struct user_record *user, int msgno) {
 				s_putstring(socket, "\r\n");
 				lines++;
 				if (lines == 19) {
-					s_putstring(socket, "Press a key to continue...");
+					s_putstring(socket, "\e[1;37mPress a key to continue...\e[0m");
 					s_getc(socket);
 					lines = 0;
 					s_putstring(socket, "\e[5;1H\e[0J");
@@ -195,7 +195,7 @@ void show_email(int socket, struct user_record *user, int msgno) {
 		}
 		sqlite3_step(res);
 
-		s_putstring(socket, "Press R to reply, D to delete Enter to quit...\r\n");
+		s_putstring(socket, "\e[1;37mPress \e[1;36mR\e[1;37m to reply, \e[1;36mD\e[1;37m to delete \e[1;36mEnter\e[1;37m to quit...\e[0m\r\n");
 		c = s_getc(socket);
 		if (tolower(c) == 'r') {
 			if (subject != NULL) {
