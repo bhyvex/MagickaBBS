@@ -165,7 +165,7 @@ extern void main_menu(int socket, struct user_record *user);
 
 extern void mail_scan(int socket, struct user_record *user);
 extern int mail_menu(int socket, struct user_record *user);
-extern char *editor(int socket, struct user_record *user, char *quote, char *from);
+extern char *editor(int socket, struct user_record *user, char *quote, char *from, int email);
 extern char *external_editor(int socket, struct user_record *user, char *to, char *from, char *quote, char *qfrom, char *subject, int email);
 
 extern int door_menu(int socket, struct user_record *user);

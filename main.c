@@ -329,6 +329,7 @@ void server(int port) {
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = SA_RESTART;
 	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
+			remove(conf.pid_file);
 			perror("sigaction");
 			exit(1);
 	}
@@ -336,12 +337,14 @@ void server(int port) {
 	st.sa_handler = sigterm_handler;
 	sigemptyset(&st.sa_mask);
 	if (sigaction(SIGTERM, &st, NULL) == -1) {
+			remove(conf.pid_file);
 			perror("sigaction");
 			exit(1);
 	}
 
 	socket_desc = socket(AF_INET, SOCK_STREAM, 0);
 	if (socket_desc == -1) {
+		remove(conf.pid_file);
 		fprintf(stderr, "Couldn't create socket..\n");
 		exit(1);
 	}

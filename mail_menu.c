@@ -376,7 +376,8 @@ char *external_editor(int socket, struct user_record *user, char *to, char *from
 
 			uname(&name);
 
-			if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_FIDO) {
+
+			if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_FIDO && !email) {
 				if (conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point == 0) {
 					snprintf(buffer, 256, "\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s (%d:%d/%d)\r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline, conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
 																																						  conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
@@ -412,10 +413,10 @@ char *external_editor(int socket, struct user_record *user, char *to, char *from
 			return body2;
 		}
 	}
-	return editor(socket, user, quote, qfrom);
+	return editor(socket, user, quote, qfrom, email);
 }
 
-char *editor(int socket, struct user_record *user, char *quote, char *from) {
+char *editor(int socket, struct user_record *user, char *quote, char *from, int email) {
 	int lines = 0;
 	char buffer[256];
 	char linebuffer[80];
@@ -494,7 +495,7 @@ char *editor(int socket, struct user_record *user, char *quote, char *from) {
 					tagline = conf.default_tagline;
 				}
 				uname(&name);
-				if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_FIDO) {
+				if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_FIDO && !email) {
 					if (conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point == 0) {
 						snprintf(buffer, 256, "\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s (%d:%d/%d)\r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline, conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
 																																							  conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,

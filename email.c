@@ -11,12 +11,12 @@ extern struct bbs_config conf;
 void send_email(int socket, struct user_record *user) {
 	char buffer[256];
 	sqlite3 *db;
-    sqlite3_stmt *res;
-    int rc;
-    char *recipient;
-    char *subject;
-    char *msg;
-    char *csql = "CREATE TABLE IF NOT EXISTS email ("
+  sqlite3_stmt *res;
+  int rc;
+  char *recipient;
+  char *subject;
+  char *msg;
+  char *csql = "CREATE TABLE IF NOT EXISTS email ("
     					"id INTEGER PRIMARY KEY,"
 						"sender TEXT COLLATE NOCASE,"
 						"recipient TEXT COLLATE NOCASE,"
@@ -24,8 +24,8 @@ void send_email(int socket, struct user_record *user) {
 						"body TEXT,"
 						"date INTEGER,"
 						"seen INTEGER);";
-    char *isql = "INSERT INTO email (sender, recipient, subject, body, date, seen) VALUES(?, ?, ?, ?, ?, 0)";
-    char *err_msg = 0;
+  char *isql = "INSERT INTO email (sender, recipient, subject, body, date, seen) VALUES(?, ?, ?, ?, ?, 0)";
+  char *err_msg = 0;
 
 	s_putstring(socket, "\r\nTO: ");
 	s_readstring(socket, buffer, 16);
@@ -103,12 +103,12 @@ void send_email(int socket, struct user_record *user) {
 void show_email(int socket, struct user_record *user, int msgno) {
 	char buffer[256];
 	sqlite3 *db;
-    sqlite3_stmt *res;
-    int rc;
-    char *sql = "SELECT id,sender,subject,body,date FROM email WHERE recipient LIKE ? LIMIT ?, 1";
-    char *dsql = "DELETE FROM email WHERE id=?";
-    char *isql = "INSERT INTO email (sender, recipient, subject, body, date, seen) VALUES(?, ?, ?, ?, ?, 0)";
-    char *ssql = "UPDATE email SET seen=1 WHERE id=?";
+  sqlite3_stmt *res;
+  int rc;
+  char *sql = "SELECT id,sender,subject,body,date FROM email WHERE recipient LIKE ? LIMIT ?, 1";
+  char *dsql = "DELETE FROM email WHERE id=?";
+  char *isql = "INSERT INTO email (sender, recipient, subject, body, date, seen) VALUES(?, ?, ?, ?, ?, 0)";
+  char *ssql = "UPDATE email SET seen=1 WHERE id=?";
 	int id;
 	char *sender;
 	char *subject;
@@ -268,16 +268,16 @@ void show_email(int socket, struct user_record *user, int msgno) {
 void list_emails(int socket, struct user_record *user) {
 	char buffer[256];
 	sqlite3 *db;
-    sqlite3_stmt *res;
-    int rc;
-    char *sql = "SELECT sender,subject,seen,date FROM email WHERE recipient LIKE ?";
-    char *subject;
-    char *from;
-    char *to;
-    char *body;
-    time_t date;
-    int seen;
-    int msgid;
+  sqlite3_stmt *res;
+  int rc;
+  char *sql = "SELECT sender,subject,seen,date FROM email WHERE recipient LIKE ?";
+  char *subject;
+  char *from;
+  char *to;
+  char *body;
+  time_t date;
+  int seen;
+  int msgid;
 	int msgtoread;
 	struct tm msg_date;
 
@@ -285,35 +285,35 @@ void list_emails(int socket, struct user_record *user) {
 
 	rc = sqlite3_open(buffer, &db);
 	if (rc != SQLITE_OK) {
-        dolog("Cannot open database: %s", sqlite3_errmsg(db));
-        sqlite3_close(db);
+  	dolog("Cannot open database: %s", sqlite3_errmsg(db));
+    sqlite3_close(db);
 
-        exit(1);
-    }
-    rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
+    exit(1);
+  }
+  rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
 
-    if (rc == SQLITE_OK) {
-        sqlite3_bind_text(res, 1, user->loginname, -1, 0);
-    } else {
-        dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
+  if (rc == SQLITE_OK) {
+    sqlite3_bind_text(res, 1, user->loginname, -1, 0);
+  } else {
+    dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
 		sqlite3_finalize(res);
 		sqlite3_close(db);
 		s_putstring(socket, "\r\nYou have no email\r\n");
 		return;
-    }
+  }
 
-    msgid = 0;
-
-    while (sqlite3_step(res) == SQLITE_ROW) {
+  msgid = 0;
+	s_putstring(socket, "\e[2J\e[1;37;44m[MSG#] Subject                                 From             Date          \r\n\e[0m");
+  while (sqlite3_step(res) == SQLITE_ROW) {
 		from = strdup((char *)sqlite3_column_text(res, 0));
 		subject = strdup((char *)sqlite3_column_text(res, 1));
 		seen = sqlite3_column_int(res, 2);
 		date = (time_t)sqlite3_column_int(res, 3);
 		localtime_r(&date, &msg_date);
 		if (seen == 0) {
-			sprintf(buffer, "\e[1;30m[\e[1;34m%4d\e[1;30m]\e[1;32m*\e[1;37m%-39.39s \e[1;32m%-16.16s \e[1;35m%02d:%02d %02d-%02d-%02d\e[0m\r\n", msgid, subject, from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+			sprintf(buffer, "\e[1;30m[\e[1;34m%4d\e[1;30m]\e[1;32m*\e[1;37m%-39.39s \e[1;32m%-16.16s \e[1;35m%02d:%02d %02d-%02d-%02d\e[0m\r\n", msgid + 1, subject, from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 		} else {
-			sprintf(buffer, "\e[1;30m[\e[1;34m%4d\e[1;30m] \e[1;37m%-39.39s \e[1;32m%-16.16s \e[1;35m%02d:%02d %02d-%02d-%02d\e[0m\r\n", msgid, subject, from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+			sprintf(buffer, "\e[1;30m[\e[1;34m%4d\e[1;30m] \e[1;37m%-39.39s \e[1;32m%-16.16s \e[1;35m%02d:%02d %02d-%02d-%02d\e[0m\r\n", msgid + 1, subject, from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 		}
 		s_putstring(socket, buffer);
 
@@ -321,8 +321,7 @@ void list_emails(int socket, struct user_record *user) {
 		free(subject);
 
 		if (msgid % 22 == 0 && msgid != 0) {
-			s_putstring(socket, "Enter # to read, Q to quit or Enter to continue\r\n");
-
+			s_putstring(socket, "\e[1;37mEnter \e[1;36m# \e[1;37mto read, \e[1;36mQ \e[1;37mto quit or \e[1;36mEnter\e[1;37m to continue\e[0m\r\n");
 			s_readstring(socket, buffer, 5);
 			if (strlen(buffer) > 0) {
 				if (tolower(buffer[0]) == 'q') {
@@ -330,31 +329,29 @@ void list_emails(int socket, struct user_record *user) {
 					sqlite3_close(db);
 					return;
 				} else {
-					msgtoread = atoi(buffer);
+					msgtoread = atoi(buffer) - 1;
 					sqlite3_finalize(res);
 					sqlite3_close(db);
 					show_email(socket, user, msgtoread);
 					return;
 				}
 			}
-
+			s_putstring(socket, "\e[2J\e[1;37;44m[MSG#] Subject                                 From             Date          \r\n\e[0m");
 		}
-
 		msgid++;
 	}
 	if (msgid == 0) {
 		s_putstring(socket, "\r\nYou have no email\r\n");
 	} else {
-		s_putstring(socket, "Enter # to read, or Enter to quit\r\n");
+		s_putstring(socket, "\e[1;37mEnter \e[1;36m# \e[1;37mto read, or \e[1;36mEnter\e[1;37m to quit\e[0m\r\n");
 		s_readstring(socket, buffer, 5);
 		if (strlen(buffer) > 0) {
-			msgtoread = atoi(buffer);
+			msgtoread = atoi(buffer) - 1;
 			sqlite3_finalize(res);
 			sqlite3_close(db);
 			show_email(socket, user, msgtoread);
 			return;
 		}
-
 	}
 	sqlite3_finalize(res);
 	sqlite3_close(db);
