@@ -820,7 +820,6 @@ void read_message(int socket, struct user_record *user, struct msg_headers *msgh
 					s_putstring(socket, "\r\n");
 				} else {
 					s_putchar(socket, body[z]);
-					s_putstring(socket, "\r\n");
 				}
 				lines++;
 				if (lines >= 17) {
