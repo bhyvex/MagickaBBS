@@ -816,7 +816,12 @@ void read_message(int socket, struct user_record *user, struct msg_headers *msgh
 		for (z=0;z<z2;z++) {
 			if (body[z] == '\r' || chars == 79) {
 				chars = 0;
-				s_putstring(socket, "\r\n");
+				if (body[z] == '\r') {
+					s_putstring(socket, "\r\n");
+				} else {
+					s_putchar(socket, body[z]);
+					s_putstring(socket, "\r\n");
+				}
 				lines++;
 				if (lines >= 17) {
 					s_putstring(socket, "\e[1;37mPress a key to continue...\e[0m");
