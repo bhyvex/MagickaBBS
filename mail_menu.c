@@ -685,7 +685,7 @@ char *editor(struct user_record *user, char *quote, char *from, int email) {
 	return NULL;
 }
 
-void read_message(int socket, struct user_record *user, struct msg_headers *msghs, int mailno) {
+void read_message(struct user_record *user, struct msg_headers *msghs, int mailno) {
 	s_JamBase *jb;
 	s_JamBaseHeader jbh;
 	s_JamMsgHeader jmh;
@@ -1315,7 +1315,7 @@ int mail_menu(struct user_record *user) {
 							}
 
 							if (i > 0 && i <= msghs->msg_count) {
-								read_message(socket, user, msghs, i - 1);
+								read_message(user, msghs, i - 1);
 							}
 						}
 					}
@@ -1642,7 +1642,7 @@ int mail_menu(struct user_record *user) {
 										z = atoi(buffer);
 										if (z > 0 && z <= msghs->msg_count) {
 											closed = 1;
-											read_message(socket, user, msghs, z - 1);
+											read_message(user, msghs, z - 1);
 											break;
 										}
 									}
@@ -1656,7 +1656,7 @@ int mail_menu(struct user_record *user) {
 								if (strlen(buffer) > 0) {
 									z = atoi(buffer);
 									if (z > 0 && z <= msghs->msg_count) {
-										read_message(socket, user, msghs, z - 1);
+										read_message(user, msghs, z - 1);
 									}
 								}
 							}
