@@ -13,7 +13,6 @@ extern struct bbs_config conf;
 void main_menu(struct user_record *user) {
 	int doquit = 0;
 	char c;
-	char prompt[128];
 	char buffer[256];
 	int i;
 	struct stat s;

@@ -308,8 +308,6 @@ void record_last10_callers(struct user_record *user) {
 		struct last10_callers callers[10];
 
 	int i,j;
-	char buffer[256];
-	struct tm l10_time;
 	FILE *fptr = fopen("last10.dat", "rb");
 
 	if (fptr != NULL) {
@@ -346,7 +344,7 @@ void record_last10_callers(struct user_record *user) {
 void display_last10_callers(struct user_record *user) {
 	struct last10_callers callers[10];
 
-	int i,z,j;
+	int i,z;
 	struct tm l10_time;
 	FILE *fptr = fopen("last10.dat", "rb");
 

@@ -134,7 +134,6 @@ void rundoor(struct user_record *user, char *cmd, int stdio) {
 	int ret;
 	char c;
 	int len;
-	int status;
 	int master;
 	int slave;
 	fd_set fdset;

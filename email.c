@@ -270,8 +270,6 @@ void list_emails(struct user_record *user) {
   char *sql = "SELECT sender,subject,seen,date FROM email WHERE recipient LIKE ?";
   char *subject;
   char *from;
-  char *to;
-  char *body;
   time_t date;
   int seen;
   int msgid;

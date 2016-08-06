@@ -15,8 +15,6 @@
 extern struct bbs_config conf;
 extern int gSocket;
 
-static int doCancel = 0;
-
 struct file_entry {
 	char *filename;
 	char *description;
@@ -162,7 +160,6 @@ int doIO(ZModem *zm) {
 
 void upload_zmodem(struct user_record *user) {
 	ZModem zm;
-	int done;
 
 
 	upload_path = conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->upload_path;
@@ -179,7 +176,7 @@ void upload_zmodem(struct user_record *user) {
 
 	zm.packetsize = 1024;
 
-	done = ZmodemRInit(&zm);
+	ZmodemRInit(&zm);
 
 	doIO(&zm);
 }
@@ -264,15 +261,6 @@ void upload(struct user_record *user) {
 void download_zmodem(struct user_record *user, char *filename) {
 	ZModem zm;
 	int	done ;
-	fd_set readfds;
-	struct timeval timeout;
-	int	i;
-	int j;
-	int	len;
-	int pos;
-
-	u_char buffer[2048];
-	u_char buffer2[1024];
 
 	dolog("Attempting to upload %s", filename);
 
@@ -337,10 +325,9 @@ void download(struct user_record *user) {
 	char *usql = "update files set dlcount=? where filename like ?";
 	char buffer[256];
 	int dloads;
-	char *err_msg = NULL;
 	sqlite3 *db;
-    sqlite3_stmt *res;
-    int rc;
+  sqlite3_stmt *res;
+  int rc;
 
 	for (i=0;i<tagged_count;i++) {
 		download_zmodem(user, tagged_files[i]);
@@ -407,7 +394,6 @@ void list_files(struct user_record *user) {
 	int file_size;
 	char file_unit;
 	int lines = 0;
-	char desc;
 	int i;
 	int j;
 	int z;

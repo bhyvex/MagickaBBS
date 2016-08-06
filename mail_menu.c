@@ -266,7 +266,6 @@ char *external_editor(struct user_record *user, char *to, char *from, char *quot
 	FILE *fptr;
 	char *body = NULL;
 	char buffer[256];
-	char buffer2[256];
 	int len;
 	int totlen;
 	char *body2 = NULL;
@@ -420,7 +419,6 @@ char *editor(struct user_record *user, char *quote, char *from, int email) {
 	int lines = 0;
 	char buffer[256];
 	char linebuffer[80];
-	char prompt[12];
 	int doquit = 0;
 	char **content = NULL;
 	int i;
@@ -687,7 +685,6 @@ char *editor(struct user_record *user, char *quote, char *from, int email) {
 
 void read_message(struct user_record *user, struct msg_headers *msghs, int mailno) {
 	s_JamBase *jb;
-	s_JamBaseHeader jbh;
 	s_JamMsgHeader jmh;
 	s_JamSubPacket* jsp;
 	s_JamSubfield jsf;
@@ -707,13 +704,8 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 	char c;
 	char *replybody;
 	struct fido_addr *from_addr = NULL;
-	struct fido_addr *dest;
-	int wwiv_to = 0;
 	int i, j;
-	char *wwiv_addressee;
 	char *dest_addr;
-	int to_us;
-	char *msgid = NULL;
 	char timestr[17];
 	int doquit = 0;
 	int skip_line = 0;
@@ -1191,7 +1183,6 @@ int mail_menu(struct user_record *user) {
 	int doquit = 0;
 	int domail = 0;
 	char c;
-	char prompt[128];
 	char buffer[256];
 	char buffer2[256];
 	int i;
@@ -1201,7 +1192,6 @@ int mail_menu(struct user_record *user) {
 	struct msg_headers *msghs;
 
 	s_JamBase *jb;
-	s_JamBaseHeader jbh;
 	s_JamMsgHeader jmh;
 	s_JamSubPacket* jsp;
 	s_JamSubfield jsf;
@@ -1212,19 +1202,10 @@ int mail_menu(struct user_record *user) {
 	char *subject;
 	char *from;
 	char *to;
-	char *body;
-	char *replybody;
-	char *wwiv_addressee;
 	char timestr[17];
 	char *msg;
 	int closed;
-	uint32_t jam_crc;
-	unsigned int lastmsg,currmsg;
-	int lines;
 	struct fido_addr *from_addr = NULL;
-	struct fido_addr *dest = NULL;
-	char *dest_addr;
-	int to_us;
 	int wwiv_to;
 	struct stat s;
 	int do_internal_menu = 0;
@@ -1818,8 +1799,6 @@ void mail_scan(struct user_record *user) {
 	char c;
 	int i;
 	int j;
-	char buffer[256];
-	int count;
 
 	s_printf("\r\nScan for new mail? (Y/N) :	");
 	c = s_getc();

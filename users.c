@@ -82,7 +82,6 @@ int save_user(struct user_record *user) {
 
 	char *update_sql = "UPDATE users SET password=?, salt=?, firstname=?,"
 					   "lastname=?, email=?, location=?, sec_level=?, last_on=?, time_left=?, cur_mail_conf=?, cur_mail_area=?, cur_file_dir=?, cur_file_sub=?, times_on=? where loginname LIKE ?";
-    char *err_msg = 0;
 
  	sprintf(buffer, "%s/users.sq3", conf.bbs_path);
 

@@ -321,7 +321,7 @@ static int handler(void* user, const char* section, const char* name,
 void server(int port) {
 	struct sigaction sa;
 	struct sigaction st;
-	int socket_desc, client_sock, c, *new_sock;
+	int socket_desc, client_sock, c;
 	int pid;
 	struct sockaddr_in server, client;
 
