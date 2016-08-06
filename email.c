@@ -100,7 +100,7 @@ void send_email(struct user_record *user) {
     free(recipient);
 }
 
-void show_email(int socket, struct user_record *user, int msgno) {
+void show_email(struct user_record *user, int msgno) {
 	char buffer[256];
 	sqlite3 *db;
   sqlite3_stmt *res;
@@ -327,7 +327,7 @@ void list_emails(struct user_record *user) {
 					msgtoread = atoi(buffer) - 1;
 					sqlite3_finalize(res);
 					sqlite3_close(db);
-					show_email(socket, user, msgtoread);
+					show_email(user, msgtoread);
 					return;
 				}
 			}
@@ -344,7 +344,7 @@ void list_emails(struct user_record *user) {
 			msgtoread = atoi(buffer) - 1;
 			sqlite3_finalize(res);
 			sqlite3_close(db);
-			show_email(socket, user, msgtoread);
+			show_email(user, msgtoread);
 			return;
 		}
 	}
