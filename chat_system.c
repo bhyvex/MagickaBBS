@@ -11,6 +11,7 @@
 
 extern struct bbs_config conf;
 extern int mynode;
+extern int gSocket;
 
 static char **screenbuffer;
 static int chat_socket;
@@ -43,25 +44,25 @@ int hostname_to_ip(char * hostname , char* ip) {
 	struct hostent *he;
 	struct in_addr **addr_list;
 	int i;
-         
-	if ( (he = gethostbyname( hostname ) ) == NULL) 
+
+	if ( (he = gethostbyname( hostname ) ) == NULL)
     {
 		// get the host info
         return 1;
     }
- 
+
 	addr_list = (struct in_addr **) he->h_addr_list;
-     
+
 	for(i = 0; addr_list[i] != NULL; i++) {
 		strcpy(ip , inet_ntoa(*addr_list[i]) );
 		return 0;
 	}
-     
+
     return 1;
 }
 void append_screenbuffer(char *buffer) {
 	int z;
-	
+
 	for (z=0;z<strlen(buffer);z++) {
 		if (row_at == 80) {
 			if (line_at == 22) {
@@ -72,7 +73,7 @@ void append_screenbuffer(char *buffer) {
 				line_at++;
 			}
 		}
-		
+
 		screenbuffer[line_at][row_at] = buffer[z];
 		row_at++;
 		screenbuffer[line_at][row_at] = '\0';
@@ -82,53 +83,47 @@ void append_screenbuffer(char *buffer) {
 	}
 	if (line_at < 22) {
 		line_at++;
-	}	
-	
+	}
+
 	row_at = 0;
 }
 
-void chat_system(int sock, struct user_record *user) {
+void chat_system(struct user_record *user) {
 	struct sockaddr_in servaddr;
-    fd_set fds;
-    int t;
-    int ret;
-    char inputbuffer[80];
-    int inputbuffer_at = 0;
-    int len;
-    char c;
-    char buffer2[256];
-    char buffer[513];
-    char buffer3[513];
-    char outputbuffer[513];
-    int buffer_at = 0;
+  fd_set fds;
+  int t;
+  int ret;
+  char inputbuffer[80];
+  int inputbuffer_at = 0;
+  int len;
+  char c;
+  char buffer2[256];
+  char buffer[513];
+  char outputbuffer[513];
+  int buffer_at = 0;
 	int do_update = 1;
 	int i;
-	int o;
-	int l;
 	int j;
-	int z;
-	int z2;
 	char *usr;
 	char *cmd;
 	char *where;
 	char *message;
-	char *pos;
 	char *sep;
 	char *target;
     memset(inputbuffer, 0, 80);
     if (conf.irc_server == NULL) {
-		s_putstring(sock, "\r\nSorry, Chat is not supported on this system.\r\n");
+		s_putstring("\r\nSorry, Chat is not supported on this system.\r\n");
 		return;
 	}
 	row_at = 0;
 	line_at = 0;
-	s_putstring(sock, "\e[2J");
-	
+	s_putstring("\e[2J");
+
     memset(&servaddr, 0, sizeof(struct sockaddr_in));
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = htons(conf.irc_port);
-    
-    
+
+
     if ( (chat_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         return;
     }
@@ -145,36 +140,36 @@ void chat_system(int sock, struct user_record *user) {
 	raw("USER %s 0 0 :%s\r\n", user->loginname, user->loginname);
 	raw("NICK %s\r\n", user->loginname);
 	raw("JOIN %s\r\n", conf.irc_channel);
-	
+
 	memset(buffer, 0, 513);
-	
-	screenbuffer = (char **)malloc(sizeof(char *) * 23);  
+
+	screenbuffer = (char **)malloc(sizeof(char *) * 23);
     for (i=0;i<23;i++) {
 		screenbuffer[i] = (char *)malloc(81);
 		memset(screenbuffer[i], 0, 81);
 	}
-	
+
 	while (1) {
 		FD_ZERO(&fds);
-		FD_SET(sock, &fds);
+		FD_SET(gSocket, &fds);
 		FD_SET(chat_socket, &fds);
-		
-		if (chat_socket > sock) {
+
+		if (chat_socket > gSocket) {
 			t = chat_socket + 1;
 		} else {
-			t = sock + 1;
+			t = gSocket + 1;
 		}
-		
+
 		ret = select(t, &fds, NULL, NULL, NULL);
-		
+
 		if (ret > 0) {
-			if (FD_ISSET(sock, &fds)) {
-				len = read(sock, &c, 1);
+			if (FD_ISSET(gSocket, &fds)) {
+				len = read(gSocket, &c, 1);
 				if (len == 0) {
 					raw("QUIT\r\n");
-					disconnect(sock, "Socket closed");
+					disconnect("Socket closed");
 				}
-				
+
 				if (c == '\r') {
 					if (inputbuffer[0] == '/') {
 						if (strcasecmp(&inputbuffer[1], "quit") == 0) {
@@ -205,19 +200,19 @@ void chat_system(int sock, struct user_record *user) {
 						do_update = 2;
 					}
 				}
-			} 
+			}
 			if (FD_ISSET(chat_socket, &fds)) {
 				len = read(chat_socket, &c, 1);
 				if (len == 0) {
-					s_putstring(sock, "\r\n\r\n\r\nLost connection to chat server!\r\n");
+					s_putstring("\r\n\r\n\r\nLost connection to chat server!\r\n");
 					for (i=0;i<22;i++) {
 						free(screenbuffer[i]);
 					}
-					free(screenbuffer);					
+					free(screenbuffer);
 					return;
 				}
-				
-				if (c == '\r' || buffer_at == 512) {	
+
+				if (c == '\r' || buffer_at == 512) {
 					if (!strncmp(buffer, "PING", 4)) {
 						buffer[1] = 'O';
 						raw(buffer);
@@ -241,7 +236,7 @@ void chat_system(int sock, struct user_record *user) {
 						}
 
 
-						if (!strncmp(cmd, "PRIVMSG", 7) || !strncmp(cmd, "NOTICE", 6)) {				
+						if (!strncmp(cmd, "PRIVMSG", 7) || !strncmp(cmd, "NOTICE", 6)) {
 							for (j=0;j<strlen(message);j++) {
 								if (message[j] == ' ') {
 									where = message;
@@ -255,13 +250,13 @@ void chat_system(int sock, struct user_record *user) {
 							if (!strncmp(cmd, "PRIVMSG", 7)) {
 								if (strcmp(target, conf.irc_channel) == 0) {
 									sprintf(outputbuffer, "%s: %s", usr, message);
-								} 
+								}
 								append_screenbuffer(outputbuffer);
 								do_update = 1;
-							} 
+							}
 						}
 					}
-					
+
 					memset(buffer, 0, 513);
 					buffer_at = 0;
 				} else if (c != '\n') {
@@ -271,22 +266,20 @@ void chat_system(int sock, struct user_record *user) {
 			}
 		}
 		if (do_update == 1) {
-			s_putstring(sock, "\e[2J");		
+			s_putstring("\e[2J");
 			for (i=0;i<=line_at;i++) {
-				sprintf(buffer2, "%s\r\n", screenbuffer[i]);
-				s_putstring(sock, buffer2);
+				s_printf("%s\r\n", screenbuffer[i]);
 			}
 			for (i=line_at+1;i<22;i++) {
-				s_putstring(sock, "\r\n");
+				s_putstring("\r\n");
 			}
-			s_putstring(sock, "\e[1;45;37m Type /Quit to Exit\e[K\e[0m\r\n");
+			s_putstring("\e[1;45;37m Type /Quit to Exit\e[K\e[0m\r\n");
 			if (inputbuffer_at > 0) {
-				s_putstring(sock, inputbuffer);
-			} 
+				s_putstring(inputbuffer);
+			}
 			do_update = 0;
 		} else if (do_update == 2) {
-			sprintf(buffer2, "\e[24;1f%s\e[K", inputbuffer);
-			s_putstring(sock, buffer2);
+			s_printf("\e[24;1f%s\e[K", inputbuffer);
 		}
 	}
 }

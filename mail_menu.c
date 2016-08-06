@@ -261,12 +261,11 @@ struct msg_headers *read_message_headers(int msgconf, int msgarea, struct user_r
 	return msghs;
 }
 
-char *external_editor(int socket, struct user_record *user, char *to, char *from, char *quote, char *qfrom, char *subject, int email) {
+char *external_editor(struct user_record *user, char *to, char *from, char *quote, char *qfrom, char *subject, int email) {
 	char c;
 	FILE *fptr;
 	char *body = NULL;
 	char buffer[256];
-	char buffer2[256];
 	int len;
 	int totlen;
 	char *body2 = NULL;
@@ -279,8 +278,8 @@ char *external_editor(int socket, struct user_record *user, char *to, char *from
 
 
 	if (conf.external_editor_cmd != NULL) {
-		s_putstring(socket, "\r\nUse external editor? (Y/N) ");
-		c = s_getc(socket);
+		s_printf("\r\nUse external editor? (Y/N) ");
+		c = s_getc();
 		if (tolower(c) == 'y') {
 
 			sprintf(buffer, "%s/node%d", conf.bbs_path, mynode);
@@ -335,7 +334,7 @@ char *external_editor(int socket, struct user_record *user, char *to, char *from
 			}
 			fclose(fptr);
 
-			rundoor(socket, user, conf.external_editor_cmd, conf.external_editor_stdio);
+			rundoor(user, conf.external_editor_cmd, conf.external_editor_stdio);
 
 			// readin msgtmp
 			sprintf(buffer, "%s/node%d/MSGTMP", conf.bbs_path, mynode);
@@ -413,14 +412,13 @@ char *external_editor(int socket, struct user_record *user, char *to, char *from
 			return body2;
 		}
 	}
-	return editor(socket, user, quote, qfrom, email);
+	return editor(user, quote, qfrom, email);
 }
 
-char *editor(int socket, struct user_record *user, char *quote, char *from, int email) {
+char *editor(struct user_record *user, char *quote, char *from, int email) {
 	int lines = 0;
 	char buffer[256];
 	char linebuffer[80];
-	char prompt[12];
 	int doquit = 0;
 	char **content = NULL;
 	int i;
@@ -460,14 +458,13 @@ char *editor(int socket, struct user_record *user, char *quote, char *from, int 
 			}
 		}
 	}
-	s_putstring(socket, "\r\n\e[1;32mMagicka Internal Editor, Type \e[1;37m/S \e[1;32mto save, \e[1;37m/A \e[1;32mto abort and \e[1;37m/? \e[1;32mfor help\r\n");
-	s_putstring(socket, "\e[1;30m-------------------------------------------------------------------------------\e[0m");
+	s_printf("\r\n\e[1;32mMagicka Internal Editor, Type \e[1;37m/S \e[1;32mto save, \e[1;37m/A \e[1;32mto abort and \e[1;37m/? \e[1;32mfor help\r\n");
+	s_printf("\e[1;30m-------------------------------------------------------------------------------\e[0m");
 
 	while(!doquit) {
-		sprintf(prompt, "\r\n\e[1;30m[\e[1;34m%3d\e[1;30m]: \e[0m%s", lines, next_line_buffer);
-		s_putstring(socket, prompt);
+		s_printf("\r\n\e[1;30m[\e[1;34m%3d\e[1;30m]: \e[0m%s", lines, next_line_buffer);
 		strcpy(linebuffer, next_line_buffer);
-		s_readstring(socket, &linebuffer[strlen(next_line_buffer)], 70 - strlen(next_line_buffer));
+		s_readstring(&linebuffer[strlen(next_line_buffer)], 70 - strlen(next_line_buffer));
 		memset(next_line_buffer, 0, 70);
 
 		if (strlen(linebuffer) == 70 && linebuffer[69] != ' ') {
@@ -475,8 +472,7 @@ char *editor(int socket, struct user_record *user, char *quote, char *from, int 
 				if (linebuffer[i] == ' ') {
 					linebuffer[i] = '\0';
 					strcpy(next_line_buffer, &linebuffer[i+1]);
-					sprintf(prompt, "\e[%dD\e[0K", 70 - i);
-					s_putstring(socket, prompt);
+					s_printf("\e[%dD\e[0K", 70 - i);
 					break;
 				}
 			}
@@ -548,21 +544,20 @@ char *editor(int socket, struct user_record *user, char *quote, char *from, int 
 				return NULL;
 			} else if (toupper(linebuffer[1]) == 'Q') {
 				if (quote == NULL) {
-					s_putstring(socket, "\r\nNo message to quote!\r\n");
+					s_printf("\r\nNo message to quote!\r\n");
 				} else {
-					s_putstring(socket, "\r\n");
+					s_printf("\r\n");
 					for (i=0;i<quotelines;i++) {
-						sprintf(buffer, "\r\n\e[1;30m[\e[1;34m%3d\e[1;30m]: \e[0m%s", i, quotecontent[i]);
-						s_putstring(socket, buffer);
+						s_printf("\r\n\e[1;30m[\e[1;34m%3d\e[1;30m]: \e[0m%s", i, quotecontent[i]);
 					}
 
-					s_putstring(socket, "\r\nQuote from Line: ");
-					s_readstring(socket, buffer, 5);
+					s_printf("\r\nQuote from Line: ");
+					s_readstring(buffer, 5);
 					qfrom = atoi(buffer);
-					s_putstring(socket, "\r\nQuote to Line: ");
-					s_readstring(socket, buffer, 5);
+					s_printf("\r\nQuote to Line: ");
+					s_readstring(buffer, 5);
 					qto = atoi(buffer);
-					s_putstring(socket, "\r\n");
+					s_printf("\r\n");
 
 					if (qto > quotelines) {
 						qto = quotelines;
@@ -571,7 +566,7 @@ char *editor(int socket, struct user_record *user, char *quote, char *from, int 
 						qfrom = 0;
 					}
 					if (qfrom > qto) {
-						s_putstring(socket, "Quoting Cancelled\r\n");
+						s_printf("Quoting Cancelled\r\n");
 					}
 
 					for (i=qfrom;i<=qto;i++) {
@@ -585,40 +580,38 @@ char *editor(int socket, struct user_record *user, char *quote, char *from, int 
 						lines++;
 					}
 
-					s_putstring(socket, "\r\n\e[1;32mMagicka Internal Editor, Type \e[1;37m/S \e[1;32mto save, \e[1;37m/A \e[1;32mto abort and \e[1;37m/? \e[1;32mfor help\r\n");
-					s_putstring(socket, "\e[1;30m-------------------------------------------------------------------------------\e[0m");
+					s_printf("\r\n\e[1;32mMagicka Internal Editor, Type \e[1;37m/S \e[1;32mto save, \e[1;37m/A \e[1;32mto abort and \e[1;37m/? \e[1;32mfor help\r\n");
+					s_printf("\e[1;30m-------------------------------------------------------------------------------\e[0m");
 
 					for (i=0;i<lines;i++) {
-						sprintf(buffer, "\r\n\e[1;30m[\e[1;34m%3d\e[1;30m]: \e[0m%s", i, content[i]);
-						s_putstring(socket, buffer);
+						s_printf("\r\n\e[1;30m[\e[1;34m%3d\e[1;30m]: \e[0m%s", i, content[i]);
 					}
 				}
 			} else if (toupper(linebuffer[1]) == 'L') {
-				s_putstring(socket, "\r\n\e[1;32mMagicka Internal Editor, Type \e[1;37m/S \e[1;32mto save, \e[1;37m/A \e[1;32mto abort and \e[1;37m/? \e[1;32mfor help\r\n");
-				s_putstring(socket, "\e[1;30m-------------------------------------------------------------------------------\e[0m");
+				s_printf("\r\n\e[1;32mMagicka Internal Editor, Type \e[1;37m/S \e[1;32mto save, \e[1;37m/A \e[1;32mto abort and \e[1;37m/? \e[1;32mfor help\r\n");
+				s_printf("\e[1;30m-------------------------------------------------------------------------------\e[0m");
 
 				for (i=0;i<lines;i++) {
-					sprintf(buffer, "\r\n\e[1;30m[\e[1;34m%3d\e[1;30m]: \e[0m%s", i, content[i]);
-					s_putstring(socket, buffer);
+					s_printf("\r\n\e[1;30m[\e[1;34m%3d\e[1;30m]: \e[0m%s", i, content[i]);
 				}
 			} else if (linebuffer[1] == '?') {
-				s_putstring(socket, "\e[1;33m\r\nHELP\r\n");
-				s_putstring(socket, "/S - Save Message\r\n");
-				s_putstring(socket, "/A - Abort Message\r\n");
-				s_putstring(socket, "/Q - Quote Message\r\n");
-				s_putstring(socket, "/E - Edit (Rewrite) Line\r\n");
-				s_putstring(socket, "/D - Delete Line\r\n");
-				s_putstring(socket, "/I - Insert Line\r\n");
-				s_putstring(socket, "/L - Relist Message\r\n\e[0m");
+				s_printf("\e[1;33m\r\nHELP\r\n");
+				s_printf("/S - Save Message\r\n");
+				s_printf("/A - Abort Message\r\n");
+				s_printf("/Q - Quote Message\r\n");
+				s_printf("/E - Edit (Rewrite) Line\r\n");
+				s_printf("/D - Delete Line\r\n");
+				s_printf("/I - Insert Line\r\n");
+				s_printf("/L - Relist Message\r\n\e[0m");
 			} else if (toupper(linebuffer[1]) == 'D') {
-				s_putstring(socket, "\r\nWhich line do you want to delete? ");
-				s_readstring(socket, buffer, 6);
+				s_printf("\r\nWhich line do you want to delete? ");
+				s_readstring(buffer, 6);
 				if (strlen(buffer) == 0) {
-					s_putstring(socket, "\r\nAborted...\r\n");
+					s_printf("\r\nAborted...\r\n");
 				} else {
 					z = atoi(buffer);
 					if (z < 0 || z >= lines) {
-						s_putstring(socket, "\r\nAborted...\r\n");
+						s_printf("\r\nAborted...\r\n");
 					} else {
 						for (i=z;i<lines-1;i++) {
 							free(content[i]);
@@ -630,37 +623,34 @@ char *editor(int socket, struct user_record *user, char *quote, char *from, int 
 					}
 				}
 			} else if (toupper(linebuffer[1]) == 'E') {
-				s_putstring(socket, "\r\nWhich line do you want to edit? ");
-				s_readstring(socket, buffer, 6);
+				s_printf("\r\nWhich line do you want to edit? ");
+				s_readstring(buffer, 6);
 				if (strlen(buffer) == 0) {
-					s_putstring(socket, "\r\nAborted...\r\n");
+					s_printf("\r\nAborted...\r\n");
 				} else {
 					z = atoi(buffer);
 					if (z < 0 || z >= lines) {
-						s_putstring(socket, "\r\nAborted...\r\n");
+						s_printf("\r\nAborted...\r\n");
 					} else {
-						sprintf(buffer, "\r\n\e[1;30m[\e[1;34m%3d\e[1;30m]: \e[0m%s", z, content[z]);
-						s_putstring(socket, buffer);
-						sprintf(buffer, "\r\n\e[1;30m[\e[1;34m%3d\e[1;30m]: \e[0m", z);
-						s_putstring(socket, buffer);
-						s_readstring(socket, linebuffer, 70);
+						s_printf("\r\n\e[1;30m[\e[1;34m%3d\e[1;30m]: \e[0m%s", z, content[z]);
+						s_printf("\r\n\e[1;30m[\e[1;34m%3d\e[1;30m]: \e[0m", z);
+						s_readstring(linebuffer, 70);
 						free(content[z]);
 						content[z] = strdup(linebuffer);
 					}
 				}
 			} else if (toupper(linebuffer[1]) == 'I') {
-				s_putstring(socket, "\r\nInsert before which line? ");
-				s_readstring(socket, buffer, 6);
+				s_printf("\r\nInsert before which line? ");
+				s_readstring(buffer, 6);
 				if (strlen(buffer) == 0) {
-					s_putstring(socket, "\r\nAborted...\r\n");
+					s_printf("\r\nAborted...\r\n");
 				} else {
 					z = atoi(buffer);
 					if (z < 0 || z >= lines) {
-						s_putstring(socket, "\r\nAborted...\r\n");
+						s_printf("\r\nAborted...\r\n");
 					} else {
-						sprintf(buffer, "\r\n\e[1;30m[\e[1;34m%3d\e[1;30m]: \e[0m", z);
-						s_putstring(socket, buffer);
-						s_readstring(socket, linebuffer, 70);
+						s_printf("\r\n\e[1;30m[\e[1;34m%3d\e[1;30m]: \e[0m", z);
+						s_readstring(linebuffer, 70);
 						lines++;
 						content = (char **)realloc(content, sizeof(char *) * lines);
 
@@ -693,9 +683,8 @@ char *editor(int socket, struct user_record *user, char *quote, char *from, int 
 	return NULL;
 }
 
-void read_message(int socket, struct user_record *user, struct msg_headers *msghs, int mailno) {
+void read_message(struct user_record *user, struct msg_headers *msghs, int mailno) {
 	s_JamBase *jb;
-	s_JamBaseHeader jbh;
 	s_JamMsgHeader jmh;
 	s_JamSubPacket* jsp;
 	s_JamSubfield jsf;
@@ -715,13 +704,7 @@ void read_message(int socket, struct user_record *user, struct msg_headers *msgh
 	char c;
 	char *replybody;
 	struct fido_addr *from_addr = NULL;
-	struct fido_addr *dest;
-	int wwiv_to = 0;
 	int i, j;
-	char *wwiv_addressee;
-	char *dest_addr;
-	int to_us;
-	char *msgid = NULL;
 	char timestr[17];
 	int doquit = 0;
 	int skip_line = 0;
@@ -750,24 +733,20 @@ void read_message(int socket, struct user_record *user, struct msg_headers *msgh
 
 		if (msghs->msgs[mailno]->oaddress != NULL && conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_FIDO) {
 			from_addr = parse_fido_addr(msghs->msgs[mailno]->oaddress);
-			sprintf(buffer, "\e[2J\e[1;32mFrom    : \e[1;37m%s (%d:%d/%d.%d)\r\n", msghs->msgs[mailno]->from, from_addr->zone, from_addr->net, from_addr->node, from_addr->point);
+			s_printf("\e[2J\e[1;32mFrom    : \e[1;37m%s (%d:%d/%d.%d)\r\n", msghs->msgs[mailno]->from, from_addr->zone, from_addr->net, from_addr->node, from_addr->point);
 			free(from_addr);
 		} else {
-			sprintf(buffer, "\e[2J\e[1;32mFrom    : \e[1;37m%s\r\n", msghs->msgs[mailno]->from);
+			s_printf("\e[2J\e[1;32mFrom    : \e[1;37m%s\r\n", msghs->msgs[mailno]->from);
 		}
-		s_putstring(socket, buffer);
-		sprintf(buffer, "\e[1;32mTo      : \e[1;37m%-27.27s \e[1;32mArea     : \e[1;37m%-27.27s\r\n", msghs->msgs[mailno]->to, conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->name);
-		s_putstring(socket, buffer);
-		sprintf(buffer, "\e[1;32mSubject : \e[1;37m%-27.27s \e[1;32mMsgNo    : \e[1;37m%4d of %4d\r\n", msghs->msgs[mailno]->subject, mailno + 1, msghs->msg_count);
-		s_putstring(socket, buffer);
+		s_printf("\e[1;32mTo      : \e[1;37m%-27.27s \e[1;32mArea     : \e[1;37m%-27.27s\r\n", msghs->msgs[mailno]->to, conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->name);
+		s_printf("\e[1;32mSubject : \e[1;37m%-27.27s \e[1;32mMsgNo    : \e[1;37m%4d of %4d\r\n", msghs->msgs[mailno]->subject, mailno + 1, msghs->msg_count);
 		localtime_r((time_t *)&msghs->msgs[mailno]->msg_h->DateWritten, &msg_date);
 		sprintf(buffer, "\e[1;32mDate    : \e[1;37m%s", asctime(&msg_date));
 		buffer[strlen(buffer) - 1] = '\0';
 		strcat(buffer, "\r\n");
-		s_putstring(socket, buffer);
-		sprintf(buffer, "\e[1;32mAttribs : \e[1;37m%s\r\n", (msghs->msgs[mailno]->msg_h->Attribute & MSG_SENT ? "SENT" : ""));
-		s_putstring(socket, buffer);
-		s_putstring(socket, "\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
+		s_printf(buffer);
+		s_printf("\e[1;32mAttribs : \e[1;37m%s\r\n", (msghs->msgs[mailno]->msg_h->Attribute & MSG_SENT ? "SENT" : ""));
+		s_printf("\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
 
 		body = (char *)malloc(msghs->msgs[mailno]->msg_h->TxtLen);
 
@@ -817,16 +796,16 @@ void read_message(int socket, struct user_record *user, struct msg_headers *msgh
 			if (body[z] == '\r' || chars == 79) {
 				chars = 0;
 				if (body[z] == '\r') {
-					s_putstring(socket, "\r\n");
+					s_printf("\r\n");
 				} else {
-					s_putchar(socket, body[z]);
+					s_putchar(body[z]);
 				}
 				lines++;
 				if (lines >= 17) {
-					s_putstring(socket, "\e[1;37mPress a key to continue...\e[0m");
-					s_getc(socket);
+					s_printf("\e[1;37mPress a key to continue...\e[0m");
+					s_getc();
 					lines = 0;
-					s_putstring(socket, "\e[7;1H\e[0J");
+					s_printf("\e[7;1H\e[0J");
 				}
 			} else if (body[z] == '\e' && body[z + 1] == '[') {
 				ansi = z;
@@ -835,7 +814,7 @@ void read_message(int socket, struct user_record *user, struct msg_headers *msgh
 				if (body[z] == 'm') {
 					strncpy(buffer, &body[ansi], (z - ansi) + 1);
 					buffer[z - ansi + 1] = '\0';
-					s_putstring(socket, buffer);
+					s_printf("%s", buffer);
 				} else if (body[z] == 'A') {
 					j = atoi(&body[ansi + 2]);
 					if (j == 0 && ansi + 2 == z) {
@@ -843,7 +822,7 @@ void read_message(int socket, struct user_record *user, struct msg_headers *msgh
 					}
 					for (i=0;i<j;i++) {
 						if (lines - 1 >= 0) {
-							s_putstring(socket, "\e[A");
+							s_printf("\e[A");
 							lines--;
 						} else {
 							break;
@@ -856,7 +835,7 @@ void read_message(int socket, struct user_record *user, struct msg_headers *msgh
 					}
 					for (i=0;i<j;i++) {
 						if (chars + 1 <= 79) {
-							s_putstring(socket, "\e[C");
+							s_printf("\e[C");
 							chars++;
 						} else {
 							break;
@@ -869,7 +848,7 @@ void read_message(int socket, struct user_record *user, struct msg_headers *msgh
 					}
 					for (i=0;i<j;i++) {
 						if (lines + 1 < 17) {
-							s_putstring(socket, "\e[B");
+							s_printf("\e[B");
 							lines++;
 						} else {
 							break;
@@ -882,7 +861,7 @@ void read_message(int socket, struct user_record *user, struct msg_headers *msgh
 					}
 					for (i=0;i<j;i++) {
 						if (chars - 1 >= 0) {
-							s_putstring(socket, "\e[D");
+							s_printf("\e[D");
 							chars--;
 						} else {
 							break;
@@ -891,18 +870,18 @@ void read_message(int socket, struct user_record *user, struct msg_headers *msgh
 				}
 			} else {
 				chars++;
-				s_putchar(socket, body[z]);
+				s_putchar(body[z]);
 			}
 		}
 
-		s_putstring(socket, "\r\n\e[1;37mPress \e[1;36mR \e[1;37mto reply, \e[1;36mQ \e[1;37mto quit, \e[1;36mB \e[1;37mto go Back, \e[1;36mSPACE \e[1;37mfor Next Mesage...");
+		s_printf("\r\n\e[1;37mPress \e[1;36mR \e[1;37mto reply, \e[1;36mQ \e[1;37mto quit, \e[1;36mB \e[1;37mto go Back, \e[1;36mSPACE \e[1;37mfor Next Mesage...");
 
-		c = s_getc(socket);
+		c = s_getc();
 
 		if (tolower(c) == 'r') {
 			JAM_CloseMB(jb);
 			if (user->sec_level < conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->write_sec_level) {
-				s_putstring(socket, "\r\nSorry, you are not allowed to post in this area\r\n");
+				s_printf("\r\nSorry, you are not allowed to post in this area\r\n");
 			} else {
 				if (msghs->msgs[mailno]->subject != NULL) {
 					if (strncasecmp(msghs->msgs[mailno]->subject, "RE:", 3) != 0) {
@@ -914,25 +893,24 @@ void read_message(int socket, struct user_record *user, struct msg_headers *msgh
 				subject = (char *)malloc(strlen(buffer) + 1);
 				strcpy(subject, buffer);
 
-				sprintf(buffer, "\r\n\r\nReplying to: %s\r\n", subject);
-				s_putstring(socket, buffer);
-				s_putstring(socket, "Change Subject? (Y/N) ");
+				s_printf("\r\n\r\nReplying to: %s\r\n", subject);
+				s_printf("Change Subject? (Y/N) ");
 
-				c = s_getc(socket);
+				c = s_getc();
 
 				if (tolower(c) == 'y') {
-					s_putstring(socket, "\r\nNew subject: ");
-					s_readstring(socket, buffer, 25);
+					s_printf("\r\nNew subject: ");
+					s_readstring(buffer, 25);
 
 					if (strlen(buffer) == 0) {
-						s_putstring(socket, "\r\nOk, not changing the subject line...");
+						s_printf("\r\nOk, not changing the subject line...");
 					} else {
 						free(subject);
 						subject = (char *)malloc(strlen(buffer) + 1);
 						strcpy(subject, buffer);
 					}
 				}
-				s_putstring(socket, "\r\n");
+				s_printf("\r\n");
 
 				if (msghs->msgs[mailno]->from != NULL) {
 					strcpy(buffer, msghs->msgs[mailno]->from);
@@ -961,7 +939,7 @@ void read_message(int socket, struct user_record *user, struct msg_headers *msgh
 					to = (char *)malloc(strlen(buffer) + 1);
 					strcpy(to, buffer);
 				}
-				replybody = external_editor(socket, user, to, from, body, msghs->msgs[mailno]->from, subject, 0);
+				replybody = external_editor(user, to, from, body, msghs->msgs[mailno]->from, subject, 0);
 				if (replybody != NULL) {
 
 					jb = open_jam_base(conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
@@ -1189,7 +1167,7 @@ void read_message(int socket, struct user_record *user, struct msg_headers *msgh
 		} else if (c == ' ') {
 			mailno++;
 			if (mailno >= msghs->msg_count) {
-				s_putstring(socket, "\r\n\r\nNo more messages\r\n");
+				s_printf("\r\n\r\nNo more messages\r\n");
 				doquit = 1;
 			}
 		} else if (tolower(c) == 'b') {
@@ -1200,11 +1178,10 @@ void read_message(int socket, struct user_record *user, struct msg_headers *msgh
 	}
 }
 
-int mail_menu(int socket, struct user_record *user) {
+int mail_menu(struct user_record *user) {
 	int doquit = 0;
 	int domail = 0;
 	char c;
-	char prompt[128];
 	char buffer[256];
 	char buffer2[256];
 	int i;
@@ -1214,7 +1191,6 @@ int mail_menu(int socket, struct user_record *user) {
 	struct msg_headers *msghs;
 
 	s_JamBase *jb;
-	s_JamBaseHeader jbh;
 	s_JamMsgHeader jmh;
 	s_JamSubPacket* jsp;
 	s_JamSubfield jsf;
@@ -1225,19 +1201,10 @@ int mail_menu(int socket, struct user_record *user) {
 	char *subject;
 	char *from;
 	char *to;
-	char *body;
-	char *replybody;
-	char *wwiv_addressee;
 	char timestr[17];
 	char *msg;
 	int closed;
-	uint32_t jam_crc;
-	unsigned int lastmsg,currmsg;
-	int lines;
 	struct fido_addr *from_addr = NULL;
-	struct fido_addr *dest = NULL;
-	char *dest_addr;
-	int to_us;
 	int wwiv_to;
 	struct stat s;
 	int do_internal_menu = 0;
@@ -1269,13 +1236,12 @@ int mail_menu(int socket, struct user_record *user) {
 
 	while (!domail) {
 		if (do_internal_menu == 1) {
-			s_displayansi(socket, "mailmenu");
+			s_displayansi("mailmenu");
 
 
-			sprintf(prompt, "\e[0m\r\nConf: (%d) %s\r\nArea: (%d) %s\r\nTL: %dm :> ", user->cur_mail_conf, conf.mail_conferences[user->cur_mail_conf]->name, user->cur_mail_area, conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->name, user->timeleft);
-			s_putstring(socket, prompt);
+			s_printf("\e[0m\r\nConf: (%d) %s\r\nArea: (%d) %s\r\nTL: %dm :> ", user->cur_mail_conf, conf.mail_conferences[user->cur_mail_conf]->name, user->cur_mail_area, conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->name, user->timeleft);
 
-			c = s_getc(socket);
+			c = s_getc();
 		} else {
 			lua_getglobal(L, "menu");
 			result = lua_pcall(L, 0, 1, 0);
@@ -1292,7 +1258,7 @@ int mail_menu(int socket, struct user_record *user) {
 		switch(tolower(c)) {
 			case 'd':
 				{
-					s_putstring(socket, "\r\n");
+					s_printf("\r\n");
 					// list mail in message base
 					msghs = read_message_headers(user->cur_mail_conf, user->cur_mail_area, user);
 					if (msghs != NULL && msghs->msg_count > 0) {
@@ -1308,9 +1274,9 @@ int mail_menu(int socket, struct user_record *user) {
 								all_unread = 1;
 							}
 							JAM_CloseMB(jb);
-							sprintf(buffer, "Read message [1-%d] or N for New: ", msghs->msg_count);
-							s_putstring(socket, buffer);
-							s_readstring(socket, buffer, 6);
+							s_printf("Read message [1-%d] or N for New: ", msghs->msg_count);
+
+							s_readstring(buffer, 6);
 
 							if (tolower(buffer[0]) == 'n') {
 								if (all_unread == 0) {
@@ -1329,7 +1295,7 @@ int mail_menu(int socket, struct user_record *user) {
 							}
 
 							if (i > 0 && i <= msghs->msg_count) {
-								read_message(socket, user, msghs, i - 1);
+								read_message(user, msghs, i - 1);
 							}
 						}
 					}
@@ -1341,14 +1307,14 @@ int mail_menu(int socket, struct user_record *user) {
 			case 'p':
 				{
 					if (user->sec_level < conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->write_sec_level) {
-						s_putstring(socket, "\r\nSorry, you are not allowed to post in this area\r\n");
+						s_printf("\r\nSorry, you are not allowed to post in this area\r\n");
 						break;
 					}
 					if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_WWIV && conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type  == TYPE_ECHOMAIL_AREA) {
 						sprintf(buffer, "ALL");
 					} else {
-						s_putstring(socket, "\r\nTO: ");
-						s_readstring(socket, buffer, 16);
+						s_printf("\r\nTO: ");
+						s_readstring(buffer, 16);
 					}
 					if (strlen(buffer) == 0) {
 						strcpy(buffer, "ALL");
@@ -1356,43 +1322,41 @@ int mail_menu(int socket, struct user_record *user) {
 
 					if (conf.mail_conferences[user->cur_mail_conf]->networked == 0 && strcasecmp(buffer, "ALL") != 0) {
 						if (check_user(buffer)) {
-							s_putstring(socket, "\r\n\r\nInvalid Username\r\n");
+							s_printf("\r\n\r\nInvalid Username\r\n");
 							break;
 						}
 					}
 					if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NETMAIL_AREA) {
-						s_putstring(socket, "\r\nADDR: ");
-						s_readstring(socket, buffer2, 32);
+						s_printf("\r\nADDR: ");
+						s_readstring(buffer2, 32);
 						if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_FIDO) {
 							from_addr = parse_fido_addr(buffer2);
 							if (!from_addr) {
-								s_putstring(socket, "\r\n\r\nInvalid Address\r\n");
+								s_printf("\r\n\r\nInvalid Address\r\n");
 								break;
 							} else {
 								if (from_addr->zone == 0 && from_addr->net == 0 && from_addr->node == 0 && from_addr->point == 0) {
 									free(from_addr);
-									s_putstring(socket, "\r\n\r\nInvalid Address\r\n");
+									s_printf("\r\n\r\nInvalid Address\r\n");
 									break;
 								}
-								sprintf(buffer2, "\r\nMailing to %d:%d/%d.%d\r\n", from_addr->zone, from_addr->net, from_addr->node, from_addr->point);
-								s_putstring(socket, buffer2);
+								s_printf(buffer2, "\r\nMailing to %d:%d/%d.%d\r\n", from_addr->zone, from_addr->net, from_addr->node, from_addr->point);
 							}
 						} else if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_WWIV) {
 							wwiv_to = atoi(buffer2);
 							if (wwiv_to == 0) {
-								s_putstring(socket, "\r\n\r\nInvalid Address\r\n");
+								s_printf("\r\n\r\nInvalid Address\r\n");
 								break;
 							} else {
-								sprintf(buffer2, "\r\nMailing to @%d\r\n", wwiv_to);
-								s_putstring(socket, buffer2);
+								s_printf("\r\nMailing to @%d\r\n", wwiv_to);
 							}
 						}
 					}
 					to = strdup(buffer);
-					s_putstring(socket, "\r\nSUBJECT: ");
-					s_readstring(socket, buffer, 25);
+					s_printf("\r\nSUBJECT: ");
+					s_readstring(buffer, 25);
 					if (strlen(buffer) == 0) {
-						s_putstring(socket, "\r\nAborted!\r\n");
+						s_printf("\r\nAborted!\r\n");
 						free(to);
 						if (from_addr != NULL) {
 							free(from_addr);
@@ -1402,7 +1366,15 @@ int mail_menu(int socket, struct user_record *user) {
 					subject = strdup(buffer);
 
 					// post a message
-					msg = external_editor(socket, user, to, from, NULL, NULL, subject, 0);
+					if (conf.mail_conferences[user->cur_mail_conf]->realnames == 0) {
+						from = strdup(user->loginname);
+					} else {
+						from = (char *)malloc(strlen(user->firstname) + strlen(user->lastname) + 2);
+						sprintf(from, "%s %s", user->firstname, user->lastname);
+					}
+					msg = external_editor(user, to, from, NULL, NULL, subject, 0);
+
+					free(from);
 
 					if (msg != NULL) {
 						jb = open_jam_base(conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
@@ -1427,7 +1399,7 @@ int mail_menu(int socket, struct user_record *user) {
 							if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_WWIV) {
 								sprintf(buffer, "%s #%d @%d (%s)", user->loginname, user->id, conf.mail_conferences[user->cur_mail_conf]->wwivnode, user->firstname);
 							} else {
-								sprintf(from, "%s %s", user->firstname, user->lastname);
+								sprintf(buffer, "%s %s", user->firstname, user->lastname);
 							}
 						}
 
@@ -1599,7 +1571,7 @@ int mail_menu(int socket, struct user_record *user) {
 				break;
 			case 'l':
 				{
-					s_putstring(socket, "\r\n");
+					s_printf("\r\n");
 					// list mail in message base
 					msghs = read_message_headers(user->cur_mail_conf, user->cur_mail_area, user);
 					if (msghs != NULL && msghs->msg_count > 0) {
@@ -1615,10 +1587,9 @@ int mail_menu(int socket, struct user_record *user) {
 								all_unread = 1;
 							}
 							JAM_CloseMB(jb);
-							sprintf(buffer, "Start at message [1-%d] or N for New? ", msghs->msg_count);
-							s_putstring(socket, buffer);
+							s_printf("Start at message [1-%d] or N for New? ", msghs->msg_count);
 
-							s_readstring(socket, buffer, 6);
+							s_readstring(buffer, 6);
 							if (tolower(buffer[0]) == 'n') {
 								if (all_unread == 0) {
 									k = jlr.HighReadMsg;
@@ -1638,21 +1609,19 @@ int mail_menu(int socket, struct user_record *user) {
 								}
 							}
 							closed = 0;
-							s_putstring(socket, "\e[2J\e[1;37;44m[MSG#] Subject                   From            To              Date          \r\n\e[0m");
+							s_printf("\e[2J\e[1;37;44m[MSG#] Subject                   From            To              Date          \r\n\e[0m");
 
 							for (j=i-1;j<msghs->msg_count;j++) {
 								localtime_r((time_t *)&msghs->msgs[j]->msg_h->DateWritten, &msg_date);
 								if (msghs->msgs[j]->msg_no > jlr.HighReadMsg || all_unread) {
-									sprintf(buffer, "\e[1;30m[\e[1;34m%4d\e[1;30m]\e[1;32m*\e[1;37m%-25.25s \e[1;32m%-15.15s \e[1;33m%-15.15s \e[1;35m%02d:%02d %02d-%02d-%02d\e[0m\r\n", j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+									s_printf("\e[1;30m[\e[1;34m%4d\e[1;30m]\e[1;32m*\e[1;37m%-25.25s \e[1;32m%-15.15s \e[1;33m%-15.15s \e[1;35m%02d:%02d %02d-%02d-%02d\e[0m\r\n", j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 								} else {
-									sprintf(buffer, "\e[1;30m[\e[1;34m%4d\e[1;30m] \e[1;37m%-25.25s \e[1;32m%-15.15s \e[1;33m%-15.15s \e[1;35m%02d:%02d %02d-%02d-%02d\e[0m\r\n", j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+									s_printf("\e[1;30m[\e[1;34m%4d\e[1;30m] \e[1;37m%-25.25s \e[1;32m%-15.15s \e[1;33m%-15.15s \e[1;35m%02d:%02d %02d-%02d-%02d\e[0m\r\n", j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 								}
-								s_putstring(socket, buffer);
 
 								if ((j - (i - 1)) != 0 && (j - (i - 1)) % 20 == 0) {
-									sprintf(buffer, "(#) Read Message # (Q) Quit (ENTER) Continue\r\n");
-									s_putstring(socket, buffer);
-									s_readstring(socket, buffer, 6);
+									s_printf("(#) Read Message # (Q) Quit (ENTER) Continue\r\n");
+									s_readstring(buffer, 6);
 
 									if (tolower(buffer[0]) == 'q') {
 										closed = 1;
@@ -1661,22 +1630,21 @@ int mail_menu(int socket, struct user_record *user) {
 										z = atoi(buffer);
 										if (z > 0 && z <= msghs->msg_count) {
 											closed = 1;
-											read_message(socket, user, msghs, z - 1);
+											read_message(user, msghs, z - 1);
 											break;
 										}
 									}
-									s_putstring(socket, "\e[2J\e[1;37;44m[MSG#] Subject                   From            To              Date          \r\n\e[0m");
+									s_printf("\e[2J\e[1;37;44m[MSG#] Subject                   From            To              Date          \r\n\e[0m");
 								}
 
 							}
 							if (closed == 0) {
-								sprintf(buffer, "(#) Read Message # (ENTER) Quit\r\n");
-								s_putstring(socket, buffer);
-								s_readstring(socket, buffer, 6);
+								s_printf("(#) Read Message # (ENTER) Quit\r\n");
+								s_readstring(buffer, 6);
 								if (strlen(buffer) > 0) {
 									z = atoi(buffer);
 									if (z > 0 && z <= msghs->msg_count) {
-										read_message(socket, user, msghs, z - 1);
+										read_message(user, msghs, z - 1);
 									}
 								}
 							}
@@ -1686,31 +1654,30 @@ int mail_menu(int socket, struct user_record *user) {
 							free_message_headers(msghs);
 						}
 					} else {
-						s_putstring(socket, "\r\nThere is no mail in this area\r\n");
+						s_printf("\r\nThere is no mail in this area\r\n");
 					}
 				}
 				break;
 			case 'c':
 				{
-					s_putstring(socket, "\r\n\r\nMail Conferences:\r\n\r\n");
+					s_printf("\r\n\r\nMail Conferences:\r\n\r\n");
 					for (i=0;i<conf.mail_conference_count;i++) {
 						if (conf.mail_conferences[i]->sec_level <= user->sec_level) {
-							sprintf(buffer, "  %d. %s\r\n", i, conf.mail_conferences[i]->name);
-							s_putstring(socket, buffer);
+							s_printf("  %d. %s\r\n", i, conf.mail_conferences[i]->name);
 						}
 						if (i != 0 && i % 20 == 0) {
-							s_putstring(socket, "Press any key to continue...\r\n");
-							c = s_getc(socket);
+							s_printf("Press any key to continue...\r\n");
+							c = s_getc();
 						}
 					}
-					s_putstring(socket, "Enter the conference number: ");
-					s_readstring(socket, buffer, 5);
+					s_printf("Enter the conference number: ");
+					s_readstring(buffer, 5);
 					if (tolower(buffer[0]) != 'q') {
 						j = atoi(buffer);
 						if (j < 0 || j >= conf.mail_conference_count || conf.mail_conferences[j]->sec_level > user->sec_level) {
-							s_putstring(socket, "\r\nInvalid conference number!\r\n");
+							s_printf("\r\nInvalid conference number!\r\n");
 						} else {
-							s_putstring(socket, "\r\n");
+							s_printf("\r\n");
 							user->cur_mail_conf = j;
 							user->cur_mail_area = 0;
 						}
@@ -1719,25 +1686,24 @@ int mail_menu(int socket, struct user_record *user) {
 				break;
 			case 'a':
 				{
-					s_putstring(socket, "\r\n\r\nMail Areas:\r\n\r\n");
+					s_printf("\r\n\r\nMail Areas:\r\n\r\n");
 					for (i=0;i<conf.mail_conferences[user->cur_mail_conf]->mail_area_count;i++) {
 						if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[i]->read_sec_level <= user->sec_level) {
-							sprintf(buffer, "  %d. %s\r\n", i, conf.mail_conferences[user->cur_mail_conf]->mail_areas[i]->name);
-							s_putstring(socket, buffer);
+							s_printf("  %d. %s\r\n", i, conf.mail_conferences[user->cur_mail_conf]->mail_areas[i]->name);
 						}
 						if (i != 0 && i % 20 == 0) {
-							s_putstring(socket, "Press any key to continue...\r\n");
-							c = s_getc(socket);
+							s_printf("Press any key to continue...\r\n");
+							c = s_getc();
 						}
 					}
-					s_putstring(socket, "Enter the area number: ");
-					s_readstring(socket, buffer, 5);
+					s_printf("Enter the area number: ");
+					s_readstring(buffer, 5);
 					if (tolower(buffer[0]) != 'q') {
 						j = atoi(buffer);
 						if (j < 0 || j >= conf.mail_conferences[user->cur_mail_conf]->mail_area_count || conf.mail_conferences[user->cur_mail_conf]->mail_areas[j]->read_sec_level > user->sec_level) {
-							s_putstring(socket, "\r\nInvalid area number!\r\n");
+							s_printf("\r\nInvalid area number!\r\n");
 						} else {
-							s_putstring(socket, "\r\n");
+							s_printf("\r\n");
 							user->cur_mail_area = j;
 						}
 					}
@@ -1750,8 +1716,8 @@ int mail_menu(int socket, struct user_record *user) {
 				break;
 			case 'g':
 				{
-					s_putstring(socket, "\r\nAre you sure you want to log off? (Y/N)");
-					c = s_getc(socket);
+					s_printf("\r\nAre you sure you want to log off? (Y/N)");
+					c = s_getc();
 					if (tolower(c) == 'y') {
 						domail = 1;
 						doquit = 1;
@@ -1760,14 +1726,14 @@ int mail_menu(int socket, struct user_record *user) {
 				break;
 			case 'e':
 				{
-					send_email(socket, user);
+					send_email(user);
 				}
 				break;
 			case 'r':
 				{
 					// Read your email...
-					s_putstring(socket, "\r\n");
-					list_emails(socket, user);
+					s_printf("\r\n");
+					list_emails(user);
 				}
 				break;
 			case '}':
@@ -1832,7 +1798,7 @@ int mail_menu(int socket, struct user_record *user) {
 	return doquit;
 }
 
-void mail_scan(int socket, struct user_record *user) {
+void mail_scan(struct user_record *user) {
 	s_JamBase *jb;
 	s_JamBaseHeader jbh;
 	s_JamLastRead jlr;
@@ -1840,19 +1806,16 @@ void mail_scan(int socket, struct user_record *user) {
 	char c;
 	int i;
 	int j;
-	char buffer[256];
-	int count;
 
-	s_putstring(socket, "\r\nScan for new mail? (Y/N) :	");
-	c = s_getc(socket);
+	s_printf("\r\nScan for new mail? (Y/N) :	");
+	c = s_getc();
 
 	if (tolower(c) == 'y') {
 		for (i=0;i<conf.mail_conference_count;i++) {
 			if (conf.mail_conferences[i]->sec_level > user->sec_level) {
 				continue;
 			}
-			sprintf(buffer, "\r\n%d. %s\r\n", i, conf.mail_conferences[i]->name);
-			s_putstring(socket, buffer);
+			s_printf("\r\n%d. %s\r\n", i, conf.mail_conferences[i]->name);
 			for (j=0;j<conf.mail_conferences[i]->mail_area_count;j++) {
 				if (conf.mail_conferences[i]->mail_areas[j]->read_sec_level > user->sec_level) {
 					continue;
@@ -1871,21 +1834,19 @@ void mail_scan(int socket, struct user_record *user) {
 						JAM_CloseMB(jb);
 						continue;
 					}
-					sprintf(buffer, "   --> %d. %s (%d new)\r\n", j, conf.mail_conferences[i]->mail_areas[j]->name, jbh.ActiveMsgs);
+					s_printf("   --> %d. %s (%d new)\r\n", j, conf.mail_conferences[i]->mail_areas[j]->name, jbh.ActiveMsgs);
 				} else {
 					if (jlr.HighReadMsg < (jbh.ActiveMsgs - 1)) {
-						sprintf(buffer, "   --> %d. %s (%d new)\r\n", j, conf.mail_conferences[i]->mail_areas[j]->name, (jbh.ActiveMsgs - 1) - jlr.HighReadMsg);
+						s_printf("   --> %d. %s (%d new)\r\n", j, conf.mail_conferences[i]->mail_areas[j]->name, (jbh.ActiveMsgs - 1) - jlr.HighReadMsg);
 					} else {
 						JAM_CloseMB(jb);
 						continue;
 					}
 				}
-				s_putstring(socket, buffer);
 				JAM_CloseMB(jb);
 			}
 		}
-		sprintf(buffer, "\r\nPress any key to continue...\r\n");
-		s_putstring(socket, buffer);
-		s_getc(socket);
+		s_printf("\r\nPress any key to continue...\r\n");
+		s_getc();
 	}
 }

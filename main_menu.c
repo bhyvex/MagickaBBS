@@ -10,10 +10,9 @@
 
 extern struct bbs_config conf;
 
-void main_menu(int socket, struct user_record *user) {
+void main_menu(struct user_record *user) {
 	int doquit = 0;
 	char c;
-	char prompt[128];
 	char buffer[256];
 	int i;
 	struct stat s;
@@ -45,13 +44,12 @@ void main_menu(int socket, struct user_record *user) {
 	while (!doquit) {
 
 		if (do_internal_menu == 1) {
-			s_displayansi(socket, "mainmenu");
+			s_displayansi("mainmenu");
 
 
-			sprintf(prompt, "\r\n\e[0mTL: %dm :> ", user->timeleft);
-			s_putstring(socket, prompt);
+			s_printf("\r\n\e[0mTL: %dm :> ", user->timeleft);
 
-			c = s_getc(socket);
+			c = s_getc();
 		} else {
 			lua_getglobal(L, "menu");
 			result = lua_pcall(L, 0, 1, 0);
@@ -69,7 +67,7 @@ void main_menu(int socket, struct user_record *user) {
 		switch(tolower(c)) {
 			case 'o':
 				{
-					automessage_write(socket, user);
+					automessage_write(user);
 				}
 				break;
 			case 'a':
@@ -77,49 +75,48 @@ void main_menu(int socket, struct user_record *user) {
 					if (conf.text_file_count > 0) {
 
 						while(1) {
-							s_putstring(socket, "\r\n\e[1;32mText Files Collection\r\n");
-							s_putstring(socket, "\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
+							s_printf("\r\n\e[1;32mText Files Collection\r\n");
+							s_printf("\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
 
 							for (i=0;i<conf.text_file_count;i++) {
-								sprintf(buffer, "\e[1;30m[\e[1;34m%3d\e[1;30m] \e[1;37m%s\r\n", i, conf.text_files[i]->name);
-								s_putstring(socket, buffer);
+								s_printf("\e[1;30m[\e[1;34m%3d\e[1;30m] \e[1;37m%s\r\n", i, conf.text_files[i]->name);
 							}
-							s_putstring(socket, "\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
-							s_putstring(socket, "Enter the number of a text file to display or Q to quit: ");
-							s_readstring(socket, buffer, 4);
+							s_printf("\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
+							s_printf("Enter the number of a text file to display or Q to quit: ");
+							s_readstring(buffer, 4);
 							if (tolower(buffer[0]) != 'q') {
 								i = atoi(buffer);
 								if (i >= 0 && i < conf.text_file_count) {
-									s_putstring(socket, "\r\n");
-									s_displayansi_p(socket, conf.text_files[i]->path);
-									s_putstring(socket, "Press any key to continue...");
-									s_getc(socket);
-									s_putstring(socket, "\r\n");
+									s_printf("\r\n");
+									s_displayansi_p(conf.text_files[i]->path);
+									s_printf("Press any key to continue...");
+									s_getc();
+									s_printf("\r\n");
 								}
 							} else {
 								break;
 							}
 						}
 					} else {
-						s_putstring(socket, "\r\nSorry, there are no text files to display\r\n");
-						s_putstring(socket, "Press any key to continue...\r\n");
-						s_getc(socket);
+						s_printf("\r\nSorry, there are no text files to display\r\n");
+						s_printf("Press any key to continue...\r\n");
+						s_getc();
 					}
 				}
 				break;
 			case 'c':
 				{
-					chat_system(socket, user);
+					chat_system(user);
 				}
 				break;
 			case 'l':
 				{
-					bbs_list(socket, user);
+					bbs_list(user);
 				}
 				break;
 			case 'u':
 				{
-					list_users(socket, user);
+					list_users(user);
 				}
 				break;
 			case 'b':
@@ -129,10 +126,9 @@ void main_menu(int socket, struct user_record *user) {
 
 					while (stat(buffer, &s) == 0) {
 						sprintf(buffer, "bulletin%d", i);
-						s_displayansi(socket, buffer);
-						sprintf(buffer, "\e[0mPress any key to continue...\r\n");
-						s_putstring(socket, buffer);
-						s_getc(socket);
+						s_displayansi(buffer);
+						s_printf("\e[0mPress any key to continue...\r\n");
+						s_getc();
 						i++;
 						sprintf(buffer, "%s/bulletin%d.ans", conf.ansi_path, i);
 					}
@@ -140,23 +136,23 @@ void main_menu(int socket, struct user_record *user) {
 				break;
 			case '1':
 				{
-					display_last10_callers(socket, user);
+					display_last10_callers(user);
 				}
 				break;
 			case 'd':
 				{
-					doquit = door_menu(socket, user);
+					doquit = door_menu(user);
 				}
 				break;
 			case 'm':
 				{
-					doquit = mail_menu(socket, user);
+					doquit = mail_menu(user);
 				}
 				break;
 			case 'g':
 				{
-					s_putstring(socket, "\r\nAre you sure you want to log off? (Y/N)");
-					c = s_getc(socket);
+					s_printf("\r\nAre you sure you want to log off? (Y/N)");
+					c = s_getc();
 					if (tolower(c) == 'y') {
 						doquit = 1;
 					}
@@ -164,12 +160,12 @@ void main_menu(int socket, struct user_record *user) {
 				break;
 			case 't':
 				{
-					doquit = file_menu(socket, user);
+					doquit = file_menu(user);
 				}
 				break;
 			case 's':
 				{
-					settings_menu(socket, user);
+					settings_menu(user);
 				}
 				break;
 		}

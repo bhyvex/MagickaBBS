@@ -22,6 +22,7 @@
 
 extern struct bbs_config conf;
 extern int mynode;
+extern int gSocket;
 
 int running_door_pid = 0;
 int running_door = 0;
@@ -36,7 +37,7 @@ void doorchld_handler(int s)
 	running_door = 0;
 }
 
-int write_door32sys(int socket, struct user_record *user) {
+int write_door32sys(struct user_record *user) {
 	struct stat s;
 	char buffer[256];
 	FILE *fptr;
@@ -59,7 +60,7 @@ int write_door32sys(int socket, struct user_record *user) {
 	}
 
 	fprintf(fptr, "2\n"); // telnet type
-	fprintf(fptr, "%d\n", socket); // socket
+	fprintf(fptr, "%d\n", gSocket); // socket
 	fprintf(fptr, "38400\n"); // baudrate
 	fprintf(fptr, "Magicka %d.%d\n", VERSION_MAJOR, VERSION_MINOR);
 	fprintf(fptr, "%d\n", user->id);
@@ -126,14 +127,13 @@ int write_door32sys(int socket, struct user_record *user) {
 	return 0;
 }
 
-void rundoor(int socket, struct user_record *user, char *cmd, int stdio) {
+void rundoor(struct user_record *user, char *cmd, int stdio) {
 	char buffer[256];
 	int pid;
 	char *arguments[4];
 	int ret;
 	char c;
 	int len;
-	int status;
 	int master;
 	int slave;
 	fd_set fdset;
@@ -143,7 +143,7 @@ void rundoor(int socket, struct user_record *user, char *cmd, int stdio) {
 
 	timeoutpaused = 1;
 
-	if (write_door32sys(socket, user) != 0) {
+	if (write_door32sys(user) != 0) {
 		return;
 	}
 
@@ -152,7 +152,7 @@ void rundoor(int socket, struct user_record *user, char *cmd, int stdio) {
 		arguments[0] = strdup(cmd);
 		sprintf(buffer, "%d", mynode);
 		arguments[1] = strdup(buffer);
-		sprintf(buffer, "%d", socket);
+		sprintf(buffer, "%d", gSocket);
 		arguments[2] = strdup(buffer);
 		arguments[3] = NULL;
 
@@ -192,19 +192,19 @@ void rundoor(int socket, struct user_record *user, char *cmd, int stdio) {
 				while(running_door != 0) {
 					FD_ZERO(&fdset);
 					FD_SET(master, &fdset);
-					FD_SET(socket, &fdset);
-					if (master > socket) {
+					FD_SET(gSocket, &fdset);
+					if (master > gSocket) {
 						t = master + 1;
 					} else {
-						t = socket + 1;
+						t = gSocket + 1;
 					}
 					ret = select(t, &fdset, NULL, NULL, NULL);
 					if (ret > 0) {
-						if (FD_ISSET(socket, &fdset)) {
-							len = read(socket, &c, 1);
+						if (FD_ISSET(gSocket, &fdset)) {
+							len = read(gSocket, &c, 1);
 							if (len == 0) {
 								close(master);
-								disconnect(socket, "Socket Closed");
+								disconnect("Socket Closed");
 								return;
 							}
 							if (c == '\n' || c == '\0') {
@@ -217,7 +217,7 @@ void rundoor(int socket, struct user_record *user, char *cmd, int stdio) {
 								close(master);
 								break;
 							}
-							write(socket, &c, 1);
+							write(gSocket, &c, 1);
 						}
 					}
 				}
@@ -227,16 +227,15 @@ void rundoor(int socket, struct user_record *user, char *cmd, int stdio) {
 		free(arguments[1]);
 		free(arguments[2]);
 	} else {
-		sprintf(buffer, "%s %d %d", cmd, mynode, socket);
+		sprintf(buffer, "%s %d %d", cmd, mynode, gSocket);
 		system(buffer);
 	}
 	timeoutpaused = 0;
 }
 
-int door_menu(int socket, struct user_record *user) {
+int door_menu(struct user_record *user) {
 	int doquit = 0;
 	int dodoors = 0;
-	char prompt[128];
 	char buffer[256];
 	int i;
 	char c;
@@ -268,12 +267,11 @@ int door_menu(int socket, struct user_record *user) {
 
 	while (!dodoors) {
 		if (do_internal_menu == 1) {
-			s_displayansi(socket, "doors");
+			s_displayansi("doors");
 
-			sprintf(prompt, "\e[0m\r\nTL: %dm :> ", user->timeleft);
-			s_putstring(socket, prompt);
+			s_printf("\e[0m\r\nTL: %dm :> ", user->timeleft);
 
-			c = s_getc(socket);
+			c = s_getc();
 		} else {
 			lua_getglobal(L, "menu");
 			result = lua_pcall(L, 0, 1, 0);
@@ -293,8 +291,8 @@ int door_menu(int socket, struct user_record *user) {
 				break;
 			case 'g':
 				{
-					s_putstring(socket, "\r\nAre you sure you want to log off? (Y/N)");
-					c = s_getc(socket);
+					s_printf("\r\nAre you sure you want to log off? (Y/N)");
+					c = s_getc();
 					if (tolower(c) == 'y') {
 						doquit = 1;
 						dodoors = 1;
@@ -306,7 +304,7 @@ int door_menu(int socket, struct user_record *user) {
 					for (i=0;i<conf.door_count;i++) {
 						if (tolower(c) == tolower(conf.doors[i]->key)) {
 							dolog("%s is launched door %s, on node %d", user->loginname, conf.doors[i]->name, mynode);
-							rundoor(socket, user, conf.doors[i]->command, conf.doors[i]->stdio);
+							rundoor(user, conf.doors[i]->command, conf.doors[i]->stdio);
 							dolog("%s is returned from door %s, on node %d", user->loginname, conf.doors[i]->name, mynode);
 							break;
 						}

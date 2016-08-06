@@ -13,8 +13,7 @@
 #include "lua/lualib.h"
 #include "lua/lauxlib.h"
 extern struct bbs_config conf;
-
-static int doCancel = 0;
+extern int gSocket;
 
 struct file_entry {
 	char *filename;
@@ -127,7 +126,7 @@ int doIO(ZModem *zm) {
 		} else if (i > 0) {
 			len = read(zm->ifd, buffer, 2048);
 			if (len == 0) {
-				disconnect(zm->ifd, "Socket closed");
+				disconnect("Socket closed");
 			}
 
 			pos = 0;
@@ -159,9 +158,8 @@ int doIO(ZModem *zm) {
 	return done;
 }
 
-void upload_zmodem(int socket, struct user_record *user) {
+void upload_zmodem(struct user_record *user) {
 	ZModem zm;
-	int done;
 
 
 	upload_path = conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->upload_path;
@@ -170,20 +168,20 @@ void upload_zmodem(int socket, struct user_record *user) {
 	zm.windowsize = 0;
 	zm.bufsize = 0;
 
-	zm.ifd = socket;
-	zm.ofd = socket;
+	zm.ifd = gSocket;
+	zm.ofd = gSocket;
 
 	zm.zrinitflags = 0;
 	zm.zsinitflags = 0;
 
 	zm.packetsize = 1024;
 
-	done = ZmodemRInit(&zm);
+	ZmodemRInit(&zm);
 
 	doIO(&zm);
 }
 
-void upload(int socket, struct user_record *user) {
+void upload(struct user_record *user) {
 	char buffer[331];
 	char buffer2[66];
 	char buffer3[256];
@@ -197,19 +195,18 @@ void upload(int socket, struct user_record *user) {
 						"approved INTEGER);";
 	char *sql = "INSERT INTO files (filename, description, size, dlcount, approved) VALUES(?, ?, ?, 0, 0)";
 	sqlite3 *db;
-    sqlite3_stmt *res;
-    int rc;
-    struct stat s;
-    char *err_msg = NULL;
+  sqlite3_stmt *res;
+  int rc;
+  struct stat s;
+  char *err_msg = NULL;
 
-	upload_zmodem(socket, user);
+	upload_zmodem(user);
 
-	s_putstring(socket, "\r\nPlease enter a description:\r\n");
+	s_printf("\r\nPlease enter a description:\r\n");
 	buffer[0] = '\0';
 	for (i=0;i<5;i++) {
-		sprintf(buffer2, "\r\n%d: ", i);
-		s_putstring(socket, buffer2);
-		s_readstring(socket, buffer2, 65);
+		s_printf("\r\n%d: ", i);
+		s_readstring(buffer2, 65);
 		if (strlen(buffer2) == 0) {
 			break;
 		}
@@ -261,18 +258,9 @@ void upload(int socket, struct user_record *user) {
     sqlite3_close(db);
 }
 
-void download_zmodem(int socket, struct user_record *user, char *filename) {
+void download_zmodem(struct user_record *user, char *filename) {
 	ZModem zm;
 	int	done ;
-	fd_set readfds;
-	struct timeval timeout;
-	int	i;
-	int j;
-	int	len;
-	int pos;
-
-	u_char buffer[2048];
-	u_char buffer2[1024];
 
 	dolog("Attempting to upload %s", filename);
 
@@ -280,8 +268,8 @@ void download_zmodem(int socket, struct user_record *user, char *filename) {
 	zm.windowsize = 0;
 	zm.bufsize = 0;
 
-	zm.ifd = socket;
-	zm.ofd = socket;
+	zm.ifd = gSocket;
+	zm.ofd = gSocket;
 
 	zm.zrinitflags = 0;
 	zm.zsinitflags = 0;
@@ -331,19 +319,18 @@ void download_zmodem(int socket, struct user_record *user, char *filename) {
 	}
 }
 
-void download(int socket, struct user_record *user) {
+void download(struct user_record *user) {
 	int i;
 	char *ssql = "select dlcount from files where filename like ?";
 	char *usql = "update files set dlcount=? where filename like ?";
 	char buffer[256];
 	int dloads;
-	char *err_msg = NULL;
 	sqlite3 *db;
-    sqlite3_stmt *res;
-    int rc;
+  sqlite3_stmt *res;
+  int rc;
 
 	for (i=0;i<tagged_count;i++) {
-		download_zmodem(socket, user, tagged_files[i]);
+		download_zmodem(user, tagged_files[i]);
 
 		sprintf(buffer, "%s/%s.sq3", conf.bbs_path, conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->database);
 
@@ -397,7 +384,7 @@ void download(int socket, struct user_record *user) {
 	tagged_count = 0;
 }
 
-void list_files(int socket, struct user_record *user) {
+void list_files(struct user_record *user) {
 	char *sql = "select filename, description, size, dlcount from files where approved=1";
 	char buffer[256];
 	sqlite3 *db;
@@ -407,7 +394,6 @@ void list_files(int socket, struct user_record *user) {
 	int file_size;
 	char file_unit;
 	int lines = 0;
-	char desc;
 	int i;
 	int j;
 	int z;
@@ -430,7 +416,7 @@ void list_files(int socket, struct user_record *user) {
     if (rc != SQLITE_OK) {
         sqlite3_finalize(res);
 		sqlite3_close(db);
-		s_putstring(socket, "\r\nNo files in this area!\r\n");
+		s_printf("\r\nNo files in this area!\r\n");
 		return;
     }
 
@@ -455,10 +441,10 @@ void list_files(int socket, struct user_record *user) {
 	sqlite3_close(db);
 
 	if (files_c == 0) {
-		s_putstring(socket, "\r\nNo files in this area!\r\n");
+		s_printf("\r\nNo files in this area!\r\n");
 		return;
 	}
-	s_putstring(socket, "\r\n");
+	s_printf("\r\n");
 	for (i=0;i<files_c;i++) {
 		file_size = files_e[i]->size;
 		if (file_size > 1024 * 1024 * 1024) {
@@ -473,20 +459,19 @@ void list_files(int socket, struct user_record *user) {
 		} else {
 			file_unit = 'b';
 		}
-		sprintf(buffer, "\r\n\r\n\e[1;30m[\e[1;34m%3d\e[1;30m] \e[1;33m%3ddloads \e[1;36m%4d%c \e[1;37m%-56s\r\n     \e[0;32m", i, files_e[i]->dlcount, file_size, file_unit, basename(files_e[i]->filename));
-		s_putstring(socket, buffer);
+		s_printf("\r\n\r\n\e[1;30m[\e[1;34m%3d\e[1;30m] \e[1;33m%3ddloads \e[1;36m%4d%c \e[1;37m%-56s\r\n     \e[0;32m", i, files_e[i]->dlcount, file_size, file_unit, basename(files_e[i]->filename));
 		lines+=3;
 		for (j=0;j<strlen(files_e[i]->description);j++) {
 			if (files_e[i]->description[j] == '\n') {
-				s_putstring(socket, "\r\n");
+				s_printf("\r\n");
 				lines++;
 				if (lines >= 18) {
 					lines = 0;
 					while (1) {
-						s_putstring(socket, "\r\n\e[0mEnter # to tag, Q to quit, Enter to continue: ");
-						s_readstring(socket, buffer, 5);
+						s_printf("\r\n\e[0mEnter # to tag, Q to quit, Enter to continue: ");
+						s_readstring(buffer, 5);
 						if (strlen(buffer) == 0) {
-							s_putstring(socket, "\r\n");
+							s_printf("\r\n");
 							break;
 						} else if (tolower(buffer[0]) == 'q') {
 							for (z=0;z<files_c;z++) {
@@ -495,7 +480,7 @@ void list_files(int socket, struct user_record *user) {
 								free(files_e[z]);
 							}
 							free(files_e);
-							s_putstring(socket, "\r\n");
+							s_printf("\r\n");
 							return;
 						}  else {
 							z = atoi(buffer);
@@ -516,28 +501,27 @@ void list_files(int socket, struct user_record *user) {
 										}
 										tagged_files[tagged_count] = strdup(files_e[z]->filename);
 										tagged_count++;
-										sprintf(buffer, "\r\nTagged %s\r\n", basename(files_e[z]->filename));
-										s_putstring(socket, buffer);
+										s_printf("\r\nTagged %s\r\n", basename(files_e[z]->filename));
 									} else {
-										s_putstring(socket, "\r\nAlready Tagged\r\n");
+										s_printf("\r\nAlready Tagged\r\n");
 									}
 								} else {
-									s_putstring(socket, "\r\nSorry, you don't have permission to download from this area\r\n");
+									s_printf("\r\nSorry, you don't have permission to download from this area\r\n");
 								}
 							}
 						}
 					}
 				} else {
-					s_putstring(socket, "     \e[0;32m");
+					s_printf("     \e[0;32m");
 				}
 			} else {
-				s_putchar(socket, files_e[i]->description[j]);
+				s_putchar(files_e[i]->description[j]);
 			}
 		}
 	}
 	while (1) {
-		s_putstring(socket, "\r\n\e[0mEnter # to tag, Enter to quit: ");
-		s_readstring(socket, buffer, 5);
+		s_printf("\r\n\e[0mEnter # to tag, Enter to quit: ");
+		s_readstring(buffer, 5);
 		if (strlen(buffer) == 0) {
 			for (z=0;z<files_c;z++) {
 				free(files_e[z]->filename);
@@ -545,7 +529,7 @@ void list_files(int socket, struct user_record *user) {
 				free(files_e[z]);
 			}
 			free(files_e);
-			s_putstring(socket, "\r\n");
+			s_printf("\r\n");
 			return;
 		} else {
 			z = atoi(buffer);
@@ -566,20 +550,19 @@ void list_files(int socket, struct user_record *user) {
 						}
 						tagged_files[tagged_count] = strdup(files_e[z]->filename);
 						tagged_count++;
-						sprintf(buffer, "\r\nTagged %s\r\n", basename(files_e[z]->filename));
-						s_putstring(socket, buffer);
+						s_printf("\r\nTagged %s\r\n", basename(files_e[z]->filename));
 					} else {
-						s_putstring(socket, "\r\nAlready Tagged\r\n");
+						s_printf("\r\nAlready Tagged\r\n");
 					}
 				} else {
-					s_putstring(socket, "\r\nSorry, you don't have permission to download from this area\r\n");
+					s_printf("\r\nSorry, you don't have permission to download from this area\r\n");
 				}
 			}
 		}
 	}
 }
 
-int file_menu(int socket, struct user_record *user) {
+int file_menu(struct user_record *user) {
 	int doquit = 0;
 	int dofiles = 0;
 	char c;
@@ -614,12 +597,11 @@ int file_menu(int socket, struct user_record *user) {
 
 	while (!dofiles) {
 		if (do_internal_menu == 1) {
-			s_displayansi(socket, "filemenu");
+			s_displayansi("filemenu");
 
-			sprintf(prompt, "\e[0m\r\nDir: (%d) %s\r\nSub: (%d) %s\r\nTL: %dm :> ", user->cur_file_dir, conf.file_directories[user->cur_file_dir]->name, user->cur_file_sub, conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->name, user->timeleft);
-			s_putstring(socket, prompt);
+			s_printf("\e[0m\r\nDir: (%d) %s\r\nSub: (%d) %s\r\nTL: %dm :> ", user->cur_file_dir, conf.file_directories[user->cur_file_dir]->name, user->cur_file_sub, conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->name, user->timeleft);
 
-			c = s_getc(socket);
+			c = s_getc();
 		} else {
 			lua_getglobal(L, "menu");
 			result = lua_pcall(L, 0, 1, 0);
@@ -636,25 +618,24 @@ int file_menu(int socket, struct user_record *user) {
 		switch(tolower(c)) {
 			case 'i':
 				{
-					s_putstring(socket, "\r\n\r\nFile Directories:\r\n\r\n");
+					s_printf("\r\n\r\nFile Directories:\r\n\r\n");
 					for (i=0;i<conf.file_directory_count;i++) {
 						if (conf.file_directories[i]->sec_level <= user->sec_level) {
-							sprintf(prompt, "  %d. %s\r\n", i, conf.file_directories[i]->name);
-							s_putstring(socket, prompt);
+							s_printf("  %d. %s\r\n", i, conf.file_directories[i]->name);
 						}
 						if (i != 0 && i % 20 == 0) {
-							s_putstring(socket, "Press any key to continue...\r\n");
-							c = s_getc(socket);
+							s_printf("Press any key to continue...\r\n");
+							c = s_getc();
 						}
 					}
-					s_putstring(socket, "Enter the directory number: ");
-					s_readstring(socket, prompt, 5);
+					s_printf("Enter the directory number: ");
+					s_readstring(prompt, 5);
 					if (tolower(prompt[0]) != 'q') {
 						j = atoi(prompt);
 						if (j < 0 || j >= conf.file_directory_count || conf.file_directories[j]->sec_level > user->sec_level) {
-							s_putstring(socket, "\r\nInvalid directory number!\r\n");
+							s_printf("\r\nInvalid directory number!\r\n");
 						} else {
-							s_putstring(socket, "\r\n");
+							s_printf("\r\n");
 							user->cur_file_dir = j;
 							user->cur_file_sub = 0;
 						}
@@ -663,43 +644,42 @@ int file_menu(int socket, struct user_record *user) {
 				break;
 			case 's':
 				{
-					s_putstring(socket, "\r\n\r\nFile Subdirectories:\r\n\r\n");
+					s_printf("\r\n\r\nFile Subdirectories:\r\n\r\n");
 					for (i=0;i<conf.file_directories[user->cur_file_dir]->file_sub_count;i++) {
-						sprintf(prompt, "  %d. %s\r\n", i, conf.file_directories[user->cur_file_dir]->file_subs[i]->name);
-						s_putstring(socket, prompt);
+						s_printf("  %d. %s\r\n", i, conf.file_directories[user->cur_file_dir]->file_subs[i]->name);
 
 						if (i != 0 && i % 20 == 0) {
-							s_putstring(socket, "Press any key to continue...\r\n");
-							c = s_getc(socket);
+							s_printf("Press any key to continue...\r\n");
+							c = s_getc();
 						}
 					}
-					s_putstring(socket, "Enter the sub directory number: ");
-					s_readstring(socket, prompt, 5);
+					s_printf("Enter the sub directory number: ");
+					s_readstring(prompt, 5);
 					if (tolower(prompt[0]) != 'q') {
 						j = atoi(prompt);
 						if (j < 0 || j >= conf.file_directories[user->cur_file_dir]->file_sub_count) {
-							s_putstring(socket, "\r\nInvalid sub directiry number!\r\n");
+							s_printf("\r\nInvalid sub directiry number!\r\n");
 						} else {
-							s_putstring(socket, "\r\n");
+							s_printf("\r\n");
 							user->cur_file_sub = j;
 						}
 					}
 				}
 				break;
 			case 'l':
-				list_files(socket, user);
+				list_files(user);
 				break;
 			case 'u':
 				{
 					if (user->sec_level >= conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->upload_sec_level) {
-						upload(socket, user);
+						upload(user);
 					} else {
-						s_putstring(socket, "Sorry, you don't have permission to upload in this Sub\r\n");
+						s_printf("Sorry, you don't have permission to upload in this Sub\r\n");
 					}
 				}
 				break;
 			case 'd':
-				download(socket, user);
+				download(user);
 				break;
 			case 'c':
 				{
@@ -764,8 +744,8 @@ int file_menu(int socket, struct user_record *user) {
 				break;
 			case 'g':
 				{
-					s_putstring(socket, "\r\nAre you sure you want to log off? (Y/N)");
-					c = s_getc(socket);
+					s_printf("\r\nAre you sure you want to log off? (Y/N)");
+					c = s_getc();
 					if (tolower(c) == 'y') {
 						dofiles = 1;
 						doquit = 1;
