@@ -8,7 +8,7 @@
 
 extern struct bbs_config conf;
 
-void send_email(int socket, struct user_record *user) {
+void send_email(struct user_record *user) {
 	char buffer[256];
 	sqlite3 *db;
   sqlite3_stmt *res;
@@ -27,30 +27,30 @@ void send_email(int socket, struct user_record *user) {
   char *isql = "INSERT INTO email (sender, recipient, subject, body, date, seen) VALUES(?, ?, ?, ?, ?, 0)";
   char *err_msg = 0;
 
-	s_putstring(socket, "\r\nTO: ");
-	s_readstring(socket, buffer, 16);
+	s_printf("\r\nTO: ");
+	s_readstring(buffer, 16);
 
 	if (strlen(buffer) == 0) {
-		s_putstring(socket, "\r\nAborted\r\n");
+		s_printf("\r\nAborted\r\n");
 		return;
 	}
 	if (check_user(buffer)) {
-		s_putstring(socket, "\r\n\r\nInvalid Username\r\n");
+		s_printf("\r\n\r\nInvalid Username\r\n");
 		return;
 	}
 
 	recipient = strdup(buffer);
-	s_putstring(socket, "\r\nSUBJECT: ");
-	s_readstring(socket, buffer, 25);
+	s_printf("\r\nSUBJECT: ");
+	s_readstring(buffer, 25);
 	if (strlen(buffer) == 0) {
 		free(recipient);
-		s_putstring(socket, "\r\nAborted\r\n");
+		s_printf("\r\nAborted\r\n");
 		return;
 	}
 	subject = strdup(buffer);
 
 	// post a message
-	msg = external_editor(socket, user, user->loginname, recipient, NULL, NULL, subject, 1);
+	msg = external_editor(user, user->loginname, recipient, NULL, NULL, subject, 1);
 
 	if (msg != NULL) {
 		sprintf(buffer, "%s/email.sq3", conf.bbs_path);
@@ -87,7 +87,7 @@ void send_email(int socket, struct user_record *user) {
 			dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
 			sqlite3_finalize(res);
 			sqlite3_close(db);
-			s_putstring(socket, "\r\nNo such email\r\n");
+			s_printf("\r\nNo such email\r\n");
 			return;
 		}
 		sqlite3_step(res);
@@ -125,23 +125,23 @@ void show_email(int socket, struct user_record *user, int msgno) {
 
 	rc = sqlite3_open(buffer, &db);
 	if (rc != SQLITE_OK) {
-        dolog("Cannot open database: %s", sqlite3_errmsg(db));
-        sqlite3_close(db);
+    dolog("Cannot open database: %s", sqlite3_errmsg(db));
+    sqlite3_close(db);
 
-        exit(1);
-    }
-    rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
+    exit(1);
+  }
+  rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
 
-    if (rc == SQLITE_OK) {
-        sqlite3_bind_text(res, 1, user->loginname, -1, 0);
-        sqlite3_bind_int(res, 2, msgno);
-    } else {
-        dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
+  if (rc == SQLITE_OK) {
+    sqlite3_bind_text(res, 1, user->loginname, -1, 0);
+    sqlite3_bind_int(res, 2, msgno);
+  } else {
+    dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
 		sqlite3_finalize(res);
 		sqlite3_close(db);
-		s_putstring(socket, "\r\nNo such email\r\n");
+		s_printf("\r\nNo such email\r\n");
 		return;
-    }
+  }
 	if (sqlite3_step(res) == SQLITE_ROW) {
 		id = sqlite3_column_int(res, 0);
 		sender = strdup((char *)sqlite3_column_text(res, 1));
@@ -150,16 +150,14 @@ void show_email(int socket, struct user_record *user, int msgno) {
 		date = (time_t)sqlite3_column_int(res, 4);
 
 
-		sprintf(buffer, "\e[2J\e[1;32mFrom    : \e[1;37m%s\r\n", sender);
-		s_putstring(socket, buffer);
-		sprintf(buffer, "\e[1;32mSubject : \e[1;37m%s\r\n", subject);
-		s_putstring(socket, buffer);
+		s_printf("\e[2J\e[1;32mFrom    : \e[1;37m%s\r\n", sender);
+		s_printf("\e[1;32mSubject : \e[1;37m%s\r\n", subject);
 		localtime_r(&date, &msg_date);
 		sprintf(buffer, "\e[1;32mDate    : \e[1;37m%s", asctime(&msg_date));
 		buffer[strlen(buffer) - 1] = '\0';
 		strcat(buffer, "\r\n");
-		s_putstring(socket, buffer);
-		s_putstring(socket, "\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
+		s_printf(buffer);
+		s_printf("\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
 
 		lines = 0;
 		chars = 0;
@@ -167,16 +165,16 @@ void show_email(int socket, struct user_record *user, int msgno) {
 		for (z=0;z<strlen(body);z++) {
 			if (body[z] == '\r' || chars == 79) {
 				chars = 0;
-				s_putstring(socket, "\r\n");
+				s_printf("\r\n");
 				lines++;
 				if (lines == 19) {
-					s_putstring(socket, "\e[1;37mPress a key to continue...\e[0m");
-					s_getc(socket);
+					s_printf("\e[1;37mPress a key to continue...\e[0m");
+					s_getc();
 					lines = 0;
-					s_putstring(socket, "\e[5;1H\e[0J");
+					s_printf("\e[5;1H\e[0J");
 				}
 			} else {
-				s_putchar(socket, body[z]);
+				s_putchar(body[z]);
 				chars++;
 			}
 		}
@@ -195,8 +193,8 @@ void show_email(int socket, struct user_record *user, int msgno) {
 		}
 		sqlite3_step(res);
 
-		s_putstring(socket, "\e[1;37mPress \e[1;36mR\e[1;37m to reply, \e[1;36mD\e[1;37m to delete \e[1;36mEnter\e[1;37m to quit...\e[0m\r\n");
-		c = s_getc(socket);
+		s_printf("\e[1;37mPress \e[1;36mR\e[1;37m to reply, \e[1;36mD\e[1;37m to delete \e[1;36mEnter\e[1;37m to quit...\e[0m\r\n");
+		c = s_getc();
 		if (tolower(c) == 'r') {
 			if (subject != NULL) {
 				if (strncasecmp(buffer, "RE:", 3) != 0) {
@@ -209,8 +207,7 @@ void show_email(int socket, struct user_record *user, int msgno) {
 			subject = (char *)malloc(strlen(buffer) + 1);
 			strcpy(subject, buffer);
 
-			//replybody = editor(socket, user, body, sender);
-			replybody = external_editor(socket, user, user->loginname, sender, body, sender, subject, 1);
+			replybody = external_editor(user, user->loginname, sender, body, sender, subject, 1);
 			if (replybody != NULL) {
 				rc = sqlite3_prepare_v2(db, isql, -1, &res, 0);
 
@@ -224,7 +221,7 @@ void show_email(int socket, struct user_record *user, int msgno) {
 					dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
 					sqlite3_finalize(res);
 					sqlite3_close(db);
-					s_putstring(socket, "\r\nNo such email\r\n");
+					s_printf("\r\nNo such email\r\n");
 					return;
 				}
 				sqlite3_step(res);
@@ -249,7 +246,7 @@ void show_email(int socket, struct user_record *user, int msgno) {
 				dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
 				sqlite3_finalize(res);
 				sqlite3_close(db);
-				s_putstring(socket, "\r\nNo such email\r\n");
+				s_printf("\r\nNo such email\r\n");
 				return;
 			}
 			sqlite3_step(res);
@@ -265,7 +262,7 @@ void show_email(int socket, struct user_record *user, int msgno) {
 	}
 }
 
-void list_emails(int socket, struct user_record *user) {
+void list_emails(struct user_record *user) {
 	char buffer[256];
 	sqlite3 *db;
   sqlite3_stmt *res;
@@ -298,12 +295,12 @@ void list_emails(int socket, struct user_record *user) {
     dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
 		sqlite3_finalize(res);
 		sqlite3_close(db);
-		s_putstring(socket, "\r\nYou have no email\r\n");
+		s_printf("\r\nYou have no email\r\n");
 		return;
   }
 
   msgid = 0;
-	s_putstring(socket, "\e[2J\e[1;37;44m[MSG#] Subject                                 From             Date          \r\n\e[0m");
+	s_printf("\e[2J\e[1;37;44m[MSG#] Subject                                 From             Date          \r\n\e[0m");
   while (sqlite3_step(res) == SQLITE_ROW) {
 		from = strdup((char *)sqlite3_column_text(res, 0));
 		subject = strdup((char *)sqlite3_column_text(res, 1));
@@ -311,18 +308,16 @@ void list_emails(int socket, struct user_record *user) {
 		date = (time_t)sqlite3_column_int(res, 3);
 		localtime_r(&date, &msg_date);
 		if (seen == 0) {
-			sprintf(buffer, "\e[1;30m[\e[1;34m%4d\e[1;30m]\e[1;32m*\e[1;37m%-39.39s \e[1;32m%-16.16s \e[1;35m%02d:%02d %02d-%02d-%02d\e[0m\r\n", msgid + 1, subject, from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+			s_printf("\e[1;30m[\e[1;34m%4d\e[1;30m]\e[1;32m*\e[1;37m%-39.39s \e[1;32m%-16.16s \e[1;35m%02d:%02d %02d-%02d-%02d\e[0m\r\n", msgid + 1, subject, from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 		} else {
-			sprintf(buffer, "\e[1;30m[\e[1;34m%4d\e[1;30m] \e[1;37m%-39.39s \e[1;32m%-16.16s \e[1;35m%02d:%02d %02d-%02d-%02d\e[0m\r\n", msgid + 1, subject, from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+			s_printf("\e[1;30m[\e[1;34m%4d\e[1;30m] \e[1;37m%-39.39s \e[1;32m%-16.16s \e[1;35m%02d:%02d %02d-%02d-%02d\e[0m\r\n", msgid + 1, subject, from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 		}
-		s_putstring(socket, buffer);
-
 		free(from);
 		free(subject);
 
 		if (msgid % 22 == 0 && msgid != 0) {
-			s_putstring(socket, "\e[1;37mEnter \e[1;36m# \e[1;37mto read, \e[1;36mQ \e[1;37mto quit or \e[1;36mEnter\e[1;37m to continue\e[0m\r\n");
-			s_readstring(socket, buffer, 5);
+			s_printf("\e[1;37mEnter \e[1;36m# \e[1;37mto read, \e[1;36mQ \e[1;37mto quit or \e[1;36mEnter\e[1;37m to continue\e[0m\r\n");
+			s_readstring(buffer, 5);
 			if (strlen(buffer) > 0) {
 				if (tolower(buffer[0]) == 'q') {
 					sqlite3_finalize(res);
@@ -336,15 +331,15 @@ void list_emails(int socket, struct user_record *user) {
 					return;
 				}
 			}
-			s_putstring(socket, "\e[2J\e[1;37;44m[MSG#] Subject                                 From             Date          \r\n\e[0m");
+			s_printf("\e[2J\e[1;37;44m[MSG#] Subject                                 From             Date          \r\n\e[0m");
 		}
 		msgid++;
 	}
 	if (msgid == 0) {
-		s_putstring(socket, "\r\nYou have no email\r\n");
+		s_printf( "\r\nYou have no email\r\n");
 	} else {
-		s_putstring(socket, "\e[1;37mEnter \e[1;36m# \e[1;37mto read, or \e[1;36mEnter\e[1;37m to quit\e[0m\r\n");
-		s_readstring(socket, buffer, 5);
+		s_printf("\e[1;37mEnter \e[1;36m# \e[1;37mto read, or \e[1;36mEnter\e[1;37m to quit\e[0m\r\n");
+		s_readstring(buffer, 5);
 		if (strlen(buffer) > 0) {
 			msgtoread = atoi(buffer) - 1;
 			sqlite3_finalize(res);
@@ -363,32 +358,32 @@ int mail_getemailcount(struct user_record *user) {
 	int count;
 	char buffer[256];
 	sqlite3 *db;
-    sqlite3_stmt *res;
-    int rc;
+  sqlite3_stmt *res;
+  int rc;
 
 	sprintf(buffer, "%s/email.sq3", conf.bbs_path);
 
 	rc = sqlite3_open(buffer, &db);
 	if (rc != SQLITE_OK) {
-        dolog("Cannot open database: %s", sqlite3_errmsg(db));
-        sqlite3_close(db);
+    dolog("Cannot open database: %s", sqlite3_errmsg(db));
+    sqlite3_close(db);
 
-        exit(1);
-    }
-    rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
+    exit(1);
+  }
+  rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
 
-    if (rc == SQLITE_OK) {
-        sqlite3_bind_text(res, 1, user->loginname, -1, 0);
-    } else {
-        dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
+  if (rc == SQLITE_OK) {
+    sqlite3_bind_text(res, 1, user->loginname, -1, 0);
+  } else {
+    dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
 		sqlite3_finalize(res);
 		sqlite3_close(db);
 		return 0;
-    }
+  }
 
 	count = 0;
 
-    if (sqlite3_step(res) == SQLITE_ROW) {
+  if (sqlite3_step(res) == SQLITE_ROW) {
 		count = sqlite3_column_int(res, 0);
 	}
 

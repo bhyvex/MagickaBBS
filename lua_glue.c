@@ -12,7 +12,7 @@ extern int gSocket;
 int l_bbsWString(lua_State *L) {
 	char *str = (char *)lua_tostring(L, -1);
 
-	s_putstring(gSocket, str);
+	s_printf("%s", str);
 
 	return 0;
 }
@@ -25,7 +25,7 @@ int l_bbsRString(lua_State *L) {
 		len = 256;
 	}
 
-	s_readstring(gSocket, buffer, len);
+	s_readstring(buffer, len);
 
 	lua_pushstring(L, buffer);
 
@@ -35,7 +35,7 @@ int l_bbsRString(lua_State *L) {
 int l_bbsRChar(lua_State *L) {
 	char c;
 
-	c = s_getc(gSocket);
+	c = s_getc();
 
 	lua_pushlstring(L, &c, 1);
 
@@ -45,7 +45,7 @@ int l_bbsRChar(lua_State *L) {
 int l_bbsDisplayAnsi(lua_State *L) {
 	char *str = (char *)lua_tostring(L, -1);
 
-	s_displayansi(gSocket, str);
+	s_displayansi(str);
 
 	return 0;
 }
@@ -94,7 +94,7 @@ int l_bbsGetEmailCount(lua_State *L) {
 }
 
 int l_bbsMailScan(lua_State *L) {
-	mail_scan(gSocket, gUser);
+	mail_scan(gUser);
 	return 0;
 }
 
@@ -102,7 +102,7 @@ int l_bbsRunDoor(lua_State *L) {
 	char *cmd = (char *)lua_tostring(L, 1);
 	int stdio = lua_toboolean(L, 2);
 
-	rundoor(gSocket, gUser, cmd, stdio);
+	rundoor(gUser, cmd, stdio);
 
 	return 0;
 }
@@ -114,7 +114,7 @@ int l_bbsTimeLeft(lua_State *L) {
 }
 
 int l_bbsDisplayAutoMsg(lua_State *L) {
-	automessage_display(gSocket);
+	automessage_display();
 	return 0;
 }
 

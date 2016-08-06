@@ -136,52 +136,53 @@ struct user_record {
 	int timeson;
 };
 
-extern void automessage_write(int socket, struct user_record *user);
-extern void automessage_display(int socket);
+extern void automessage_write(struct user_record *user);
+extern void automessage_display();
 extern void dolog(char *fmt, ...);
 extern void runbbs(int sock, char *ipaddress);
 extern struct fido_addr *parse_fido_addr(const char *str);
-extern void s_putchar(int socket, char c);
-extern void s_putstring(int socket, char *c);
-extern void s_displayansi_p(int socket, char *file);
-extern void s_displayansi(int socket, char *file);
-extern char s_getchar(int socket);
-extern void s_readpass(int socket, char *buffer, int max);
-extern void s_readstring(int socket, char *buffer, int max);
-extern char s_getc(int socket);
-extern void disconnect(int socket, char *calledby);
-extern void display_info(int socket);
-extern void display_last10_callers(int socket, struct user_record *user);
+extern void s_putchar(char c);
+extern void s_printf(char *fmt, ...);
+extern void s_putstring(char *c);
+extern void s_displayansi_p(char *file);
+extern void s_displayansi(char *file);
+extern char s_getchar();
+extern void s_readpass(char *buffer, int max);
+extern void s_readstring(char *buffer, int max);
+extern char s_getc();
+extern void disconnect(char *calledby);
+extern void display_info();
+extern void display_last10_callers(struct user_record *user);
 
 extern void gen_salt(char **s);
 extern char *hash_sha256(char *pass, char *salt);
 extern int save_user(struct user_record *user);
 extern int check_user(char *loginname);
-extern struct user_record *new_user(int socket);
-extern struct user_record *check_user_pass(int socket, char *loginname, char *password);
-extern void list_users(int socket, struct user_record *user);
+extern struct user_record *new_user();
+extern struct user_record *check_user_pass(char *loginname, char *password);
+extern void list_users(struct user_record *user);
 
-extern void main_menu(int socket, struct user_record *user);
+extern void main_menu(struct user_record *user);
 
-extern void mail_scan(int socket, struct user_record *user);
-extern int mail_menu(int socket, struct user_record *user);
-extern char *editor(int socket, struct user_record *user, char *quote, char *from, int email);
-extern char *external_editor(int socket, struct user_record *user, char *to, char *from, char *quote, char *qfrom, char *subject, int email);
+extern void mail_scan(struct user_record *user);
+extern int mail_menu(struct user_record *user);
+extern char *editor(struct user_record *user, char *quote, char *from, int email);
+extern char *external_editor(struct user_record *user, char *to, char *from, char *quote, char *qfrom, char *subject, int email);
 
-extern int door_menu(int socket, struct user_record *user);
-extern void rundoor(int socket, struct user_record *user, char *cmd, int stdio);
+extern int door_menu(struct user_record *user);
+extern void rundoor(struct user_record *user, char *cmd, int stdio);
 
-extern void bbs_list(int socket, struct user_record *user);
+extern void bbs_list(struct user_record *user);
 
-extern void chat_system(int sock, struct user_record *user);
+extern void chat_system(struct user_record *user);
 
 extern int mail_getemailcount(struct user_record *user);
-extern void send_email(int socket, struct user_record *user);
-extern void list_emails(int socket, struct user_record *user);
+extern void send_email(struct user_record *user);
+extern void list_emails(struct user_record *user);
 
-extern int file_menu(int socket, struct user_record *user);
+extern int file_menu(struct user_record *user);
 
-extern void settings_menu(int sock, struct user_record *user);
+extern void settings_menu(struct user_record *user);
 
 extern void lua_push_cfunctions(lua_State *L);
 #endif

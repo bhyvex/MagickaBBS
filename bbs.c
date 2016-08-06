@@ -44,12 +44,12 @@ void dolog(char *fmt, ...) {
 		dolog("Error opening log file!");
 		return;
 	}
-    va_list ap;
-    va_start(ap, fmt);
-    vsnprintf(buffer, 512, fmt, ap);
-    va_end(ap);
+  va_list ap;
+  va_start(ap, fmt);
+  vsnprintf(buffer, 512, fmt, ap);
+  va_end(ap);
 
-    fprintf(logfptr, "%02d:%02d:%02d [%s] %s\n", time_now.tm_hour, time_now.tm_min, time_now.tm_sec, ipaddress, buffer);
+  fprintf(logfptr, "%02d:%02d:%02d [%s] %s\n", time_now.tm_hour, time_now.tm_min, time_now.tm_sec, ipaddress, buffer);
 
 	fclose(logfptr);
 }
@@ -117,8 +117,8 @@ void timer_handler(int signum) {
 			gUser->timeleft--;
 
 			if (gUser->timeleft <= 0) {
-				s_putstring(gSocket, "\r\n\r\nSorry, you're out of time today..\r\n");
-				disconnect(gSocket, "Out of Time");
+				s_printf("\r\n\r\nSorry, you're out of time today..\r\n");
+				disconnect("Out of Time");
 			}
 
 
@@ -127,21 +127,32 @@ void timer_handler(int signum) {
 			usertimeout--;
 		}
 		if (usertimeout <= 0) {
-			s_putstring(gSocket, "\r\n\r\nTimeout waiting for input..\r\n");
-			disconnect(gSocket, "Timeout");
+			s_printf("\r\n\r\nTimeout waiting for input..\r\n");
+			disconnect("Timeout");
 		}
 	}
 }
 
-void s_putchar(int socket, char c) {
-	write(socket, &c, 1);
+void s_printf(char *fmt, ...) {
+	char buffer[512];
+
+  va_list ap;
+  va_start(ap, fmt);
+  vsnprintf(buffer, 512, fmt, ap);
+  va_end(ap);
+
+	s_putstring(buffer);
 }
 
-void s_putstring(int socket, char *c) {
-	write(socket, c, strlen(c));
+void s_putchar(char c) {
+	write(gSocket, &c, 1);
 }
 
-void s_displayansi_p(int socket, char *file) {
+void s_putstring(char *c) {
+	write(gSocket, c, strlen(c));
+}
+
+void s_displayansi_p(char *file) {
 	FILE *fptr;
 	char c;
 
@@ -151,14 +162,14 @@ void s_displayansi_p(int socket, char *file) {
 	}
 	c = fgetc(fptr);
 	while (!feof(fptr) && c != 0x1a) {
-		s_putchar(socket, c);
+		s_putchar(c);
 		c = fgetc(fptr);
 	}
 	fclose(fptr);
 }
 
 
-void s_displayansi(int socket, char *file) {
+void s_displayansi(char *file) {
 	FILE *fptr;
 	char c;
 
@@ -172,39 +183,39 @@ void s_displayansi(int socket, char *file) {
 	}
 	c = fgetc(fptr);
 	while (!feof(fptr) && c != 0x1a) {
-		s_putchar(socket, c);
+		s_putchar(c);
 		c = fgetc(fptr);
 	}
 	fclose(fptr);
 }
 
-char s_getchar(int socket) {
+char s_getchar() {
 	unsigned char c;
 	int len;
 
 	do {
 
-		len = read(socket, &c, 1);
+		len = read(gSocket, &c, 1);
 
 		if (len == 0) {
-			disconnect(socket, "Socket Closed");
+			disconnect("Socket Closed");
 		}
 
 		while (c == 255) {
-			len = read(socket, &c, 1);
+			len = read(gSocket, &c, 1);
 			if (len == 0) {
-				disconnect(socket, "Socket Closed");
+				disconnect("Socket Closed");
 			} else if (c == 255) {
 				usertimeout = 10;
 				return c;
 			}
-			len = read(socket, &c, 1);
+			len = read(gSocket, &c, 1);
 			if (len == 0) {
-				disconnect(socket, "Socket Closed");
+				disconnect("Socket Closed");
 			}
-			len = read(socket, &c, 1);
+			len = read(gSocket, &c, 1);
 			if (len == 0) {
-				disconnect(socket, "Socket Closed");
+				disconnect("Socket Closed");
 			}
 		}
 
@@ -212,7 +223,7 @@ char s_getchar(int socket) {
 
 		if (c == '\r') {
 			if (len == 0) {
-				disconnect(socket, "Socket Closed");
+				disconnect("Socket Closed");
 			}
 		}
 	} while (c == '\n');
@@ -220,25 +231,25 @@ char s_getchar(int socket) {
 	return (char)c;
 }
 
-char s_getc(int socket) {
-	char c = s_getchar(socket);
+char s_getc() {
+	char c = s_getchar();
 
-	s_putchar(socket, c);
+	s_putchar(c);
 	return (char)c;
 }
 
-void s_readstring(int socket, char *buffer, int max) {
+void s_readstring(char *buffer, int max) {
 	int i;
 	char c;
 
 	memset(buffer, 0, max);
 
 	for (i=0;i<max;i++) {
-		c = s_getchar(socket);
+		c = s_getchar();
 		if ((c == '\b' || c == 127) && i > 0) {
 			buffer[i-1] = '\0';
 			i -= 2;
-			s_putstring(socket, "\e[D \e[D");
+			s_printf("\e[D \e[D");
 			continue;
 		} else if (c == '\b' || c == 127) {
 			i -= 1;
@@ -248,23 +259,23 @@ void s_readstring(int socket, char *buffer, int max) {
 		if (c == '\n' || c == '\r') {
 			return;
 		}
-		s_putchar(socket, c);
+		s_putchar(c);
 		buffer[i] = c;
 		buffer[i+1] = '\0';
 	}
 }
 
-void s_readpass(int socket, char *buffer, int max) {
+void s_readpass(char *buffer, int max) {
 	int i;
 	char c;
 
 	for (i=0;i<max;i++) {
-		c = s_getchar(socket);
+		c = s_getchar();
 
 		if ((c == '\b' || c == 127) && i > 0) {
 			buffer[i-1] = '\0';
 			i-=2;
-			s_putstring(socket, "\e[D \e[D");
+			s_printf("\e[D \e[D");
 			continue;
 		} else if (c == '\b' || c == 127) {
 			i -= 1;
@@ -274,13 +285,13 @@ void s_readpass(int socket, char *buffer, int max) {
 		if (c == '\n' || c == '\r') {
 			return;
 		}
-		s_putchar(socket, '*');
+		s_putchar('*');
 		buffer[i] = c;
 		buffer[i+1] = '\0';
 	}
 }
 
-void disconnect(int socket, char *calledby) {
+void disconnect(char *calledby) {
 	char buffer[256];
 	if (gUser != NULL) {
 		save_user(gUser);
@@ -288,7 +299,7 @@ void disconnect(int socket, char *calledby) {
 	dolog("Node %d disconnected (%s)", mynode, calledby);
 	sprintf(buffer, "%s/nodeinuse.%d", conf.bbs_path, mynode);
 	remove(buffer);
-	close(socket);
+	close(gSocket);
 	exit(0);
 }
 
@@ -332,16 +343,15 @@ void record_last10_callers(struct user_record *user) {
 	}
 }
 
-void display_last10_callers(int socket, struct user_record *user) {
+void display_last10_callers(struct user_record *user) {
 	struct last10_callers callers[10];
 
 	int i,z,j;
-	char buffer[256];
 	struct tm l10_time;
 	FILE *fptr = fopen("last10.dat", "rb");
 
-	s_putstring(socket, "\r\n\e[1;37mLast 10 callers:\r\n");
-	s_putstring(socket, "\e[1;30m-------------------------------------------------------------------------------\r\n");
+	s_printf("\r\n\e[1;37mLast 10 callers:\r\n");
+	s_printf("\e[1;30m-------------------------------------------------------------------------------\r\n");
 
 	if (fptr != NULL) {
 
@@ -358,53 +368,41 @@ void display_last10_callers(int socket, struct user_record *user) {
 
 	for (z=0;z<i;z++) {
 		localtime_r(&callers[z].time, &l10_time);
-		sprintf(buffer, "\e[1;37m%-16s \e[1;36m%-32s \e[1;32m%02d:%02d %02d-%02d-%02d\e[0m\r\n", callers[z].name, callers[z].location, l10_time.tm_hour, l10_time.tm_min, l10_time.tm_mday, l10_time.tm_mon + 1, l10_time.tm_year - 100);
-		s_putstring(socket, buffer);
+		s_printf("\e[1;37m%-16s \e[1;36m%-32s \e[1;32m%02d:%02d %02d-%02d-%02d\e[0m\r\n", callers[z].name, callers[z].location, l10_time.tm_hour, l10_time.tm_min, l10_time.tm_mday, l10_time.tm_mon + 1, l10_time.tm_year - 100);
 	}
-	s_putstring(socket, "\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
-	sprintf(buffer, "Press any key to continue...\r\n");
-	s_putstring(socket, buffer);
-	s_getc(socket);
+	s_printf("\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
+	s_printf("Press any key to continue...\r\n");
+	s_getc();
 }
 
-void display_info(int socket) {
-	char buffer[256];
+void display_info() {
 	struct utsname name;
 
 	uname(&name);
 
-	sprintf(buffer, "\r\n\r\n\e[1;37mSystem Information\r\n");
-	s_putstring(socket, buffer);
-	sprintf(buffer, "\e[1;30m----------------------------------------------\r\n");
-	s_putstring(socket, buffer);
-	sprintf(buffer, "\e[1;32mBBS Name    : \e[1;37m%s\r\n", conf.bbs_name);
-	s_putstring(socket, buffer);
-	sprintf(buffer, "\e[1;32mSysOp Name  : \e[1;37m%s\r\n", conf.sysop_name);
-	s_putstring(socket, buffer);
-	sprintf(buffer, "\e[1;32mNode        : \e[1;37m%d\r\n", mynode);
-	s_putstring(socket, buffer);
-	sprintf(buffer, "\e[1;32mBBS Version : \e[1;37mMagicka %d.%d (%s)\r\n", VERSION_MAJOR, VERSION_MINOR, VERSION_STR);
-	s_putstring(socket, buffer);
-	sprintf(buffer, "\e[1;32mSystem      : \e[1;37m%s (%s)\r\n", name.sysname, name.machine);
-	s_putstring(socket, buffer);
-	sprintf(buffer, "\e[1;30m----------------------------------------------\e[0m\r\n");
-	s_putstring(socket, buffer);
+	s_printf("\r\n\r\n\e[1;37mSystem Information\r\n");
+	s_printf("\e[1;30m----------------------------------------------\r\n");
+	s_printf("\e[1;32mBBS Name    : \e[1;37m%s\r\n", conf.bbs_name);
+	s_printf("\e[1;32mSysOp Name  : \e[1;37m%s\r\n", conf.sysop_name);
+	s_printf("\e[1;32mNode        : \e[1;37m%d\r\n", mynode);
+	s_printf("\e[1;32mBBS Version : \e[1;37mMagicka %d.%d (%s)\r\n", VERSION_MAJOR, VERSION_MINOR, VERSION_STR);
+	s_printf("\e[1;32mSystem      : \e[1;37m%s (%s)\r\n", name.sysname, name.machine);
+	s_printf("\e[1;30m----------------------------------------------\e[0m\r\n");
 
-	sprintf(buffer, "Press any key to continue...\r\n");
-	s_putstring(socket, buffer);
-	s_getc(socket);
+	s_printf("Press any key to continue...\r\n");
+	s_getc();
 }
 
-void automessage_write(int socket, struct user_record *user) {
+void automessage_write(struct user_record *user) {
 	FILE *fptr;
 	char automsg[450];
-	char buffer[90];
+	char buffer[76];
 	int i;
 	struct tm timenow;
 	time_t timen;
 
 	memset(automsg, 0, 450);
-	memset(buffer, 0, 90);
+	memset(buffer, 0, 76);
 
 	if (user->sec_level >= conf.automsgwritelvl) {
 		timen = time(NULL);
@@ -414,11 +412,10 @@ void automessage_write(int socket, struct user_record *user) {
 
 		automsg[strlen(automsg) - 1] = '\r';
 		automsg[strlen(automsg)] = '\n';
-		s_putstring(socket, "\r\nEnter your message (4 lines):\r\n");
+		s_printf("\r\nEnter your message (4 lines):\r\n");
 		for (i=0;i<4;i++) {
-			sprintf(buffer, "\r\n%d: ", i);
-			s_putstring(socket, buffer);
-			s_readstring(socket, buffer, 75);
+			s_printf("\r\n%d: ", i);
+			s_readstring(buffer, 75);
 			strcat(automsg, buffer);
 			strcat(automsg, "\r\n");
 		}
@@ -433,12 +430,12 @@ void automessage_write(int socket, struct user_record *user) {
 	}
 }
 
-void automessage_display(int socket) {
+void automessage_display() {
 	struct stat s;
 	FILE *fptr;
 	char buffer[90];
 	int i;
-	s_putstring(socket, "\r\n\r\n");
+	s_printf("\r\n\r\n");
 	if (stat("automessage.txt", &s) == 0) {
 		fptr = fopen("automessage.txt", "r");
 		if (fptr) {
@@ -448,17 +445,17 @@ void automessage_display(int socket) {
 				buffer[strlen(buffer) - 1] = '\r';
 				buffer[strlen(buffer)] = '\n';
 
-				s_putstring(socket, buffer);
+				s_printf(buffer);
 			}
 			fclose(fptr);
 		} else {
 			dolog("Error opening automessage.txt");
 		}
 	} else {
-		s_putstring(socket, "No automessage!\r\n");
+		s_printf("No automessage!\r\n");
 	}
-	s_putstring(socket, "\e[0mPress any key to continue...\r\n");
-	s_getc(socket);
+	s_printf("\e[0mPress any key to continue...\r\n");
+	s_getc();
 }
 
 void runbbs(int socket, char *ip) {
@@ -484,10 +481,10 @@ void runbbs(int socket, char *ip) {
 	write(socket, iac_echo, 3);
 	write(socket, iac_sga, 3);
 
+	gUser = NULL;
+	gSocket = socket;
 
-
-	sprintf(buffer, "Magicka BBS v%d.%d (%s), Loading...\r\n", VERSION_MAJOR, VERSION_MINOR, VERSION_STR);
-	s_putstring(socket, buffer);
+	s_printf("Magicka BBS v%d.%d (%s), Loading...\r\n", VERSION_MAJOR, VERSION_MINOR, VERSION_STR);
 
 	// find out which node we are
 	mynode = 0;
@@ -510,12 +507,11 @@ void runbbs(int socket, char *ip) {
 	}
 
 	if (mynode == 0) {
-		s_putstring(socket, "Sorry, all nodes are in use. Please try later\r\n");
+		s_printf("Sorry, all nodes are in use. Please try later\r\n");
 		close(socket);
 		exit(1);
 	}
-	gUser = NULL;
-	gSocket = socket;
+
 	usertimeout = 10;
 	timeoutpaused = 0;
 
@@ -531,22 +527,22 @@ void runbbs(int socket, char *ip) {
 
 	setitimer (ITIMER_REAL, &itime, 0);
 
-	s_displayansi(socket, "issue");
+	s_displayansi("issue");
 
-	s_putstring(socket, "\e[0mEnter your Login Name or NEW to create an account\r\n");
-	s_putstring(socket, "Login:> ");
+	s_printf("\e[0mEnter your Login Name or NEW to create an account\r\n");
+	s_printf("Login:> ");
 
-	s_readstring(socket, buffer, 25);
+	s_readstring(buffer, 25);
 
 	if (strcasecmp(buffer, "new") == 0) {
-		user = new_user(socket);
+		user = new_user();
 	} else {
-		s_putstring(socket, "\r\nPassword:> ");
-		s_readpass(socket, password, 16);
-		user = check_user_pass(socket, buffer, password);
+		s_printf("\r\nPassword:> ");
+		s_readpass(password, 16);
+		user = check_user_pass(buffer, password);
 		if (user == NULL) {
-			s_putstring(socket, "\r\nIncorrect Login.\r\n");
-			disconnect(socket, "Incorrect Login");
+			s_printf("\r\nIncorrect Login.\r\n");
+			disconnect("Incorrect Login");
 		}
 
 		for (i=1;i<=conf.nodes;i++) {
@@ -555,14 +551,14 @@ void runbbs(int socket, char *ip) {
 				nodefile = fopen(buffer, "r");
 				if (!nodefile) {
 					dolog("Error opening nodefile!");
-					disconnect(socket, "Error opening nodefile!");
+					disconnect("Error opening nodefile!");
 				}
 				fgets(buffer, 256, nodefile);
 
 				if (strcasecmp(user->loginname, buffer) == 0) {
 					fclose(nodefile);
-					s_putstring(socket, "\r\nYou are already logged in.\r\n");
-					disconnect(socket, "Already Logged in");
+					s_printf("\r\nYou are already logged in.\r\n");
+					disconnect("Already Logged in");
 				}
 				fclose(nodefile);
 			}
@@ -621,10 +617,9 @@ void runbbs(int socket, char *ip) {
 
 		while (stat(buffer, &s) == 0) {
 			sprintf(buffer, "bulletin%d", i);
-			s_displayansi(socket, buffer);
-			sprintf(buffer, "\e[0mPress any key to continue...\r\n");
-			s_putstring(socket, buffer);
-			s_getc(socket);
+			s_displayansi(buffer);
+			s_printf("\e[0mPress any key to continue...\r\n");
+			s_getc();
 			i++;
 			sprintf(buffer, "%s/bulletin%d.ans", conf.ansi_path, i);
 		}
@@ -632,28 +627,27 @@ void runbbs(int socket, char *ip) {
 		// external login cmd
 
 		// display info
-		display_info(socket);
+		display_info();
 
-		display_last10_callers(socket, user);
+		display_last10_callers(user);
 
 		// check email
 		i = mail_getemailcount(user);
 		if (i > 0) {
-			sprintf(buffer, "\r\nYou have %d e-mail(s) in your inbox.\r\n", i);
-			s_putstring(socket, buffer);
+			s_printf("\r\nYou have %d e-mail(s) in your inbox.\r\n", i);
 		} else {
-			s_putstring(socket, "\r\nYou have no e-mail.\r\n");
+			s_printf("\r\nYou have no e-mail.\r\n");
 		}
 
-		mail_scan(socket, user);
+		mail_scan(user);
 
-		automessage_display(socket);
+		automessage_display();
 	}
 	record_last10_callers(user);
 	// main menu
-	main_menu(socket, user);
+	main_menu(user);
 
-	s_displayansi(socket, "goodbye");
+	s_displayansi("goodbye");
 	dolog("%s is logging out, on node %d", user->loginname, mynode);
-	disconnect(socket, "Log out");
+	disconnect("Log out");
 }

@@ -219,7 +219,7 @@ int inst_user(struct user_record *user) {
 	return 1;
 }
 
-struct user_record *check_user_pass(int socket, char *loginname, char *password) {
+struct user_record *check_user_pass(char *loginname, char *password) {
 	struct user_record *user;
 	char buffer[256];
 	sqlite3 *db;
@@ -322,7 +322,7 @@ struct user_record *check_user_pass(int socket, char *loginname, char *password)
     return user;
 }
 
-void list_users(int socket, struct user_record *user) {
+void list_users(struct user_record *user) {
 	char buffer[256];
 	sqlite3 *db;
     sqlite3_stmt *res;
@@ -346,70 +346,67 @@ void list_users(int socket, struct user_record *user) {
         sqlite3_close(db);
         exit(1);
     }
-    s_putstring(socket, "\e[2J\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
-    s_putstring(socket, "User Name        Location                         Times On\r\n");
-    s_putstring(socket, "\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
+    s_printf("\e[2J\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
+    s_printf("User Name        Location                         Times On\r\n");
+    s_printf("\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
     i = 0;
     while (sqlite3_step(res) == SQLITE_ROW) {
-		sprintf(buffer, "\e[1;37m%-16s \e[1;36m%-32s \e[1;32m%5d\r\n", sqlite3_column_text(res, 0), sqlite3_column_text(res, 1), sqlite3_column_int(res, 2));
-		s_putstring(socket, buffer);
+		s_printf("\e[1;37m%-16s \e[1;36m%-32s \e[1;32m%5d\r\n", sqlite3_column_text(res, 0), sqlite3_column_text(res, 1), sqlite3_column_int(res, 2));
 
 		i++;
 		if (i == 20) {
-			sprintf(buffer, "Press any key to continue...\r\n");
-			s_putstring(socket, buffer);
-			s_getc(socket);
+			s_printf("Press any key to continue...\r\n");
+			s_getc();
 			i = 0;
 		}
 	}
-    s_putstring(socket, "\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
-    sqlite3_finalize(res);
-    sqlite3_close(db);
+  s_printf("\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
+  sqlite3_finalize(res);
+  sqlite3_close(db);
 
-    sprintf(buffer, "Press any key to continue...\r\n");
-	s_putstring(socket, buffer);
-	s_getc(socket);
+  s_printf("Press any key to continue...\r\n");
+	s_getc();
 }
 
 int check_user(char *loginname) {
 	char buffer[256];
 	sqlite3 *db;
-    sqlite3_stmt *res;
-    int rc;
-    char *sql = "SELECT * FROM users WHERE loginname = ?";
+  sqlite3_stmt *res;
+  int rc;
+  char *sql = "SELECT * FROM users WHERE loginname = ?";
 
 	sprintf(buffer, "%s/users.sq3", conf.bbs_path);
 
 	rc = sqlite3_open(buffer, &db);
 
 	if (rc != SQLITE_OK) {
-        dolog("Cannot open database: %s", sqlite3_errmsg(db));
-        sqlite3_close(db);
+    dolog("Cannot open database: %s", sqlite3_errmsg(db));
+    sqlite3_close(db);
 
-        exit(1);
-    }
-    rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
+    exit(1);
+  }
+  rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
 
-    if (rc == SQLITE_OK) {
-        sqlite3_bind_text(res, 1, loginname, -1, 0);
-    } else {
-        dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
-    }
+  if (rc == SQLITE_OK) {
+      sqlite3_bind_text(res, 1, loginname, -1, 0);
+  } else {
+      dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
+  }
 
-    int step = sqlite3_step(res);
+  int step = sqlite3_step(res);
 
-    if (step == SQLITE_ROW) {
+  if (step == SQLITE_ROW) {
 		sqlite3_finalize(res);
 		sqlite3_close(db);
 		return 0;
-    }
+  }
 
-    sqlite3_finalize(res);
-    sqlite3_close(db);
-    return 1;
+  sqlite3_finalize(res);
+  sqlite3_close(db);
+  return 1;
 }
 
-struct user_record *new_user(int socket) {
+struct user_record *new_user() {
 	char buffer[256];
 	struct user_record *user;
 	int done = 0;
@@ -419,24 +416,24 @@ struct user_record *new_user(int socket) {
 	int i;
 
 	user = (struct user_record *)malloc(sizeof(struct user_record));
-	s_putstring(socket, "\r\n\r\n");
-	s_displayansi(socket, "newuser");
+	s_printf("\r\n\r\n");
+	s_displayansi("newuser");
 
 	do {
 		passok = 0;
 		nameok = 0;
 		do {
-			s_putstring(socket, "\r\nWhat is your login name: ");
-			s_readstring(socket, buffer, 16);
-			s_putstring(socket, "\r\n");
+			s_printf("\r\nWhat is your login name: ");
+			s_readstring(buffer, 16);
+			s_printf("\r\n");
 			if (strlen(buffer) < 3) {
-				s_putstring(socket, "Sorry, that name is too short.\r\n");
+				s_printf("Sorry, that name is too short.\r\n");
 				continue;
 			}
 
 			for (i=0;i<strlen(buffer);i++) {
 				if (!(tolower(buffer[i]) >= 97 && tolower(buffer[i]) <= 122)) {
-					s_putstring(socket, "Sorry, invalid character, can only use alpha characters.\r\n");
+					s_printf("Sorry, invalid character, can only use alpha characters.\r\n");
 					nameok = 1;
 					break;
 				}
@@ -446,80 +443,80 @@ struct user_record *new_user(int socket) {
 				continue;
 			}
 			if (strcasecmp(buffer, "unknown") == 0) {
-				s_putstring(socket, "Sorry, that name is reserved.\r\n");
+				s_printf("Sorry, that name is reserved.\r\n");
 				continue;
 			}
 			if (strcasecmp(buffer, "all") == 0) {
-				s_putstring(socket, "Sorry, that name is reserved.\r\n");
+				s_printf("Sorry, that name is reserved.\r\n");
 				continue;
 			}
 			if (strcasecmp(buffer, "new") == 0) {
-				s_putstring(socket, "Sorry, that name is reserved.\r\n");
+				s_printf("Sorry, that name is reserved.\r\n");
 				continue;
 			}
 			user->loginname = strdup(buffer);
 			nameok = check_user(user->loginname);
 			if (!nameok) {
-				s_putstring(socket, "Sorry, that name is in use.\r\n");
+				s_printf("Sorry, that name is in use.\r\n");
 				free(user->loginname);
 				memset(buffer, 0, 256);
 			}
 		} while (!nameok);
-		s_putstring(socket, "What is your first name: ");
+		s_printf("What is your first name: ");
 		memset(buffer, 0, 256);
-		s_readstring(socket, buffer, 32);
-		s_putstring(socket, "\r\n");
+		s_readstring(buffer, 32);
+		s_printf("\r\n");
 		user->firstname = strdup(buffer);
 
-		s_putstring(socket, "What is your last name: ");
+		s_printf("What is your last name: ");
 		memset(buffer, 0, 256);
-		s_readstring(socket, buffer, 32);
-		s_putstring(socket, "\r\n");
+		s_readstring(buffer, 32);
+		s_printf("\r\n");
 		user->lastname = strdup(buffer);
 
-		s_putstring(socket, "What is your e-mail address: ");
+		s_printf("What is your e-mail address: ");
 		memset(buffer, 0, 256);
-		s_readstring(socket, buffer, 64);
-		s_putstring(socket, "\r\n");
+		s_readstring(buffer, 64);
+		s_printf("\r\n");
 		user->email = strdup(buffer);
 
-		s_putstring(socket, "Where are you located: ");
+		s_printf("Where are you located: ");
 		memset(buffer, 0, 256);
-		s_readstring(socket, buffer, 32);
-		s_putstring(socket, "\r\n");
+		s_readstring(buffer, 32);
+		s_printf("\r\n");
 		user->location = strdup(buffer);
 
 		do {
-			s_putstring(socket, "What password would you like (at least 8 characters): ");
+			s_printf("What password would you like (at least 8 characters): ");
 			memset(buffer, 0, 256);
-			s_readstring(socket, buffer, 16);
-			s_putstring(socket, "\r\n");
+			s_readstring(buffer, 16);
+			s_printf("\r\n");
 			if (strlen(buffer) >= 8) {
 				passok = 1;
 			} else {
-				s_putstring(socket, "Password too short!\r\n");
+				s_printf("Password too short!\r\n");
 			}
 		} while (!passok);
 		gen_salt(&user->salt);
 		user->password = hash_sha256(buffer, user->salt);
 
-		s_putstring(socket, "You Entered:\r\n");
-		s_putstring(socket, "-------------------------------------\r\n");
-		s_putstring(socket, "Login Name: ");
-		s_putstring(socket, user->loginname);
-		s_putstring(socket, "\r\nFirst Name: ");
-		s_putstring(socket, user->firstname);
-		s_putstring(socket, "\r\nLast Name: ");
-		s_putstring(socket, user->lastname);
-		s_putstring(socket, "\r\nE-mail: ");
-		s_putstring(socket, user->email);
-		s_putstring(socket, "\r\nLocation: ");
-		s_putstring(socket, user->location);
-		s_putstring(socket, "\r\n-------------------------------------\r\n");
-		s_putstring(socket, "Is this Correct? (Y/N)");
-		c = s_getchar(socket);
+		s_printf("You Entered:\r\n");
+		s_printf("-------------------------------------\r\n");
+		s_printf("Login Name: ");
+		s_printf(user->loginname);
+		s_printf("\r\nFirst Name: ");
+		s_printf(user->firstname);
+		s_printf("\r\nLast Name: ");
+		s_printf(user->lastname);
+		s_printf("\r\nE-mail: ");
+		s_printf(user->email);
+		s_printf("\r\nLocation: ");
+		s_printf(user->location);
+		s_printf("\r\n-------------------------------------\r\n");
+		s_printf("Is this Correct? (Y/N)");
+		c = s_getchar();
 		while (tolower(c) != 'y' && tolower(c) != 'n') {
-			c = s_getchar(socket);
+			c = s_getchar();
 		}
 
 		if (tolower(c) == 'y') {
