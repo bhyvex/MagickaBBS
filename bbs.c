@@ -20,7 +20,7 @@ struct bbs_config conf;
 
 struct user_record *gUser;
 int gSocket;
-
+int sshBBS;
 int usertimeout;
 int timeoutpaused;
 
@@ -145,11 +145,19 @@ void s_printf(char *fmt, ...) {
 }
 
 void s_putchar(char c) {
-	write(gSocket, &c, 1);
+	if (sshBBS) {
+		putchar(c);
+	} else {
+		write(gSocket, &c, 1);
+	}
 }
 
 void s_putstring(char *c) {
-	write(gSocket, c, strlen(c));
+	if (sshBBS) {
+		printf("%s", c);
+	} else {
+		write(gSocket, c, strlen(c));
+	}
 }
 
 void s_displayansi_p(char *file) {
@@ -195,30 +203,34 @@ char s_getchar() {
 
 	do {
 
-		len = read(gSocket, &c, 1);
-
+		if (sshBBS) {
+			len = read(stdin, &c, 1);
+		} else {
+			len = read(gSocket, &c, 1);
+		}
 		if (len == 0) {
 			disconnect("Socket Closed");
 		}
 
-		while (c == 255) {
-			len = read(gSocket, &c, 1);
-			if (len == 0) {
-				disconnect("Socket Closed");
-			} else if (c == 255) {
-				usertimeout = 10;
-				return c;
-			}
-			len = read(gSocket, &c, 1);
-			if (len == 0) {
-				disconnect("Socket Closed");
-			}
-			len = read(gSocket, &c, 1);
-			if (len == 0) {
-				disconnect("Socket Closed");
+		if (!sshBBS) {
+			while (c == 255) {
+				len = read(gSocket, &c, 1);
+				if (len == 0) {
+					disconnect("Socket Closed");
+				} else if (c == 255) {
+					usertimeout = 10;
+					return c;
+				}
+				len = read(gSocket, &c, 1);
+				if (len == 0) {
+					disconnect("Socket Closed");
+				}
+				len = read(gSocket, &c, 1);
+				if (len == 0) {
+					disconnect("Socket Closed");
+				}
 			}
 		}
-
 
 
 		if (c == '\r') {
@@ -299,7 +311,9 @@ void disconnect(char *calledby) {
 	dolog("Node %d disconnected (%s)", mynode, calledby);
 	sprintf(buffer, "%s/nodeinuse.%d", conf.bbs_path, mynode);
 	remove(buffer);
-	close(gSocket);
+	if (!sshBBS) {
+		close(gSocket);
+	}
 	exit(0);
 }
 
@@ -456,7 +470,7 @@ void automessage_display() {
 	s_getc();
 }
 
-void runbbs(int socket, char *ip) {
+void runbbs_real(int socket, char *ip, int ssh) {
 	char buffer[256];
 	char password[17];
 
@@ -476,10 +490,17 @@ void runbbs(int socket, char *ip) {
 
 	ipaddress = ip;
 
-	write(socket, iac_echo, 3);
-	write(socket, iac_sga, 3);
+	if (!ssh) {
+		write(socket, iac_echo, 3);
+		write(socket, iac_sga, 3);
+		gUser = NULL;
+		sshBBS = 0;
+	} else {
+		sshBBS = 1;
+	}
 
-	gUser = NULL;
+
+
 	gSocket = socket;
 
 	s_printf("Magicka BBS v%d.%d (%s), Loading...\r\n", VERSION_MAJOR, VERSION_MINOR, VERSION_STR);
@@ -506,7 +527,9 @@ void runbbs(int socket, char *ip) {
 
 	if (mynode == 0) {
 		s_printf("Sorry, all nodes are in use. Please try later\r\n");
-		close(socket);
+		if (!ssh) {
+			close(socket);
+		}
 		exit(1);
 	}
 
@@ -527,42 +550,70 @@ void runbbs(int socket, char *ip) {
 
 	s_displayansi("issue");
 
-	s_printf("\e[0mEnter your Login Name or NEW to create an account\r\n");
-	s_printf("Login:> ");
+	if (!ssh) {
+		s_printf("\e[0mEnter your Login Name or NEW to create an account\r\n");
+		s_printf("Login:> ");
 
-	s_readstring(buffer, 25);
+		s_readstring(buffer, 25);
 
-	if (strcasecmp(buffer, "new") == 0) {
-		user = new_user();
-	} else {
-		s_printf("\r\nPassword:> ");
-		s_readpass(password, 16);
-		user = check_user_pass(buffer, password);
-		if (user == NULL) {
-			s_printf("\r\nIncorrect Login.\r\n");
-			disconnect("Incorrect Login");
-		}
+		if (strcasecmp(buffer, "new") == 0) {
+			user = new_user();
+		} else {
+			s_printf("\r\nPassword:> ");
+			s_readpass(password, 16);
+			user = check_user_pass(buffer, password);
+			if (user == NULL) {
+				s_printf("\r\nIncorrect Login.\r\n");
+				disconnect("Incorrect Login");
+			}
 
-		for (i=1;i<=conf.nodes;i++) {
-			sprintf(buffer, "%s/nodeinuse.%d", conf.bbs_path, i);
-			if (stat(buffer, &s) == 0) {
-				nodefile = fopen(buffer, "r");
-				if (!nodefile) {
-					dolog("Error opening nodefile!");
-					disconnect("Error opening nodefile!");
-				}
-				fgets(buffer, 256, nodefile);
+			for (i=1;i<=conf.nodes;i++) {
+				sprintf(buffer, "%s/nodeinuse.%d", conf.bbs_path, i);
+				if (stat(buffer, &s) == 0) {
+					nodefile = fopen(buffer, "r");
+					if (!nodefile) {
+						dolog("Error opening nodefile!");
+						disconnect("Error opening nodefile!");
+					}
+					fgets(buffer, 256, nodefile);
 
-				if (strcasecmp(user->loginname, buffer) == 0) {
+					if (strcasecmp(user->loginname, buffer) == 0) {
+						fclose(nodefile);
+						s_printf("\r\nYou are already logged in.\r\n");
+						disconnect("Already Logged in");
+					}
 					fclose(nodefile);
-					s_printf("\r\nYou are already logged in.\r\n");
-					disconnect("Already Logged in");
 				}
-				fclose(nodefile);
 			}
 		}
-	}
+	} else {
+		if (gUser != NULL) {
+			user = gUser;
+			s_printf("\e[0mWelcome back %s. Press enter to log in...\r\n", gUser->loginname);
+			s_getc();
+			for (i=1;i<=conf.nodes;i++) {
+				sprintf(buffer, "%s/nodeinuse.%d", conf.bbs_path, i);
+				if (stat(buffer, &s) == 0) {
+					nodefile = fopen(buffer, "r");
+					if (!nodefile) {
+						dolog("Error opening nodefile!");
+						disconnect("Error opening nodefile!");
+					}
+					fgets(buffer, 256, nodefile);
 
+					if (strcasecmp(user->loginname, buffer) == 0) {
+						fclose(nodefile);
+						s_printf("\r\nYou are already logged in.\r\n");
+						disconnect("Already Logged in");
+					}
+					fclose(nodefile);
+				}
+			}
+		} else {
+		 	gUser = new_user();
+			user = gUser;
+		}
+	}
 	sprintf(buffer, "%s/nodeinuse.%d", conf.bbs_path, mynode);
 	nodefile = fopen(buffer, "w");
 	if (!nodefile) {
@@ -648,4 +699,12 @@ void runbbs(int socket, char *ip) {
 	s_displayansi("goodbye");
 	dolog("%s is logging out, on node %d", user->loginname, mynode);
 	disconnect("Log out");
+}
+
+void runbbs(int socket, char *ip) {
+	runbbs_real(socket, ip, 0);
+}
+
+void runbbs_ssh(char *ip) {
+	runbbs_real(-1, ip, 1);
 }

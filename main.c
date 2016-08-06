@@ -17,8 +17,14 @@
 
 extern struct bbs_config conf;
 extern struct user_record *gUser;
+
+int ssh_pid = -1;
+
 void sigterm_handler(int s)
 {
+	if (ssh_pid != -1) {
+		kill(ssh_pid, SIGTERM);
+	}
 	remove(conf.pid_file);
 	exit(0);
 }
@@ -376,12 +382,85 @@ int ssh_authenticate(ssh_session p_ssh_session) {
 	} while(1);
 }
 
+char *ssh_getip(ssh_session session) {
+  struct sockaddr_storage tmp;
+  struct sockaddr_in *sock;
+  unsigned int len = 100;
+  char ip[100] = "\0";
+
+  getpeername(ssh_get_fd(session), (struct sockaddr*)&tmp, &len);
+  sock = (struct sockaddr_in *)&tmp;
+  inet_ntop(AF_INET, &sock->sin_addr, ip, len);
+
+	return strdup(ip);
+}
+
+static int ssh_copy_fd_to_chan(socket_t fd, int revents, void *userdata) {
+  ssh_channel chan = (ssh_channel)userdata;
+  char buf[2048];
+  int sz = 0;
+
+  if(!chan) {
+    close(fd);
+    return -1;
+  }
+  if(revents & POLLIN) {
+    sz = read(fd, buf, 2048);
+    if(sz > 0) {
+      ssh_channel_write(chan, buf, sz);
+    }
+  }
+  if(revents & POLLHUP) {
+    ssh_channel_close(chan);
+    sz = -1;
+  }
+  return sz;
+}
+
+static int ssh_copy_chan_to_fd(ssh_session session,
+                                           ssh_channel channel,
+                                           void *data,
+                                           uint32_t len,
+                                           int is_stderr,
+                                           void *userdata) {
+  int fd = *(int*)userdata;
+  int sz;
+  (void)session;
+  (void)channel;
+  (void)is_stderr;
+
+  sz = write(fd, data, len);
+  return sz;
+}
+
+static void ssh_chan_close(ssh_session session, ssh_channel channel, void *userdata) {
+  int fd = *(int*)userdata;
+  (void)session;
+  (void)channel;
+
+  close(fd);
+}
+
+struct ssh_channel_callbacks_struct ssh_cb = {
+	.channel_data_function = ssh_copy_chan_to_fd,
+  .channel_eof_function = ssh_chan_close,
+  .channel_close_function = ssh_chan_close,
+	.userdata = NULL
+};
+
 void serverssh(int port) {
 	ssh_session p_ssh_session;
 	ssh_bind p_ssh_bind;
 	int err;
 	int pid;
+	int shell;
+	int fd;
 	ssh_channel chan = 0;
+	int bbs_pid;
+	char *ip;
+	ssh_event event;
+	short events;
+
 	err = ssh_init();
 	if (err == -1) {
 		fprintf(stderr, "Error starting SSH server.\n");
@@ -458,8 +537,45 @@ void serverssh(int port) {
 						exit(-1);
 					}
 
-					
+					ip = ssh_getip(p_ssh_session);
+
+					bbs_pid = forkpty(&fd, NULL, NULL, NULL);
+					if (bbs_pid == 0) {
+						runbbs_ssh(ip);
+						exit(0);
+					}
+					free(ip);
+					ssh_cb.userdata = &fd;
+					ssh_callbacks_init(&ssh_cb);
+					ssh_set_channel_callbacks(chan, &cb);
+
+					events = POLLIN | POLLPRI | POLLERR | POLLHUP | POLLNVAL;
+
+					event = ssh_event_new();
+					if(event == NULL) {
+						ssh_finalize();
+						exit(0);
+					}
+					if(ssh_event_add_fd(event, fd, events, ssh_copy_fd_to_chan, chan) != SSH_OK) {
+						ssh_finalize();
+						exit(0);
+					}
+					if(ssh_event_add_session(event, p_ssh_session) != SSH_OK) {
+						ssh_finalize();
+						exit(0);
+					}
+
+					do {
+						ssh_event_dopoll(event, 1000);
+					} while(!ssh_channel_is_closed(chan));
+
+					ssh_event_remove_fd(event, fd);
+
+					ssh_event_remove_session(event, p_ssh_session);
+
+					ssh_event_free(event);
 				}
+				ssh_finalize();
 				exit(0);
 			} else if (pid > 0) {
 
@@ -492,6 +608,19 @@ void server(int port) {
 			remove(conf.pid_file);
 			perror("sigaction");
 			exit(1);
+	}
+
+	if (conf.ssh_server) {
+		// fork ssh server
+		ssh_pid = fork();
+
+		if (ssh_pid > 0) {
+			serverssh(conf.ssh_port);
+			exit(0);
+		}
+		if (ssh_pid != 0) {
+			fprintf(stderr, "Error forking ssh server.");
+		}
 	}
 
 	socket_desc = socket(AF_INET, SOCK_STREAM, 0);

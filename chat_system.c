@@ -110,8 +110,9 @@ void chat_system(struct user_record *user) {
 	char *message;
 	char *sep;
 	char *target;
-    memset(inputbuffer, 0, 80);
-    if (conf.irc_server == NULL) {
+
+	memset(inputbuffer, 0, 80);
+  if (conf.irc_server == NULL) {
 		s_putstring("\r\nSorry, Chat is not supported on this system.\r\n");
 		return;
 	}
