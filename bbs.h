@@ -90,6 +90,12 @@ struct bbs_config {
 	char *echomail_sem;
 	char *netmail_sem;
 	char *default_tagline;
+	int telnet_port;
+
+	int ssh_server;
+	int ssh_port;
+	char *ssh_dsa_key;
+	char *ssh_rsa_key;
 
 	char *irc_server;
 	int irc_port;
