@@ -705,7 +705,6 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 	char *replybody;
 	struct fido_addr *from_addr = NULL;
 	int i, j;
-	char *dest_addr;
 	char timestr[17];
 	int doquit = 0;
 	int skip_line = 0;
@@ -1367,7 +1366,15 @@ int mail_menu(struct user_record *user) {
 					subject = strdup(buffer);
 
 					// post a message
+					if (conf.mail_conferences[user->cur_mail_conf]->realnames == 0) {
+						from = strdup(user->loginname);
+					} else {
+						from = (char *)malloc(strlen(user->firstname) + strlen(user->lastname) + 2);
+						sprintf(from, "%s %s", user->firstname, user->lastname);
+					}
 					msg = external_editor(user, to, from, NULL, NULL, subject, 0);
+
+					free(from);
 
 					if (msg != NULL) {
 						jb = open_jam_base(conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
@@ -1392,7 +1399,7 @@ int mail_menu(struct user_record *user) {
 							if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_WWIV) {
 								sprintf(buffer, "%s #%d @%d (%s)", user->loginname, user->id, conf.mail_conferences[user->cur_mail_conf]->wwivnode, user->firstname);
 							} else {
-								sprintf(from, "%s %s", user->firstname, user->lastname);
+								sprintf(buffer, "%s %s", user->firstname, user->lastname);
 							}
 						}
 
