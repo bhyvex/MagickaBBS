@@ -68,7 +68,7 @@ void main_menu(struct user_record *user) {
 		switch(tolower(c)) {
 			case 'o':
 				{
-					automessage_write(socket, user);
+					automessage_write(user);
 				}
 				break;
 			case 'a':
