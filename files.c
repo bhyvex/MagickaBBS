@@ -368,7 +368,12 @@ void download(struct user_record *user) {
 	sqlite3 *db;
   sqlite3_stmt *res;
   int rc;
-
+	struct termios oldit;
+	struct termios oldot;
+	if (sshBBS) {
+		ttySetRaw(STDIN_FILENO, &oldit);
+		ttySetRaw(STDOUT_FILENO, &oldot);
+	}
 	for (i=0;i<tagged_count;i++) {
 
 		download_zmodem(user, tagged_files[i]);
@@ -416,6 +421,11 @@ void download(struct user_record *user) {
 
 		sqlite3_finalize(res);
 		sqlite3_close(db);
+	}
+	
+	if (sshBBS) {
+		tcsetattr(STDIN_FILENO, TCSANOW, &oldit);
+		tcsetattr(STDOUT_FILENO, TCSANOW, &oldot);
 	}
 
 	for (i=0;i<tagged_count;i++) {
