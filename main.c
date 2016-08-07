@@ -528,11 +528,11 @@ void serverssh(int port) {
 							if (ssh_message_type(message) == SSH_REQUEST_CHANNEL) {
 								if (ssh_message_subtype(message) == SSH_CHANNEL_REQUEST_SHELL) {
 									shell  = 1;
-									ssh_channel_request_reply_success(message);
+									ssh_message_channel_request_reply_success(message);
 									ssh_message_free(message);
 									break;
 								} else if (ssh_message_subtype(message) == SSH_CHANNEL_REQUEST_PTY) {
-									ssh_channel_request_reply_success(message);
+									ssh_message_channel_request_reply_success(message);
 									ssh_message_free(message);
 									continue;
 								}
