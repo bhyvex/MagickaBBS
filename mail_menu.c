@@ -738,13 +738,12 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 		} else {
 			s_printf("\e[2J\e[1;32mFrom    : \e[1;37m%s\r\n", msghs->msgs[mailno]->from);
 		}
-		s_printf("\e[1;32mTo      : \e[1;37m%-27.27s \e[1;32mArea     : \e[1;37m%-27.27s\r\n", msghs->msgs[mailno]->to, conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->name);
-		s_printf("\e[1;32mSubject : \e[1;37m%-27.27s \e[1;32mMsgNo    : \e[1;37m%4d of %4d\r\n", msghs->msgs[mailno]->subject, mailno + 1, msghs->msg_count);
+		s_printf("\e[1;32mTo      : \e[1;37m%-27.27s \e[1;32mConf     : \e[1;37m%-27.27s\r\n", msghs->msgs[mailno]->to, conf.mail_conferences[user->cur_mail_conf]->name);
+		s_printf("\e[1;32mSubject : \e[1;37m%-27.27s \e[1;32mArea     : \e[1;37m%-27.27s\r\n", msghs->msgs[mailno]->subject, conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->name);
 		localtime_r((time_t *)&msghs->msgs[mailno]->msg_h->DateWritten, &msg_date);
 		sprintf(buffer, "\e[1;32mDate    : \e[1;37m%s", asctime(&msg_date));
 		buffer[strlen(buffer) - 1] = '\0';
-		strcat(buffer, "\r\n");
-		s_printf(buffer);
+		s_printf("%s     \e[1;32mMsgNo    : \e[1;37m%4d of %4d\r\n", buffer, mailno + 1, msghs->msg_count);
 		s_printf("\e[1;32mAttribs : \e[1;37m%s\r\n", (msghs->msgs[mailno]->msg_h->Attribute & MSG_SENT ? "SENT" : ""));
 		s_printf("\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
 
