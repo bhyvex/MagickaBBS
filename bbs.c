@@ -156,7 +156,7 @@ void s_putstring(char *c) {
 	int i;
 	if (sshBBS) {
 		for (i=0;i<strlen(c);i++) {
-			putchar(c);
+			putchar(c[i]);
 		}
 	} else {
 		write(gSocket, c, strlen(c));
