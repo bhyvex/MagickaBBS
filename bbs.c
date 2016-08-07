@@ -26,7 +26,7 @@ int timeoutpaused;
 
 char *ipaddress;
 
-void sigterm_handler(int s)
+void sigterm_handler2(int s)
 {
 	if (mynode != 0) {
 		disconnect("Terminated.");
@@ -511,7 +511,7 @@ void runbbs_real(int socket, char *ip, int ssh) {
 		sshBBS = 1;
 	}
 
-	st.sa_handler = sigterm_handler;
+	st.sa_handler = sigterm_handler2;
 	sigemptyset(&st.sa_mask);
 	if (sigaction(SIGTERM, &st, NULL) == -1) {
 		dolog("Failed to setup sigterm handler.");
