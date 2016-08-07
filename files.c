@@ -154,7 +154,7 @@ int doIO(ZModem *zm) {
 
 			pos = 0;
 			for (j=0;j<len;j++) {
-				if (buffer[j] == 255) {
+				if (buffer[j] == 255 && !sshBBS) {
 					if (buffer[j+1] == 255) {
 						buffer2[pos] = 255;
 						pos++;
@@ -227,7 +227,7 @@ void upload(struct user_record *user) {
   struct stat s;
   char *err_msg = NULL;
 	struct termios oldit;
-	struct termios oldot
+	struct termios oldot;
 	if (sshBBS) {
 		ttySetRaw(STDIN_FILENO, &oldit);
 		ttySetRaw(STDOUT_FILENO, &oldot);
