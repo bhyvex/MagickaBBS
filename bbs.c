@@ -204,7 +204,7 @@ char s_getchar() {
 	do {
 
 		if (sshBBS) {
-			len = read(stdin, &c, 1);
+			c = getchar();
 		} else {
 			len = read(gSocket, &c, 1);
 		}
