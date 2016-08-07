@@ -241,6 +241,7 @@ char s_getchar() {
 		}*/
 	} while (c == '\n');
 	usertimeout = 10;
+
 	return (char)c;
 }
 

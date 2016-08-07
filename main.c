@@ -556,6 +556,7 @@ void serverssh(int port) {
 
 					bbs_pid = forkpty(&fd, NULL, NULL, NULL);
 					if (bbs_pid == 0) {
+						setvbuf(stdin,NULL,_IONBF,0);
 						runbbs_ssh(ip);
 						exit(0);
 					}
