@@ -12,6 +12,7 @@
 extern struct bbs_config conf;
 extern int mynode;
 extern int gSocket;
+extern int sshBBS;
 
 static char **screenbuffer;
 static int chat_socket;
