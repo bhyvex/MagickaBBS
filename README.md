@@ -70,7 +70,9 @@ If you want to install Magicka BBS, follow these steps.
 10. If you are going to run SSH, you will need to create keys. To do this
 
   `mkdir keys`
+
 	`ssh-keygen -f keys/ssh_host_rsa_key -N '' -t rsa`
+	
 	`ssh-keygen -f keys/ssh_host_dsa_key -N '' -t dsa`
 
 11. Run Magicka BBS on a port over 1024 (Below require root, and we're not ready for that).
