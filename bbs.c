@@ -31,6 +31,7 @@ void sigterm_handler2(int s)
 	if (mynode != 0) {
 		disconnect("Terminated.");
 	}
+	dolog("Terminated...");
 	exit(0);
 }
 

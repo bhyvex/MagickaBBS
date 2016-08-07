@@ -30,6 +30,7 @@ extern struct bbs_config conf;
 extern struct user_record *gUser;
 
 int ssh_pid = -1;
+int bbs_pid = 0;
 
 void sigterm_handler(int s)
 {
@@ -449,7 +450,8 @@ static void ssh_chan_close(ssh_session session, ssh_channel channel, void *userd
 	int fd = *(int*)userdata;
   (void)session;
   (void)channel;
-
+	kill(bbs_pid, SIGTERM);
+	sleep(10);
   close(fd);
 }
 
@@ -468,7 +470,6 @@ void serverssh(int port) {
 	int shell = 0;
 	int fd;
 	ssh_channel chan = 0;
-	int bbs_pid;
 	char *ip;
 	ssh_event event;
 	short events;
@@ -593,8 +594,6 @@ void serverssh(int port) {
 						ssh_event_dopoll(event, 1000);
 					} while(!ssh_channel_is_closed(chan));
 
-
-
 					ssh_event_remove_fd(event, fd);
 
 					ssh_event_remove_session(event, p_ssh_session);
@@ -603,7 +602,7 @@ void serverssh(int port) {
 				}
 				ssh_disconnect(p_ssh_session);
 				ssh_finalize();
-				kill(bbs_pid, SIGTERM);
+
 				exit(0);
 			} else if (pid > 0) {
 
