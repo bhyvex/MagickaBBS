@@ -518,6 +518,7 @@ void serverssh(int port) {
 						}
 					} while(!chan);
 					if (!chan) {
+						fprintf(stderr, "Failed to get channel\n");
 						ssh_finalize();
 						exit(-1);
 					}
@@ -543,6 +544,7 @@ void serverssh(int port) {
 					} while (!shell);
 
 					if (!shell) {
+						fprintf(stderr, "Failed to get shell\n");
 						ssh_finalize();
 						exit(-1);
 					}

@@ -567,6 +567,8 @@ void runbbs_real(int socket, char *ip, int ssh) {
 				disconnect("Incorrect Login");
 			}
 
+			gUser = user;
+
 			for (i=1;i<=conf.nodes;i++) {
 				sprintf(buffer, "%s/nodeinuse.%d", conf.bbs_path, i);
 				if (stat(buffer, &s) == 0) {
@@ -639,7 +641,7 @@ void runbbs_real(int socket, char *ip, int ssh) {
 		user->laston = now;
 		save_user(user);
 	}
-	gUser = user;
+
 	user->timeson++;
 
 
