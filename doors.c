@@ -23,6 +23,7 @@
 extern struct bbs_config conf;
 extern int mynode;
 extern int gSocket;
+extern int sshBBS;
 
 int running_door_pid = 0;
 int running_door = 0;
