@@ -562,9 +562,9 @@ void serverssh(int port) {
 
 					bbs_pid = forkpty(&fd, NULL, NULL, NULL);
 					if (bbs_pid == 0) {
-						tcgetattr(master, &tios);
+						tcgetattr(STDIN_FILENO, &tios);
 						tios.c_lflag &= ~(ICANON | ECHO | ECHONL);
-						tcsetattr(master, TCSAFLUSH, &tios);
+						tcsetattr(STDIN_FILENO, TCSAFLUSH, &tios);
 						runbbs_ssh(ip);
 						exit(0);
 					}
