@@ -414,6 +414,9 @@ static int ssh_copy_fd_to_chan(socket_t fd, int revents, void *userdata) {
   int sz = 0;
 
   if(!chan) {
+		if (mynode != 0) {
+			disconnect("Channel Closed");
+		}
     close(fd);
     return -1;
   }
