@@ -11,7 +11,17 @@
 #include <errno.h>
 #include <arpa/inet.h>
 #include <libssh/libssh.h>
+#include <libssh/server.h>
+#include <libssh/callbacks.h>
 #include <string.h>
+#include <poll.h>
+#if defined(linux)
+#  include <pty.h>
+#elif defined(__OpenBSD__) || defined(__NetBSD__)
+#  include <util.h>
+#else
+#  include <libutil.h>
+#endif
 #include "bbs.h"
 #include "inih/ini.h"
 
@@ -345,7 +355,7 @@ int ssh_authenticate(ssh_session p_ssh_session) {
 	char *password;
 
 	do {
-		msg = ssh_message_get(p_ssh_session);
+		message = ssh_message_get(p_ssh_session);
 		switch(ssh_message_type(message)) {
 			case SSH_REQUEST_AUTH:
 				switch(ssh_message_subtype(message)) {
@@ -460,7 +470,7 @@ void serverssh(int port) {
 	char *ip;
 	ssh_event event;
 	short events;
-
+	ssh_message message;
 	err = ssh_init();
 	if (err == -1) {
 		fprintf(stderr, "Error starting SSH server.\n");
@@ -475,12 +485,12 @@ void serverssh(int port) {
 	p_ssh_bind = ssh_bind_new();
 	if (p_ssh_bind == NULL) {
 		fprintf(stderr, "Error starting SSH server.\n");
-		exit(-1)
+		exit(-1);
 	}
 
-	ssh_bind_options_set(pSshBind, SSH_BIND_OPTIONS_BINDPORT, &port);
-	ssh_bind_options_set(pSshBind, SSH_BIND_OPTIONS_DSAKEY, conf.ssh_dsa_key);
-	ssh_bind_options_set(pSshBind, SSH_BIND_OPTIONS_RSAKEY, conf.ssh_rsa_key);
+	ssh_bind_options_set(p_ssh_bind, SSH_BIND_OPTIONS_BINDPORT, &port);
+	ssh_bind_options_set(p_ssh_bind, SSH_BIND_OPTIONS_DSAKEY, conf.ssh_dsa_key);
+	ssh_bind_options_set(p_ssh_bind, SSH_BIND_OPTIONS_RSAKEY, conf.ssh_rsa_key);
 
 	ssh_bind_listen(p_ssh_bind);
 
@@ -743,9 +753,9 @@ int main(int argc, char **argv) {
 				fclose(fptr);
 			}
 		} else {
-			server(conf.port);
+			server(conf.telnet_port);
 		}
 	} else {
-		server(conf.port);
+		server(conf.telnet_port);
 	}
 }
