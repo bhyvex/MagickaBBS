@@ -7,6 +7,7 @@
 #include <libgen.h>
 #include <ctype.h>
 #include <errno.h>
+#include <termios.h>
 #include "Xmodem/zmodem.h"
 #include "bbs.h"
 #include "lua/lua.h"
@@ -25,6 +26,27 @@ struct file_entry {
 
 char **tagged_files;
 int tagged_count = 0;
+
+int ttySetRaw(int fd, struct termios *prevTermios) {
+    struct termios t;
+
+    if (tcgetattr(fd, &t) == -1)
+        return -1;
+
+    if (prevTermios != NULL)
+        *prevTermios = t;
+
+    t.c_lflag &= ~(ICANON | ISIG | IEXTEN | ECHO);
+    t.c_iflag &= ~(BRKINT | ICRNL | IGNBRK | IGNCR | INLCR | INPCK | ISTRIP | IXON | PARMRK);
+    t.c_oflag &= ~OPOST;
+    t.c_cc[VMIN] = 1;
+    t.c_cc[VTIME] = 0;
+
+    if (tcsetattr(fd, TCSAFLUSH, &t) == -1)
+        return -1;
+
+    return 0;
+}
 
 int ZXmitStr(u_char *str, int len, ZModem *info) {
 	int i;
@@ -204,8 +226,15 @@ void upload(struct user_record *user) {
   int rc;
   struct stat s;
   char *err_msg = NULL;
+	struct termios oldt;
 
+	if (sshBBS) {
+		ttySetRaw(STDIN_FILENO, &oldt);
+	}
 	upload_zmodem(user);
+	if (sshBBS) {
+		tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+	}
 
 	s_printf("\r\nPlease enter a description:\r\n");
 	buffer[0] = '\0';
@@ -339,6 +368,7 @@ void download(struct user_record *user) {
   int rc;
 
 	for (i=0;i<tagged_count;i++) {
+
 		download_zmodem(user, tagged_files[i]);
 
 		sprintf(buffer, "%s/%s.sq3", conf.bbs_path, conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->database);
