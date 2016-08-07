@@ -153,8 +153,11 @@ void s_putchar(char c) {
 }
 
 void s_putstring(char *c) {
+	int i;
 	if (sshBBS) {
-		printf("%s", c);
+		for (i=0;i<strlen(c);i++) {
+			putchar(c);
+		}
 	} else {
 		write(gSocket, c, strlen(c));
 	}
