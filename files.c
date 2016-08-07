@@ -7,6 +7,7 @@
 #include <libgen.h>
 #include <ctype.h>
 #include <errno.h>
+#include <termios.h>
 #include "Xmodem/zmodem.h"
 #include "bbs.h"
 #include "lua/lua.h"
@@ -14,6 +15,7 @@
 #include "lua/lauxlib.h"
 extern struct bbs_config conf;
 extern int gSocket;
+extern int sshBBS;
 
 struct file_entry {
 	char *filename;
@@ -25,11 +27,32 @@ struct file_entry {
 char **tagged_files;
 int tagged_count = 0;
 
+int ttySetRaw(int fd, struct termios *prevTermios) {
+    struct termios t;
+
+    if (tcgetattr(fd, &t) == -1)
+        return -1;
+
+    if (prevTermios != NULL)
+        *prevTermios = t;
+
+    t.c_lflag &= ~(ICANON | ISIG | IEXTEN | ECHO);
+    t.c_iflag &= ~(BRKINT | ICRNL | IGNBRK | IGNCR | INLCR | INPCK | ISTRIP | IXON | PARMRK);
+    t.c_oflag &= ~OPOST;
+    t.c_cc[VMIN] = 1;
+    t.c_cc[VTIME] = 0;
+
+    if (tcsetattr(fd, TCSAFLUSH, &t) == -1)
+        return -1;
+
+    return 0;
+}
+
 int ZXmitStr(u_char *str, int len, ZModem *info) {
 	int i;
 
 	for (i=0;i<len;i++) {
-		if (str[i] == 255) {
+		if (str[i] == 255 && !sshBBS) {
 			if (write(info->ofd, &str[i], 1) == 0) {
 				return ZmErrSys;
 			}
@@ -131,7 +154,7 @@ int doIO(ZModem *zm) {
 
 			pos = 0;
 			for (j=0;j<len;j++) {
-				if (buffer[j] == 255) {
+				if (buffer[j] == 255 && !sshBBS) {
 					if (buffer[j+1] == 255) {
 						buffer2[pos] = 255;
 						pos++;
@@ -168,9 +191,13 @@ void upload_zmodem(struct user_record *user) {
 	zm.windowsize = 0;
 	zm.bufsize = 0;
 
-	zm.ifd = gSocket;
-	zm.ofd = gSocket;
-
+	if (!sshBBS) {
+		zm.ifd = gSocket;
+		zm.ofd = gSocket;
+	} else {
+		zm.ifd = STDIN_FILENO;
+		zm.ofd = STDOUT_FILENO;
+	}
 	zm.zrinitflags = 0;
 	zm.zsinitflags = 0;
 
@@ -199,8 +226,17 @@ void upload(struct user_record *user) {
   int rc;
   struct stat s;
   char *err_msg = NULL;
-
+	struct termios oldit;
+	struct termios oldot;
+	if (sshBBS) {
+		ttySetRaw(STDIN_FILENO, &oldit);
+		ttySetRaw(STDOUT_FILENO, &oldot);
+	}
 	upload_zmodem(user);
+	if (sshBBS) {
+		tcsetattr(STDIN_FILENO, TCSANOW, &oldit);
+		tcsetattr(STDOUT_FILENO, TCSANOW, &oldot);
+	}
 
 	s_printf("\r\nPlease enter a description:\r\n");
 	buffer[0] = '\0';
@@ -268,9 +304,13 @@ void download_zmodem(struct user_record *user, char *filename) {
 	zm.windowsize = 0;
 	zm.bufsize = 0;
 
-	zm.ifd = gSocket;
-	zm.ofd = gSocket;
-
+	if (!sshBBS) {
+		zm.ifd = gSocket;
+		zm.ofd = gSocket;
+	} else {
+		zm.ifd = STDIN_FILENO;
+		zm.ofd = STDOUT_FILENO;
+	}
 	zm.zrinitflags = 0;
 	zm.zsinitflags = 0;
 
@@ -328,8 +368,14 @@ void download(struct user_record *user) {
 	sqlite3 *db;
   sqlite3_stmt *res;
   int rc;
-
+	struct termios oldit;
+	struct termios oldot;
+	if (sshBBS) {
+		ttySetRaw(STDIN_FILENO, &oldit);
+		ttySetRaw(STDOUT_FILENO, &oldot);
+	}
 	for (i=0;i<tagged_count;i++) {
+
 		download_zmodem(user, tagged_files[i]);
 
 		sprintf(buffer, "%s/%s.sq3", conf.bbs_path, conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->database);
@@ -375,6 +421,11 @@ void download(struct user_record *user) {
 
 		sqlite3_finalize(res);
 		sqlite3_close(db);
+	}
+	
+	if (sshBBS) {
+		tcsetattr(STDIN_FILENO, TCSANOW, &oldit);
+		tcsetattr(STDOUT_FILENO, TCSANOW, &oldot);
 	}
 
 	for (i=0;i<tagged_count;i++) {

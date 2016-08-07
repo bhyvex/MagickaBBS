@@ -12,6 +12,7 @@
 extern struct bbs_config conf;
 extern int mynode;
 extern int gSocket;
+extern int sshBBS;
 
 static char **screenbuffer;
 static int chat_socket;
@@ -110,8 +111,16 @@ void chat_system(struct user_record *user) {
 	char *message;
 	char *sep;
 	char *target;
-    memset(inputbuffer, 0, 80);
-    if (conf.irc_server == NULL) {
+	int chat_in;
+
+	if (sshBBS) {
+		chat_in = STDIN_FILENO;
+	} else {
+		chat_in = gSocket;
+	}
+
+	memset(inputbuffer, 0, 80);
+  if (conf.irc_server == NULL) {
 		s_putstring("\r\nSorry, Chat is not supported on this system.\r\n");
 		return;
 	}
@@ -151,20 +160,20 @@ void chat_system(struct user_record *user) {
 
 	while (1) {
 		FD_ZERO(&fds);
-		FD_SET(gSocket, &fds);
+		FD_SET(chat_in, &fds);
 		FD_SET(chat_socket, &fds);
 
-		if (chat_socket > gSocket) {
+		if (chat_socket > chat_in) {
 			t = chat_socket + 1;
 		} else {
-			t = gSocket + 1;
+			t = chat_in + 1;
 		}
 
 		ret = select(t, &fds, NULL, NULL, NULL);
 
 		if (ret > 0) {
-			if (FD_ISSET(gSocket, &fds)) {
-				len = read(gSocket, &c, 1);
+			if (FD_ISSET(chat_in, &fds)) {
+				len = read(chat_in, &c, 1);
 				if (len == 0) {
 					raw("QUIT\r\n");
 					disconnect("Socket closed");

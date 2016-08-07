@@ -10,14 +10,33 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <arpa/inet.h>
+#include <libssh/libssh.h>
+#include <libssh/server.h>
+#include <libssh/callbacks.h>
 #include <string.h>
+#include <poll.h>
+#if defined(linux)
+#  include <pty.h>
+#elif defined(__OpenBSD__) || defined(__NetBSD__)
+#  include <util.h>
+#else
+#  include <libutil.h>
+#endif
+#include <termios.h>
 #include "bbs.h"
 #include "inih/ini.h"
 
 extern struct bbs_config conf;
+extern struct user_record *gUser;
+
+int ssh_pid = -1;
+int bbs_pid = 0;
 
 void sigterm_handler(int s)
 {
+	if (ssh_pid != -1) {
+		kill(ssh_pid, SIGTERM);
+	}
 	remove(conf.pid_file);
 	exit(0);
 }
@@ -228,6 +247,20 @@ static int handler(void* user, const char* section, const char* name,
 	if (strcasecmp(section, "main") == 0) {
 		if (strcasecmp(name, "bbs name") == 0) {
 			conf->bbs_name = strdup(value);
+		} else if (strcasecmp(name, "telnet port") == 0) {
+			conf->telnet_port = atoi(value);
+		} else if (strcasecmp(name, "enable ssh") == 0) {
+			if (strcasecmp(value, "true") == 0) {
+				conf->ssh_server = 1;
+			} else {
+				conf->ssh_server = 0;
+			}
+		} else if (strcasecmp(name, "ssh port") == 0) {
+			conf->ssh_port = atoi(value);
+		} else if (strcasecmp(name, "ssh dsa key") == 0) {
+			conf->ssh_dsa_key = strdup(value);
+		} else if (strcasecmp(name, "ssh rsa key") == 0) {
+			conf->ssh_rsa_key = strdup(value);
 		} else if (strcasecmp(name, "sysop name") == 0) {
 			conf->sysop_name = strdup(value);
 		} else if (strcasecmp(name, "nodes") == 0) {
@@ -318,6 +351,268 @@ static int handler(void* user, const char* section, const char* name,
 	return 1;
 }
 
+int ssh_authenticate(ssh_session p_ssh_session) {
+	ssh_message message;
+	char *username;
+	char *password;
+
+	do {
+		message = ssh_message_get(p_ssh_session);
+		switch(ssh_message_type(message)) {
+			case SSH_REQUEST_AUTH:
+				switch(ssh_message_subtype(message)) {
+					case SSH_AUTH_METHOD_PASSWORD:
+						username = ssh_message_auth_user(message);
+						password = ssh_message_auth_password(message);
+
+						if (strcasecmp(username, "new") == 0 && strcasecmp(password, "new") == 0) {
+							ssh_message_auth_reply_success(message, 0);
+							ssh_message_free(message);
+							gUser = NULL;
+							return 1;
+						}
+						gUser = check_user_pass(username, password);
+						if (gUser != NULL) {
+							ssh_message_auth_reply_success(message, 0);
+							ssh_message_free(message);
+							return 1;
+						}
+						ssh_message_free(message);
+						return 0;
+					case SSH_AUTH_METHOD_NONE:
+					default:
+						ssh_message_auth_set_methods(message, SSH_AUTH_METHOD_PASSWORD | SSH_AUTH_METHOD_INTERACTIVE);
+						ssh_message_reply_default(message);
+						break;
+				}
+				break;
+			default:
+				ssh_message_auth_set_methods(message, SSH_AUTH_METHOD_PASSWORD | SSH_AUTH_METHOD_INTERACTIVE);
+				ssh_message_reply_default(message);
+				break;
+		}
+		ssh_message_free(message);
+	} while(1);
+}
+
+char *ssh_getip(ssh_session session) {
+  struct sockaddr_storage tmp;
+  struct sockaddr_in *sock;
+  unsigned int len = 100;
+  char ip[100] = "\0";
+
+  getpeername(ssh_get_fd(session), (struct sockaddr*)&tmp, &len);
+  sock = (struct sockaddr_in *)&tmp;
+  inet_ntop(AF_INET, &sock->sin_addr, ip, len);
+
+	return strdup(ip);
+}
+
+static int ssh_copy_fd_to_chan(socket_t fd, int revents, void *userdata) {
+  ssh_channel chan = (ssh_channel)userdata;
+  char buf[2048];
+  int sz = 0;
+
+  if(!chan) {
+    close(fd);
+    return -1;
+  }
+  if(revents & POLLIN) {
+    sz = read(fd, buf, 2048);
+    if(sz > 0) {
+      ssh_channel_write(chan, buf, sz);
+    }
+  }
+  if(revents & POLLHUP) {
+    ssh_channel_close(chan);
+    sz = -1;
+  }
+  return sz;
+}
+
+static int ssh_copy_chan_to_fd(ssh_session session,
+                                           ssh_channel channel,
+                                           void *data,
+                                           uint32_t len,
+                                           int is_stderr,
+                                           void *userdata) {
+  int fd = *(int*)userdata;
+  int sz;
+  (void)session;
+  (void)channel;
+  (void)is_stderr;
+
+  sz = write(fd, data, len);
+  return sz;
+}
+
+static void ssh_chan_close(ssh_session session, ssh_channel channel, void *userdata) {
+	int fd = *(int*)userdata;
+  (void)session;
+  (void)channel;
+	kill(bbs_pid, SIGTERM);
+	sleep(10);
+  close(fd);
+}
+
+struct ssh_channel_callbacks_struct ssh_cb = {
+	.channel_data_function = ssh_copy_chan_to_fd,
+  .channel_eof_function = ssh_chan_close,
+  .channel_close_function = ssh_chan_close,
+	.userdata = NULL
+};
+
+void serverssh(int port) {
+	ssh_session p_ssh_session;
+	ssh_bind p_ssh_bind;
+	int err;
+	int pid;
+	int shell = 0;
+	int fd;
+	ssh_channel chan = 0;
+	char *ip;
+	ssh_event event;
+	short events;
+	ssh_message message;
+	struct termios tios;
+
+
+	err = ssh_init();
+	if (err == -1) {
+		fprintf(stderr, "Error starting SSH server.\n");
+		exit(-1);
+	}
+	p_ssh_session = ssh_new();
+	if (p_ssh_session == NULL) {
+		fprintf(stderr, "Error starting SSH server.\n");
+		exit(-1);
+	}
+
+	p_ssh_bind = ssh_bind_new();
+	if (p_ssh_bind == NULL) {
+		fprintf(stderr, "Error starting SSH server.\n");
+		exit(-1);
+	}
+
+	ssh_bind_options_set(p_ssh_bind, SSH_BIND_OPTIONS_BINDPORT, &port);
+	ssh_bind_options_set(p_ssh_bind, SSH_BIND_OPTIONS_DSAKEY, conf.ssh_dsa_key);
+	ssh_bind_options_set(p_ssh_bind, SSH_BIND_OPTIONS_RSAKEY, conf.ssh_rsa_key);
+
+	ssh_bind_listen(p_ssh_bind);
+
+	while (1) {
+		if (ssh_bind_accept(p_ssh_bind, p_ssh_session) == SSH_OK) {
+			pid = fork();
+			if (pid == 0) {
+				if (ssh_handle_key_exchange(p_ssh_session)) {
+					exit(-1);
+				}
+				if (ssh_authenticate(p_ssh_session) == 1) {
+					do {
+						message = ssh_message_get(p_ssh_session);
+						if (message) {
+
+							if (ssh_message_type(message) == SSH_REQUEST_CHANNEL_OPEN && ssh_message_subtype(message) == SSH_CHANNEL_SESSION) {
+								chan = ssh_message_channel_request_open_reply_accept(message);
+								ssh_message_free(message);
+								break;
+							} else {
+								ssh_message_reply_default(message);
+								ssh_message_free(message);
+							}
+						} else {
+							break;
+						}
+					} while(!chan);
+					if (!chan) {
+						fprintf(stderr, "Failed to get channel\n");
+						ssh_finalize();
+						exit(-1);
+					}
+
+					do {
+						message = ssh_message_get(p_ssh_session);
+						if (message) {
+							if (ssh_message_type(message) == SSH_REQUEST_CHANNEL) {
+								if (ssh_message_subtype(message) == SSH_CHANNEL_REQUEST_SHELL) {
+									shell  = 1;
+									ssh_message_channel_request_reply_success(message);
+									ssh_message_free(message);
+									break;
+								} else if (ssh_message_subtype(message) == SSH_CHANNEL_REQUEST_PTY) {
+									ssh_message_channel_request_reply_success(message);
+									ssh_message_free(message);
+									continue;
+								}
+							}
+						} else {
+							break;
+						}
+					} while (!shell);
+
+					if (!shell) {
+						fprintf(stderr, "Failed to get shell\n");
+						ssh_finalize();
+						exit(-1);
+					}
+
+					ip = ssh_getip(p_ssh_session);
+
+
+
+					bbs_pid = forkpty(&fd, NULL, NULL, NULL);
+					if (bbs_pid == 0) {
+						tcgetattr(STDIN_FILENO, &tios);
+						tios.c_lflag &= ~(ICANON | ECHO | ECHONL);
+						tios.c_iflag &= INLCR;
+						tcsetattr(STDIN_FILENO, TCSAFLUSH, &tios);
+						runbbs_ssh(ip);
+						exit(0);
+					}
+					free(ip);
+					ssh_cb.userdata = &fd;
+					ssh_callbacks_init(&ssh_cb);
+					ssh_set_channel_callbacks(chan, &ssh_cb);
+
+					events = POLLIN | POLLPRI | POLLERR | POLLHUP | POLLNVAL;
+
+					event = ssh_event_new();
+					if(event == NULL) {
+						ssh_finalize();
+						exit(0);
+					}
+					if(ssh_event_add_fd(event, fd, events, ssh_copy_fd_to_chan, chan) != SSH_OK) {
+						ssh_finalize();
+						exit(0);
+					}
+					if(ssh_event_add_session(event, p_ssh_session) != SSH_OK) {
+						ssh_finalize();
+						exit(0);
+					}
+
+					do {
+						ssh_event_dopoll(event, 1000);
+					} while(!ssh_channel_is_closed(chan));
+
+					ssh_event_remove_fd(event, fd);
+
+					ssh_event_remove_session(event, p_ssh_session);
+
+					ssh_event_free(event);
+				}
+				ssh_disconnect(p_ssh_session);
+				ssh_finalize();
+
+				exit(0);
+			} else if (pid > 0) {
+
+			} else {
+
+			}
+		}
+	}
+}
+
 void server(int port) {
 	struct sigaction sa;
 	struct sigaction st;
@@ -340,6 +635,19 @@ void server(int port) {
 			remove(conf.pid_file);
 			perror("sigaction");
 			exit(1);
+	}
+
+	if (conf.ssh_server) {
+		// fork ssh server
+		ssh_pid = fork();
+
+		if (ssh_pid > 0) {
+			serverssh(conf.ssh_port);
+			exit(0);
+		}
+		if (ssh_pid != 0) {
+			fprintf(stderr, "Error forking ssh server.");
+		}
 	}
 
 	socket_desc = socket(AF_INET, SOCK_STREAM, 0);
@@ -390,15 +698,13 @@ void server(int port) {
 }
 
 int main(int argc, char **argv) {
-	int port;
-
 	int i;
 	int main_pid;
 	FILE *fptr;
 	struct stat s;
 
-	if (argc < 3) {
-		fprintf(stderr, "Usage ./magicka config/bbs.ini port\n");
+	if (argc < 2) {
+		fprintf(stderr, "Usage ./magicka config/bbs.ini\n");
 		exit(1);
 	}
 
@@ -414,6 +720,7 @@ int main(int argc, char **argv) {
 	conf.automsgwritelvl = 10;
 	conf.echomail_sem = NULL;
 	conf.netmail_sem = NULL;
+	conf.telnet_port = 0;
 
 	// Load BBS data
 	if (ini_parse(argv[1], handler, &conf) <0) {
@@ -440,8 +747,6 @@ int main(int argc, char **argv) {
 		exit(-1);
 	}
 
-	port = atoi(argv[2]);
-
 	if (conf.fork) {
 		if (stat(conf.pid_file, &s) == 0) {
 			fprintf(stderr, "Magicka already running or stale pid file at: %s\n", conf.pid_file);
@@ -463,9 +768,9 @@ int main(int argc, char **argv) {
 				fclose(fptr);
 			}
 		} else {
-			server(port);
+			server(conf.telnet_port);
 		}
 	} else {
-		server(port);
+		server(conf.telnet_port);
 	}
 }

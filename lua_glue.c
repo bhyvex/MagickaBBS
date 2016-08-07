@@ -7,7 +7,6 @@ extern int mynode;
 extern struct bbs_config conf;
 
 extern struct user_record *gUser;
-extern int gSocket;
 
 int l_bbsWString(lua_State *L) {
 	char *str = (char *)lua_tostring(L, -1);

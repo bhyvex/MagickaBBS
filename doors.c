@@ -23,6 +23,7 @@
 extern struct bbs_config conf;
 extern int mynode;
 extern int gSocket;
+extern int sshBBS;
 
 int running_door_pid = 0;
 int running_door = 0;
@@ -140,6 +141,8 @@ void rundoor(struct user_record *user, char *cmd, int stdio) {
 	int t;
 	struct winsize ws;
 	struct sigaction sa;
+	int door_in;
+	int door_out;
 
 	timeoutpaused = 1;
 
@@ -148,11 +151,18 @@ void rundoor(struct user_record *user, char *cmd, int stdio) {
 	}
 
 	if (stdio) {
+		if (sshBBS) {
+			door_in = STDIN_FILENO;
+			door_out = STDOUT_FILENO;
+		} else {
+			door_in = gSocket;
+			door_out = gSocket;
+		}
 
 		arguments[0] = strdup(cmd);
 		sprintf(buffer, "%d", mynode);
 		arguments[1] = strdup(buffer);
-		sprintf(buffer, "%d", gSocket);
+		sprintf(buffer, "%d", door_out);
 		arguments[2] = strdup(buffer);
 		arguments[3] = NULL;
 
@@ -192,16 +202,16 @@ void rundoor(struct user_record *user, char *cmd, int stdio) {
 				while(running_door != 0) {
 					FD_ZERO(&fdset);
 					FD_SET(master, &fdset);
-					FD_SET(gSocket, &fdset);
-					if (master > gSocket) {
+					FD_SET(door_in, &fdset);
+					if (master > door_in) {
 						t = master + 1;
 					} else {
-						t = gSocket + 1;
+						t = door_in + 1;
 					}
 					ret = select(t, &fdset, NULL, NULL, NULL);
 					if (ret > 0) {
-						if (FD_ISSET(gSocket, &fdset)) {
-							len = read(gSocket, &c, 1);
+						if (FD_ISSET(door_in, &fdset)) {
+							len = read(door_in, &c, 1);
 							if (len == 0) {
 								close(master);
 								disconnect("Socket Closed");
@@ -217,7 +227,7 @@ void rundoor(struct user_record *user, char *cmd, int stdio) {
 								close(master);
 								break;
 							}
-							write(gSocket, &c, 1);
+							write(door_out, &c, 1);
 						}
 					}
 				}
@@ -227,8 +237,12 @@ void rundoor(struct user_record *user, char *cmd, int stdio) {
 		free(arguments[1]);
 		free(arguments[2]);
 	} else {
-		sprintf(buffer, "%s %d %d", cmd, mynode, gSocket);
-		system(buffer);
+		if (!sshBBS) {
+			sprintf(buffer, "%s %d %d", cmd, mynode, gSocket);
+			system(buffer);
+		} else {
+			s_printf("Non-STDIO door support on SSH is currently broken...\r\n");
+		}
 	}
 	timeoutpaused = 0;
 }
