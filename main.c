@@ -364,12 +364,14 @@ int ssh_authenticate(ssh_session p_ssh_session) {
 						password = ssh_message_auth_password(message);
 
 						if (strcasecmp(username, "new") == 0 && strcasecmp(password, "new") == 0) {
+							ssh_message_auth_reply_success(message, 0);
 							ssh_message_free(message);
 							gUser = NULL;
 							return 1;
 						}
 						gUser = check_user_pass(username, password);
 						if (gUser != NULL) {
+							ssh_message_auth_reply_success(message, 0);
 							ssh_message_free(message);
 							return 1;
 						}
@@ -505,6 +507,7 @@ void serverssh(int port) {
 					do {
 						message = ssh_message_get(p_ssh_session);
 						if (message) {
+
 							if (ssh_message_type(message) == SSH_REQUEST_CHANNEL_OPEN && ssh_message_subtype(message) == SSH_CHANNEL_SESSION) {
 								chan = ssh_message_channel_request_open_reply_accept(message);
 								ssh_message_free(message);
