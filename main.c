@@ -599,6 +599,7 @@ void serverssh(int port) {
 
 					ssh_event_free(event);
 				}
+				ssh_disconnect(p_ssh_session);
 				ssh_finalize();
 				exit(0);
 			} else if (pid > 0) {
