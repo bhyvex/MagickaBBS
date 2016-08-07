@@ -466,7 +466,7 @@ void serverssh(int port) {
 	ssh_bind p_ssh_bind;
 	int err;
 	int pid;
-	int shell;
+	int shell = 0;
 	int fd;
 	ssh_channel chan = 0;
 	int bbs_pid;
@@ -696,8 +696,6 @@ void server(int port) {
 }
 
 int main(int argc, char **argv) {
-	int port;
-
 	int i;
 	int main_pid;
 	FILE *fptr;

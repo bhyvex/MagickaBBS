@@ -145,6 +145,7 @@ struct user_record {
 extern void automessage_write(struct user_record *user);
 extern void automessage_display();
 extern void dolog(char *fmt, ...);
+extern void runbbs_ssh(char *ipaddress);
 extern void runbbs(int sock, char *ipaddress);
 extern struct fido_addr *parse_fido_addr(const char *str);
 extern void s_putchar(char c);
