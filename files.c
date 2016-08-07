@@ -226,14 +226,16 @@ void upload(struct user_record *user) {
   int rc;
   struct stat s;
   char *err_msg = NULL;
-	struct termios oldt;
-
+	struct termios oldit;
+	struct termios oldot
 	if (sshBBS) {
-		ttySetRaw(STDIN_FILENO, &oldt);
+		ttySetRaw(STDIN_FILENO, &oldit);
+		ttySetRaw(STDOUT_FILENO, &oldot);
 	}
 	upload_zmodem(user);
 	if (sshBBS) {
-		tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+		tcsetattr(STDIN_FILENO, TCSANOW, &oldit);
+		tcsetattr(STDOUT_FILENO, TCSANOW, &oldot);
 	}
 
 	s_printf("\r\nPlease enter a description:\r\n");
