@@ -414,9 +414,6 @@ static int ssh_copy_fd_to_chan(socket_t fd, int revents, void *userdata) {
   int sz = 0;
 
   if(!chan) {
-		if (mynode != 0) {
-			disconnect("Channel Closed");
-		}
     close(fd);
     return -1;
   }
@@ -453,10 +450,6 @@ static void ssh_chan_close(ssh_session session, ssh_channel channel, void *userd
 	int fd = *(int*)userdata;
   (void)session;
   (void)channel;
-
-	if (mynode != 0) {
-		disconnect("Channel Closed");
-	}
 
   close(fd);
 }
@@ -601,6 +594,8 @@ void serverssh(int port) {
 						ssh_event_dopoll(event, 1000);
 					} while(!ssh_channel_is_closed(chan));
 
+
+
 					ssh_event_remove_fd(event, fd);
 
 					ssh_event_remove_session(event, p_ssh_session);
@@ -609,6 +604,9 @@ void serverssh(int port) {
 				}
 				ssh_disconnect(p_ssh_session);
 				ssh_finalize();
+				if (mynode != 0) {
+					disconnect("Channel Closed");
+				}
 				exit(0);
 			} else if (pid > 0) {
 
