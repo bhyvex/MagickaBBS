@@ -629,6 +629,8 @@ void runbbs_real(int socket, char *ip, int ssh) {
 				}
 			}
 		} else {
+			s_printf("\e[0mWelcome to %s! Press enter to create an account...\r\n", conf.bbs_name);
+			s_getc();
 		 	gUser = new_user();
 			user = gUser;
 		}
