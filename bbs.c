@@ -207,9 +207,10 @@ char s_getchar() {
 			c = getchar();
 		} else {
 			len = read(gSocket, &c, 1);
-		}
-		if (len == 0) {
-			disconnect("Socket Closed");
+
+			if (len == 0) {
+				disconnect("Socket Closed");
+			}
 		}
 
 		if (!sshBBS) {
