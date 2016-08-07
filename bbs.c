@@ -233,11 +233,11 @@ char s_getchar() {
 		}
 
 
-		if (c == '\r') {
+	/*	if (c == '\r') {
 			if (len == 0) {
 				disconnect("Socket Closed");
 			}
-		}
+		}*/
 	} while (c == '\n');
 	usertimeout = 10;
 	return (char)c;
