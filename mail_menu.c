@@ -743,7 +743,7 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 		localtime_r((time_t *)&msghs->msgs[mailno]->msg_h->DateWritten, &msg_date);
 		sprintf(buffer, "\e[1;32mDate    : \e[1;37m%s", asctime(&msg_date));
 		buffer[strlen(buffer) - 1] = '\0';
-		s_printf("%s     \e[1;32mMsgNo    : \e[1;37m%4d of %4d\r\n", buffer, mailno + 1, msghs->msg_count);
+		s_printf("%s    \e[1;32mMsgNo    : \e[1;37m%4d of %4d\r\n", buffer, mailno + 1, msghs->msg_count);
 		s_printf("\e[1;32mAttribs : \e[1;37m%s\r\n", (msghs->msgs[mailno]->msg_h->Attribute & MSG_SENT ? "SENT" : ""));
 		s_printf("\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
 
