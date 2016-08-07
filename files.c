@@ -14,6 +14,7 @@
 #include "lua/lauxlib.h"
 extern struct bbs_config conf;
 extern int gSocket;
+extern int sshBBS;
 
 struct file_entry {
 	char *filename;
@@ -29,7 +30,7 @@ int ZXmitStr(u_char *str, int len, ZModem *info) {
 	int i;
 
 	for (i=0;i<len;i++) {
-		if (str[i] == 255) {
+		if (str[i] == 255 && !sshBBS) {
 			if (write(info->ofd, &str[i], 1) == 0) {
 				return ZmErrSys;
 			}
@@ -168,9 +169,13 @@ void upload_zmodem(struct user_record *user) {
 	zm.windowsize = 0;
 	zm.bufsize = 0;
 
-	zm.ifd = gSocket;
-	zm.ofd = gSocket;
-
+	if (!sshBBS) {
+		zm.ifd = gSocket;
+		zm.ofd = gSocket;
+	} else {
+		zm.ifd = STDIN_FILENO;
+		zm.ofd = STDOUT_FILENO;
+	}
 	zm.zrinitflags = 0;
 	zm.zsinitflags = 0;
 
@@ -268,9 +273,13 @@ void download_zmodem(struct user_record *user, char *filename) {
 	zm.windowsize = 0;
 	zm.bufsize = 0;
 
-	zm.ifd = gSocket;
-	zm.ofd = gSocket;
-
+	if (!sshBBS) {
+		zm.ifd = gSocket;
+		zm.ofd = gSocket;
+	} else {
+		zm.ifd = STDIN_FILENO;
+		zm.ofd = STDOUT_FILENO;
+	}
 	zm.zrinitflags = 0;
 	zm.zsinitflags = 0;
 

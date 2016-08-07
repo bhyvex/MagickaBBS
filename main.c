@@ -564,6 +564,7 @@ void serverssh(int port) {
 					if (bbs_pid == 0) {
 						tcgetattr(STDIN_FILENO, &tios);
 						tios.c_lflag &= ~(ICANON | ECHO | ECHONL);
+						tios.c_iflag &= INLCR;
 						tcsetattr(STDIN_FILENO, TCSAFLUSH, &tios);
 						runbbs_ssh(ip);
 						exit(0);
