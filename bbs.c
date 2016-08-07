@@ -26,6 +26,15 @@ int timeoutpaused;
 
 char *ipaddress;
 
+void sigterm_handler(int s)
+{
+	if (mynode != 0) {
+		disconnect("Terminated.");
+	}
+	exit(0);
+}
+
+
 void dolog(char *fmt, ...) {
 	char buffer[512];
 	struct tm time_now;
@@ -487,6 +496,7 @@ void runbbs_real(int socket, char *ip, int ssh) {
 	time_t now;
 	struct itimerval itime;
 	struct sigaction sa;
+	struct sigaction st;
 	lua_State *L;
 	int do_internal_login = 0;
 
@@ -501,7 +511,12 @@ void runbbs_real(int socket, char *ip, int ssh) {
 		sshBBS = 1;
 	}
 
-
+	st.sa_handler = sigterm_handler;
+	sigemptyset(&st.sa_mask);
+	if (sigaction(SIGTERM, &st, NULL) == -1) {
+		dolog("Failed to setup sigterm handler.");
+		exit(1);
+	}
 
 	gSocket = socket;
 

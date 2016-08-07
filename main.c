@@ -28,7 +28,6 @@
 
 extern struct bbs_config conf;
 extern struct user_record *gUser;
-extern int mynode;
 
 int ssh_pid = -1;
 
@@ -604,9 +603,7 @@ void serverssh(int port) {
 				}
 				ssh_disconnect(p_ssh_session);
 				ssh_finalize();
-				if (mynode != 0) {
-					disconnect("Channel Closed");
-				}
+				kill(bbs_pid, SIGTERM);
 				exit(0);
 			} else if (pid > 0) {
 
