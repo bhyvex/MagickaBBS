@@ -376,9 +376,8 @@ int ssh_authenticate(ssh_session p_ssh_session) {
 							ssh_message_free(message);
 							return 1;
 						}
-						ssh_message_auth_set_methods(message, SSH_AUTH_METHOD_PASSWORD | SSH_AUTH_METHOD_INTERACTIVE);
-						ssh_message_reply_default(message);
-						break;
+						ssh_message_free(message);
+						return 0;
 					case SSH_AUTH_METHOD_NONE:
 					default:
 						ssh_message_auth_set_methods(message, SSH_AUTH_METHOD_PASSWORD | SSH_AUTH_METHOD_INTERACTIVE);
