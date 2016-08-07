@@ -557,7 +557,7 @@ void serverssh(int port) {
 					free(ip);
 					ssh_cb.userdata = &fd;
 					ssh_callbacks_init(&ssh_cb);
-					ssh_set_channel_callbacks(chan, &cb);
+					ssh_set_channel_callbacks(chan, &ssh_cb);
 
 					events = POLLIN | POLLPRI | POLLERR | POLLHUP | POLLNVAL;
 
