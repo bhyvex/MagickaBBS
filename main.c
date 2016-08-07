@@ -22,6 +22,7 @@
 #else
 #  include <libutil.h>
 #endif
+#include <termios.h>
 #include "bbs.h"
 #include "inih/ini.h"
 
@@ -473,6 +474,9 @@ void serverssh(int port) {
 	ssh_event event;
 	short events;
 	ssh_message message;
+	struct termios tios;
+
+
 	err = ssh_init();
 	if (err == -1) {
 		fprintf(stderr, "Error starting SSH server.\n");
@@ -554,9 +558,13 @@ void serverssh(int port) {
 
 					ip = ssh_getip(p_ssh_session);
 
+
+
 					bbs_pid = forkpty(&fd, NULL, NULL, NULL);
 					if (bbs_pid == 0) {
-						setvbuf(stdin,NULL,_IONBF,0);
+						tcgetattr(master, &tios);
+						tios.c_lflag &= ~(ICANON | ECHO | ECHONL);
+						tcsetattr(master, TCSAFLUSH, &tios);
 						runbbs_ssh(ip);
 						exit(0);
 					}
