@@ -153,11 +153,8 @@ void s_putchar(char c) {
 }
 
 void s_putstring(char *c) {
-	int i;
 	if (sshBBS) {
-		for (i=0;i<strlen(c);i++) {
-			putchar(c[i]);
-		}
+		printf("%s", c);
 	} else {
 		write(gSocket, c, strlen(c));
 	}
@@ -713,5 +710,6 @@ void runbbs(int socket, char *ip) {
 }
 
 void runbbs_ssh(char *ip) {
+	setbuf(stdout, NULL);
 	runbbs_real(-1, ip, 1);
 }
