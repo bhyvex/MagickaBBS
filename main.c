@@ -28,6 +28,7 @@
 
 extern struct bbs_config conf;
 extern struct user_record *gUser;
+extern int mynode;
 
 int ssh_pid = -1;
 
@@ -446,9 +447,13 @@ static int ssh_copy_chan_to_fd(ssh_session session,
 }
 
 static void ssh_chan_close(ssh_session session, ssh_channel channel, void *userdata) {
-  int fd = *(int*)userdata;
+	int fd = *(int*)userdata;
   (void)session;
   (void)channel;
+
+	if (mynode != 0) {
+		disconnect("Channel Closed");
+	}
 
   close(fd);
 }

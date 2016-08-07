@@ -15,7 +15,7 @@
 #include "lua/lualib.h"
 #include "lua/lauxlib.h"
 
-int mynode;
+int mynode = 0;
 struct bbs_config conf;
 
 struct user_record *gUser;
@@ -508,7 +508,6 @@ void runbbs_real(int socket, char *ip, int ssh) {
 	s_printf("Magicka BBS v%d.%d (%s), Loading...\r\n", VERSION_MAJOR, VERSION_MINOR, VERSION_STR);
 
 	// find out which node we are
-	mynode = 0;
 	for (i=1;i<=conf.nodes;i++) {
 		sprintf(buffer, "%s/nodeinuse.%d", conf.bbs_path, i);
 		if (stat(buffer, &s) != 0) {
@@ -710,6 +709,7 @@ void runbbs(int socket, char *ip) {
 }
 
 void runbbs_ssh(char *ip) {
+	setbuf(stdin, NULL);
 	setbuf(stdout, NULL);
 	runbbs_real(-1, ip, 1);
 }
