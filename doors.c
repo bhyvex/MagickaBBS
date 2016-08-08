@@ -60,17 +60,17 @@ int write_door32sys(struct user_record *user) {
 		return 1;
 	}
 
-	fprintf(fptr, "2\n"); // telnet type
-	fprintf(fptr, "%d\n", gSocket); // socket
-	fprintf(fptr, "38400\n"); // baudrate
-	fprintf(fptr, "Magicka %d.%d\n", VERSION_MAJOR, VERSION_MINOR);
-	fprintf(fptr, "%d\n", user->id);
-	fprintf(fptr, "%s %s\n", user->firstname, user->lastname);
-	fprintf(fptr, "%s\n", user->loginname);
-	fprintf(fptr, "%d\n", user->sec_level);
-	fprintf(fptr, "%d\n", user->timeleft);
-	fprintf(fptr, "1\n"); // ansi emulation = 1
-	fprintf(fptr, "%d\n", mynode);
+	fprintf(fptr, "2\r\n"); // telnet type
+	fprintf(fptr, "%d\r\n", gSocket); // socket
+	fprintf(fptr, "38400\r\n"); // baudrate
+	fprintf(fptr, "Magicka %d.%d\r\n", VERSION_MAJOR, VERSION_MINOR);
+	fprintf(fptr, "%d\r\n", user->id);
+	fprintf(fptr, "%s %s\r\n", user->firstname, user->lastname);
+	fprintf(fptr, "%s\r\n", user->loginname);
+	fprintf(fptr, "%d\r\n", user->sec_level);
+	fprintf(fptr, "%d\r\n", user->timeleft);
+	fprintf(fptr, "1\r\n"); // ansi emulation = 1
+	fprintf(fptr, "%d\r\n", mynode);
 
 	fclose(fptr);
 
@@ -103,23 +103,23 @@ int write_door32sys(struct user_record *user) {
 		}
 	}
 
-	fprintf(fptr, "%s\n", conf.bbs_name); // telnet type
-	fprintf(fptr, "%s\n", buffer);
+	fprintf(fptr, "%s\r\n", conf.bbs_name); // telnet type
+	fprintf(fptr, "%s\r\n", buffer);
 	if (ptr != NULL) {
-		fprintf(fptr, "%s\n", ptr);
+		fprintf(fptr, "%s\r\n", ptr);
 	} else {
-		fprintf(fptr, "\n");
+		fprintf(fptr, "\r\n");
 	}
-	fprintf(fptr, "COM1\n"); // com port
-	fprintf(fptr, "38400 BAUD,N,8,1\n");
-	fprintf(fptr, "0\n");
-	fprintf(fptr, "%s\n", user->firstname);
-	fprintf(fptr, "%s\n", user->lastname);
-	fprintf(fptr, "%s\n", user->location);
-	fprintf(fptr, "1\n");
-	fprintf(fptr, "30\n");
-	fprintf(fptr, "%d\n", user->timeleft);
-	fprintf(fptr, "-1\n");
+	fprintf(fptr, "COM1\r\n"); // com port
+	fprintf(fptr, "38400 BAUD,N,8,1\r\n");
+	fprintf(fptr, "0\r\n");
+	fprintf(fptr, "%s\r\n", user->firstname);
+	fprintf(fptr, "%s\r\n", user->lastname);
+	fprintf(fptr, "%s\r\n", user->location);
+	fprintf(fptr, "1\r\n");
+	fprintf(fptr, "30\r\n");
+	fprintf(fptr, "%d\r\n", user->timeleft);
+	fprintf(fptr, "-1\r\n");
 
 
 	fclose(fptr);
