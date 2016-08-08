@@ -41,6 +41,7 @@ void dolog(char *fmt, ...) {
 	struct tm time_now;
 	time_t timen;
 	FILE *logfptr;
+	int mypid = getpid();
 
 	if (conf.log_path == NULL) return;
 
@@ -59,7 +60,7 @@ void dolog(char *fmt, ...) {
   vsnprintf(buffer, 512, fmt, ap);
   va_end(ap);
 
-  fprintf(logfptr, "%02d:%02d:%02d [%s] %s\n", time_now.tm_hour, time_now.tm_min, time_now.tm_sec, ipaddress, buffer);
+  fprintf(logfptr, "%02d:%02d:%02d [%d][%s] %s\n", time_now.tm_hour, time_now.tm_min, time_now.tm_sec, mypid, ipaddress, buffer);
 
 	fclose(logfptr);
 }
