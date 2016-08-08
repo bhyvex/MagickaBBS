@@ -422,7 +422,7 @@ void download(struct user_record *user) {
 		sqlite3_finalize(res);
 		sqlite3_close(db);
 	}
-	
+
 	if (sshBBS) {
 		tcsetattr(STDIN_FILENO, TCSANOW, &oldit);
 		tcsetattr(STDOUT_FILENO, TCSANOW, &oldot);
@@ -746,6 +746,7 @@ int file_menu(struct user_record *user) {
 				break;
 			case '}':
 				{
+
 					for (i=user->cur_file_dir;i<conf.file_directory_count;i++) {
 						if (i + 1 == conf.file_directory_count) {
 							i = -1;

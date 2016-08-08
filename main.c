@@ -109,7 +109,7 @@ static int file_sub_handler(void* user, const char* section, const char* name,
 	int i;
 
 	if (strcasecmp(section, "main") == 0) {
-		if (strcasecmp(name, "visible sec level")) {
+		if (strcasecmp(name, "visible sec level") == 0) {
 			fd->sec_level = atoi(value);
 		}
 	} else {
