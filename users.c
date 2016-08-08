@@ -265,8 +265,8 @@ struct user_record *check_user_pass(char *loginname, char *password) {
 		user->timeleft = sqlite3_column_int(res, 10);
 		user->cur_mail_conf = sqlite3_column_int(res, 11);
 		user->cur_mail_area = sqlite3_column_int(res, 12);
-		user->cur_file_dir = sqlite3_column_int(res, 14);
-		user->cur_file_sub = sqlite3_column_int(res, 13);
+		user->cur_file_dir = sqlite3_column_int(res, 13);
+		user->cur_file_sub = sqlite3_column_int(res, 14);
 		user->timeson = sqlite3_column_int(res, 15);
 
 		pass_hash = hash_sha256(password, user->salt);

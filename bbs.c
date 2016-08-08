@@ -243,13 +243,6 @@ char s_getchar() {
 				}
 			}
 		}
-
-
-	/*	if (c == '\r') {
-			if (len == 0) {
-				disconnect("Socket Closed");
-			}
-		}*/
 	} while (c == '\n');
 	usertimeout = 10;
 
@@ -576,6 +569,7 @@ void runbbs_real(int socket, char *ip, int ssh) {
 
 		if (strcasecmp(buffer, "new") == 0) {
 			user = new_user();
+			gUser = user;
 		} else {
 			s_printf("\r\nPassword:> ");
 			s_readpass(password, 16);
