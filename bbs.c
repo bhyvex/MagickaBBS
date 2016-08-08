@@ -35,6 +35,10 @@ void sigterm_handler2(int s)
 	exit(0);
 }
 
+void sigint_handler(int s)
+{
+	// do nothing...
+}
 
 void dolog(char *fmt, ...) {
 	char buffer[512];
@@ -722,7 +726,14 @@ void runbbs(int socket, char *ip) {
 }
 
 void runbbs_ssh(char *ip) {
+	struct sigaction si;
 	setbuf(stdin, NULL);
 	setbuf(stdout, NULL);
+	si.sa_handler = sigint_handler;
+	sigemptyset(&si.sa_mask);
+	if (sigaction(SIGINT, &si, NULL) == -1) {
+		dolog("Failed to setup sigint handler.");
+		exit(1);
+	}
 	runbbs_real(-1, ip, 1);
 }
