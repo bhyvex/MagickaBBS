@@ -448,10 +448,11 @@ static int ssh_copy_chan_to_fd(ssh_session session,
 
 static void ssh_chan_close(ssh_session session, ssh_channel channel, void *userdata) {
 	int fd = *(int*)userdata;
+	int status;
   (void)session;
   (void)channel;
 	kill(bbs_pid, SIGTERM);
-	sleep(10);
+	waitpid(bbs_pid, &status, 0);
   close(fd);
 }
 
