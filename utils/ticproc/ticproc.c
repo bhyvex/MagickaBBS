@@ -8,6 +8,7 @@
 #include <ctype.h>
 #include "../../inih/ini.h"
 #include "ticproc.h"
+#include "crc32.h"
 
 struct ticproc_t conf;
 
@@ -25,6 +26,8 @@ static int handler(void* user, const char* section, const char* name,
 			}
 		} else if (strcasecmp(name, "inbound directory") == 0) {
 			conf.inbound = strdup(value);
+		} else if (strcasecmp(name, "bad files directory") == 0) {
+			conf.bad = strdup(value);
 		}
 	} else {
 		for (i=0;i<conf.filearea_count;i++) {
@@ -96,6 +99,7 @@ int copy_file(char *src, char *dest) {
 }
 
 int add_file(struct ticfile_t *ticfile) {
+	FILE *fptr;
 	struct stat s;
 	char src_filename[4096];
 	char dest_filename[4096];
@@ -119,6 +123,8 @@ int add_file(struct ticfile_t *ticfile) {
 	sqlite3_stmt *res;
 	sqlite3_stmt *res2;
 	char *err_msg = 0;
+	int len;
+	unsigned long crc;
 
 	if (ticfile->area == NULL) {
 		return -1;
@@ -161,6 +167,35 @@ int add_file(struct ticfile_t *ticfile) {
 		return -1;
 	}
 
+	// figure out source and dest filenames
+	if (ticfile->lname != NULL) {
+		snprintf(src_filename, 4096, "%s/%s", conf.inbound, ticfile->lname);
+		snprintf(dest_filename, 4096, "%s/%s", conf.file_areas[i]->path, ticfile->lname);
+		if (stat(src_filename, &s) != 0) {
+			snprintf(src_filename, 4096, "%s/%s", conf.inbound, ticfile->file);
+			snprintf(dest_filename, 4096, "%s/%s", conf.file_areas[i]->path, ticfile->file);
+		}
+	} else {
+		snprintf(src_filename, 4096, "%s/%s", conf.inbound, ticfile->file);
+		snprintf(dest_filename, 4096, "%s/%s", conf.file_areas[i]->path, ticfile->file);
+	}
+
+	// check crc
+	fptr = fopen(src_filename, "rb");
+	if (Crc32_ComputeFile(fptr, &crc) == -1) {
+		fprintf(stderr, "Error computing CRC\n");
+		sqlite3_close(db);
+		return -1;
+	}
+	fclose(fptr);
+
+
+	if (crc != strtol(ticfile->crc, NULL, 16)) {
+		fprintf(stderr, "CRC Mismatch, bailing 0x%x != 0x%x\n", crc, strtol(ticfile->crc, NULL, 16));
+		sqlite3_close(db);
+		return -1;
+	}
+
 	// password is good, or not needed, check replaces
 	if (ticfile->replaces != NULL) {
 		rc = sqlite3_prepare_v2(db, fetch_sql, -1, &res, 0);
@@ -195,23 +230,25 @@ int add_file(struct ticfile_t *ticfile) {
 	sqlite3_finalize(res);
 
 	// add the file
-	if (ticfile->lname != NULL) {
-		snprintf(src_filename, 4096, "%s/%s", conf.inbound, ticfile->lname);
-		snprintf(dest_filename, 4096, "%s/%s", conf.file_areas[i]->path, ticfile->lname);
-		if (stat(src_filename, &s) != 0) {
-			snprintf(src_filename, 4096, "%s/%s", conf.inbound, ticfile->file);
-			snprintf(dest_filename, 4096, "%s/%s", conf.file_areas[i]->path, ticfile->file);
-		}
-	} else {
-		snprintf(src_filename, 4096, "%s/%s", conf.inbound, ticfile->file);
-		snprintf(dest_filename, 4096, "%s/%s", conf.file_areas[i]->path, ticfile->file);
-	}
 
 	if (stat(dest_filename, &s) == 0) {
 		// uh oh, filename collision.
 		fprintf(stderr, "Filename collision! %s\n", dest_filename);
+		snprintf(dest_filename, 4096, "%s/%s", conf.bad, ticfile->file);
+		j = 1;
+		while (stat(dest_filename, &s) == 0) {
+			snprintf(dest_filename, 4096, "%s/%s.%d", conf.bad, ticfile->file, j);
+			j++;
+		}
+		if (copy_file(src_filename, dest_filename) != 0) {
+			fprintf(stderr, "Error copying file %s\n", src_filename);
+			sqlite3_close(db);
+			return -1;
+		} else {
+			remove(src_filename);
+		}
 		sqlite3_close(db);
-		return -1;
+		return 0;
 	}
 
 	if (stat(src_filename, &s) != 0) {

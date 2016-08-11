@@ -2,7 +2,7 @@ CC=cc
 CFLAGS=-I/usr/local/include
 DEPS = ticproc.c
 
-OBJ = ticproc.o ../../inih/ini.o
+OBJ = ticproc.o ../../inih/ini.o crc32.o
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 

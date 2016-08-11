@@ -11,6 +11,7 @@ struct filearea_t {
 struct ticproc_t {
 	int ignore_pass;
 	char *inbound;
+	char *bad;
 	int filearea_count;
 	struct filearea_t **file_areas;
 };
