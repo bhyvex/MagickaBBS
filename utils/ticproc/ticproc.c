@@ -366,7 +366,7 @@ int process_tic_file(char *ticfilen) {
 		} else if (strncasecmp(buffer, "seenby", 6) == 0) {
 			// nothing currently
 		} else if (strncasecmp(buffer, "pw", 2) == 0) {
-			ticfile.password = strdup(buffer);
+			ticfile.password = strdup(&buffer[3]);
 		}
 
 		fgets(buffer, 1024, fptr);
