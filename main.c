@@ -17,7 +17,7 @@
 #include <poll.h>
 #if defined(linux)
 #  include <pty.h>
-#elif defined(__OpenBSD__) || defined(__NetBSD__)
+#elif defined(__OpenBSD__) || defined(__NetBSD__) || defined(__APPLE__)
 #  include <util.h>
 #else
 #  include <libutil.h>
