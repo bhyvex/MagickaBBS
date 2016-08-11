@@ -401,7 +401,9 @@ int process_tic_file(char *ticfilen) {
 	if (ticfile.crc != NULL) {
 		free(ticfile.crc);
 	}
-	remove(ticfilename);
+	if (ret == 0) {
+		remove(ticfilename);
+	}
 	return ret;
 }
 
