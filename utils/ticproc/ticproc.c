@@ -79,7 +79,7 @@ int copy_file(char *src, char *dest) {
 		return -1;
 	}
 	dest_file = fopen(dest, "wb");
-	if (!src_file) {
+	if (!dest_file) {
 		fclose(src_file);
 		return -1;
 	}
@@ -182,6 +182,11 @@ int add_file(struct ticfile_t *ticfile) {
 
 	// check crc
 	fptr = fopen(src_filename, "rb");
+	if (!fptr) {
+		sqlite3_free(err_msg);
+		sqlite3_close(db);
+		return -1;
+	}
 	if (Crc32_ComputeFile(fptr, &crc) == -1) {
 		fprintf(stderr, "Error computing CRC\n");
 		sqlite3_close(db);
@@ -270,9 +275,9 @@ int add_file(struct ticfile_t *ticfile) {
 		desc_len += strlen(ticfile->desc[j]) + 1;
 	}
 
-	description = (char *)malloc(desc_len);
+	description = (char *)malloc(desc_len + 1);
 
-	memset(description, 0, desc_len);
+	memset(description, 0, desc_len + 1);
 
 	for (j=0;j<ticfile->desc_lines;j++) {
 		strcat(description, ticfile->desc[j]);
