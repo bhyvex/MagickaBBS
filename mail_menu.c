@@ -1872,7 +1872,7 @@ void mail_scan(struct user_record *user) {
 	int i;
 	int j;
 
-	s_printf("\r\nScan for new mail? (Y/N) :	");
+	s_printf("\r\nScan for new mail? (Y/N) : ");
 	c = s_getc();
 
 	if (tolower(c) == 'y') {

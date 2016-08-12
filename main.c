@@ -31,11 +31,15 @@ extern struct user_record *gUser;
 
 int ssh_pid = -1;
 int bbs_pid = 0;
+int server_socket = -1;
 
 void sigterm_handler(int s)
 {
 	if (ssh_pid != -1) {
 		kill(ssh_pid, SIGTERM);
+	}
+	if (server_socket != -1) {
+		close(server_socket);
 	}
 	remove(conf.pid_file);
 	exit(0);
@@ -617,7 +621,8 @@ void serverssh(int port) {
 void server(int port) {
 	struct sigaction sa;
 	struct sigaction st;
-	int socket_desc, client_sock, c;
+	struct sigaction sq;
+	int client_sock, c;
 	int pid;
 	struct sockaddr_in server, client;
 
@@ -638,6 +643,14 @@ void server(int port) {
 			exit(1);
 	}
 
+	sq.sa_handler = sigterm_handler;
+	sigemptyset(&sq.sa_mask);
+	if (sigaction(SIGQUIT, &sq, NULL) == -1) {
+			remove(conf.pid_file);
+			perror("sigaction");
+			exit(1);
+	}
+
 	if (conf.ssh_server) {
 		// fork ssh server
 		ssh_pid = fork();
@@ -651,8 +664,8 @@ void server(int port) {
 		}
 	}
 
-	socket_desc = socket(AF_INET, SOCK_STREAM, 0);
-	if (socket_desc == -1) {
+	server_socket = socket(AF_INET, SOCK_STREAM, 0);
+	if (server_socket == -1) {
 		remove(conf.pid_file);
 		fprintf(stderr, "Couldn't create socket..\n");
 		exit(1);
@@ -663,16 +676,17 @@ void server(int port) {
 	server.sin_addr.s_addr = INADDR_ANY;
 	server.sin_port = htons(port);
 
-	if (bind(socket_desc, (struct sockaddr *)&server, sizeof(server)) < 0) {
+	if (bind(server_socket, (struct sockaddr *)&server, sizeof(server)) < 0) {
 		perror("Bind Failed, Error\n");
+		remove(conf.pid_file);
 		exit(1);
 	}
 
-	listen(socket_desc, 3);
+	listen(server_socket, 3);
 
 	c = sizeof(struct sockaddr_in);
 
-	while ((client_sock = accept(socket_desc, (struct sockaddr *)&client, (socklen_t *)&c))) {
+	while ((client_sock = accept(server_socket, (struct sockaddr *)&client, (socklen_t *)&c))) {
 		if (client_sock == -1) {
 			if (errno == EINTR) {
 				continue;
@@ -688,7 +702,8 @@ void server(int port) {
 		}
 
 		if (pid == 0) {
-			close(socket_desc);
+			close(server_socket);
+			server_socket = -1;
 			runbbs(client_sock, strdup(inet_ntoa(client.sin_addr)));
 
 			exit(0);
