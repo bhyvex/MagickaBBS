@@ -83,7 +83,9 @@ void free_message_headers(struct msg_headers *msghs) {
 			free(msghs->msgs[i]->replyid);
 		}
 	}
-	free(msghs->msgs);
+	if (msghs->msg_count > 0) {
+		free(msghs->msgs);
+	}
 	free(msghs);
 }
 
