@@ -145,7 +145,6 @@ int msg_is_to(char *addressed_to, char *address, int type, int rn, int msgconf) 
 
 int msg_is_from(char *addressed_from, char *address, int type, int rn, int msgconf) {
 	char *myname;
-	char *wwiv_addressee;
 	struct fido_addr *orig;
 	int j;
 	if (rn) {
@@ -155,23 +154,6 @@ int msg_is_from(char *addressed_from, char *address, int type, int rn, int msgco
 		myname = strdup(gUser->loginname);
 	}
 	if (type == NETWORK_WWIV) {
-		wwiv_addressee = strdup(addressed_from);
-		for (j=1;j<strlen(addressed_from);j++) {
-			if (wwiv_addressee[j] == '(' || wwiv_addressee[j] == '#') {
-				wwiv_addressee[j-1] = '\0';
-				break;
-			}
-		}
-
-		if (strcasecmp(myname, wwiv_addressee) == 0) {
-			// name match
-			if (conf.mail_conferences[msgconf]->wwivnode == atoi(address)) {
-				free(wwiv_addressee);
-				free(myname);
-				return 1;
-			}
-		}
-		free(wwiv_addressee);
 		free(myname);
 		return 0;
 	} else if (type == NETWORK_FIDO) {
