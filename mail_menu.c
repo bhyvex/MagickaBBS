@@ -14,6 +14,7 @@
 #include "lua/lauxlib.h"
 
 extern struct bbs_config conf;
+extern struct user_record *gUser;
 extern int mynode;
 struct jam_msg {
 	int msg_no;
@@ -86,13 +87,124 @@ void free_message_headers(struct msg_headers *msghs) {
 	free(msghs);
 }
 
+int msg_is_to(char *addressed_to, char *address, int type, int rn, int msgconf) {
+	char *myname;
+	char *wwiv_addressee;
+	struct fido_addr *dest;
+	int j;
+	if (rn) {
+		myname = (char *)malloc(strlen(gUser->firstname) + strlen(gUser->lastname) + 2);
+		sprintf(myname, "%s %s", gUser->firstname, gUser->lastname);
+	} else {
+		myname = strdup(gUser->loginname);
+	}
+	if (type == NETWORK_WWIV) {
+		wwiv_addressee = strdup(addressed_to);
+		for (j=1;j<strlen(addressed_to);j++) {
+			if (wwiv_addressee[j] == '(' || wwiv_addressee[j] == '#') {
+				wwiv_addressee[j-1] = '\0';
+				break;
+			}
+		}
+
+		if (strcasecmp(myname, wwiv_addressee) == 0) {
+			// name match
+			if (conf.mail_conferences[msgconf]->wwivnode == atoi(address)) {
+				free(wwiv_addressee);
+				free(myname);
+				return 1;
+			}
+		}
+		free(wwiv_addressee);
+		free(myname);
+		return 0;
+	} else if (type == NETWORK_FIDO) {
+		if (strcasecmp(myname, addressed_to) == 0) {
+			dest = parse_fido_addr(address);
+			if (conf.mail_conferences[msgconf]->fidoaddr->zone == dest->zone &&
+				conf.mail_conferences[msgconf]->fidoaddr->net == dest->net &&
+				conf.mail_conferences[msgconf]->fidoaddr->node == dest->node &&
+				conf.mail_conferences[msgconf]->fidoaddr->point == dest->point) {
+					free(dest);
+					free(myname);
+					return 1;
+			}
+			free(dest);
+		}
+		free(myname);
+		return 0;
+	} else {
+		if (strcasecmp(myname, addressed_to) == 0) {
+			free(myname);
+			return 1;
+		}
+		free(myname);
+		return 0;
+	}
+}
+
+int msg_is_from(char *addressed_from, char *address, int type, int rn, int msgconf) {
+	char *myname;
+	char *wwiv_addressee;
+	struct fido_addr *orig;
+	int j;
+	if (rn) {
+		myname = (char *)malloc(strlen(gUser->firstname) + strlen(gUser->lastname) + 2);
+		sprintf(myname, "%s %s", gUser->firstname, gUser->lastname);
+	} else {
+		myname = strdup(gUser->loginname);
+	}
+	if (type == NETWORK_WWIV) {
+		wwiv_addressee = strdup(addressed_from);
+		for (j=1;j<strlen(addressed_from);j++) {
+			if (wwiv_addressee[j] == '(' || wwiv_addressee[j] == '#') {
+				wwiv_addressee[j-1] = '\0';
+				break;
+			}
+		}
+
+		if (strcasecmp(myname, wwiv_addressee) == 0) {
+			// name match
+			if (conf.mail_conferences[msgconf]->wwivnode == atoi(address)) {
+				free(wwiv_addressee);
+				free(myname);
+				return 1;
+			}
+		}
+		free(wwiv_addressee);
+		free(myname);
+		return 0;
+	} else if (type == NETWORK_FIDO) {
+		if (strcasecmp(myname, addressed_from) == 0) {
+			orig = parse_fido_addr(address);
+			if (conf.mail_conferences[msgconf]->fidoaddr->zone == orig->zone &&
+				conf.mail_conferences[msgconf]->fidoaddr->net == orig->net &&
+				conf.mail_conferences[msgconf]->fidoaddr->node == orig->node &&
+				conf.mail_conferences[msgconf]->fidoaddr->point == orig->point) {
+					free(orig);
+					free(myname);
+					return 1;
+			}
+			free(orig);
+		}
+		free(myname);
+		return 0;
+	} else {
+		if (strcasecmp(myname, addressed_from) == 0) {
+			free(myname);
+			return 1;
+		}
+		free(myname);
+		return 0;
+	}
+}
+
 struct msg_headers *read_message_headers(int msgconf, int msgarea, struct user_record *user) {
 	s_JamBase *jb;
 	s_JamBaseHeader jbh;
 	s_JamMsgHeader jmh;
 	s_JamSubPacket* jsp;
 	struct jam_msg *jamm;
-	char *wwiv_addressee;
 	int to_us;
 	int i;
 	int z;
@@ -181,36 +293,8 @@ struct msg_headers *read_message_headers(int msgconf, int msgarea, struct user_r
 			JAM_DelSubPacket(jsp);
 
 			if (jmh.Attribute & MSG_PRIVATE) {
-				wwiv_addressee = strdup(jamm->to);
-				for (j=0;j<strlen(jamm->to);j++) {
-					if (wwiv_addressee[j] == ' ') {
-						wwiv_addressee[j] = '\0';
-						break;
-					}
-				}
-
-				if (conf.mail_conferences[msgconf]->nettype == NETWORK_WWIV) {
-					if (conf.mail_conferences[msgconf]->wwivnode == atoi(jamm->daddress)) {
-						to_us = 1;
-					} else {
-						to_us = 0;
-					}
-				} else if (conf.mail_conferences[msgconf]->nettype == NETWORK_FIDO) {
-					dest = parse_fido_addr(jamm->daddress);
-					if (conf.mail_conferences[msgconf]->fidoaddr->zone == dest->zone &&
-						conf.mail_conferences[msgconf]->fidoaddr->net == dest->net &&
-						conf.mail_conferences[msgconf]->fidoaddr->node == dest->node &&
-						conf.mail_conferences[msgconf]->fidoaddr->point == dest->point) {
-
-						to_us = 1;
-					} else {
-						to_us = 0;
-					}
-					free(dest);
-				}
-
-
-				if (!(strcasecmp(wwiv_addressee, user->loginname) == 0) || ((strcasecmp(jamm->from, user->loginname) == 0) && to_us)) {
+				if (!msg_is_to(jamm->to, jamm->daddress, conf.mail_conferences[msgconf]->nettype, conf.mail_conferences[msgconf]->realnames, msgconf) &&
+				    !msg_is_from(jamm->from, jamm->oaddress, conf.mail_conferences[msgconf]->nettype, conf.mail_conferences[msgconf]->realnames, msgconf)) {
 
 					if (jamm->subject != NULL) {
 						free(jamm->subject);
@@ -233,13 +317,11 @@ struct msg_headers *read_message_headers(int msgconf, int msgarea, struct user_r
 					if (jamm->replyid != NULL) {
 						free(jamm->replyid);
 					}
-					free(wwiv_addressee);
 					free(jamm->msg_h);
 					free(jamm);
 					k++;
 					continue;
 				}
-				free(wwiv_addressee);
 			}
 
 			if (msghs->msg_count == 0) {
