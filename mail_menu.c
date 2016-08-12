@@ -1865,7 +1865,7 @@ void mail_scan(struct user_record *user) {
 	s_JamBase *jb;
 	s_JamBaseHeader jbh;
 	s_JamLastRead jlr;
-
+	struct msg_headers *msghs;
 	char c;
 	int i;
 	int j;
@@ -1897,10 +1897,28 @@ void mail_scan(struct user_record *user) {
 						JAM_CloseMB(jb);
 						continue;
 					}
-					s_printf("   --> %d. %s (%d new)\r\n", j, conf.mail_conferences[i]->mail_areas[j]->name, jbh.ActiveMsgs);
+					if (conf.mail_conferences[i]->mail_areas[j]->type == TYPE_NETMAIL_AREA) {
+						msghs = read_message_headers(user->cur_mail_conf, user->cur_mail_area, user);
+						if (msghs != NULL) {
+							s_printf("   --> %d. %s (%d new)\r\n", j, conf.mail_conferences[i]->mail_areas[j]->name, msghs->msg_count);
+							free_message_headers(msghs);
+						}
+					} else {
+						s_printf("   --> %d. %s (%d new)\r\n", j, conf.mail_conferences[i]->mail_areas[j]->name, jbh.ActiveMsgs);
+					}
 				} else {
 					if (jlr.HighReadMsg < (jbh.ActiveMsgs - 1)) {
-						s_printf("   --> %d. %s (%d new)\r\n", j, conf.mail_conferences[i]->mail_areas[j]->name, (jbh.ActiveMsgs - 1) - jlr.HighReadMsg);
+						if (conf.mail_conferences[i]->mail_areas[j]->type == TYPE_NETMAIL_AREA) {
+							msghs = read_message_headers(user->cur_mail_conf, user->cur_mail_area, user);
+							if (msghs != NULL) {
+								if (msghs->msgs[msghs->msg_count-1]->msg_no > jlr.HighReadMsg) {
+									s_printf("   --> %d. %s (%d new)\r\n", j, conf.mail_conferences[i]->mail_areas[j]->name, msghs->msgs[msghs->msg_count-1]->msg_no - jlr.HighReadMsg);
+								}
+								free_message_headers(msghs);
+							}
+						} else {
+							s_printf("   --> %d. %s (%d new)\r\n", j, conf.mail_conferences[i]->mail_areas[j]->name, (jbh.ActiveMsgs - 1) - jlr.HighReadMsg);
+						}
 					} else {
 						JAM_CloseMB(jb);
 						continue;
