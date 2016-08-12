@@ -1913,8 +1913,10 @@ void mail_scan(struct user_record *user) {
 						if (conf.mail_conferences[i]->mail_areas[j]->type == TYPE_NETMAIL_AREA) {
 							msghs = read_message_headers(i, j, user);
 							if (msghs != NULL) {
-								if (msghs->msgs[msghs->msg_count-1]->msg_no > jlr.HighReadMsg) {
-									s_printf("   --> %d. %s (%d new)\r\n", j, conf.mail_conferences[i]->mail_areas[j]->name, msghs->msgs[msghs->msg_count-1]->msg_no - jlr.HighReadMsg);
+								if (msghs->msg_count > 0) {
+									if (msghs->msgs[msghs->msg_count-1]->msg_no > jlr.HighReadMsg) {
+										s_printf("   --> %d. %s (%d new)\r\n", j, conf.mail_conferences[i]->mail_areas[j]->name, msghs->msgs[msghs->msg_count-1]->msg_no - jlr.HighReadMsg);
+									}
 								}
 								free_message_headers(msghs);
 							}
