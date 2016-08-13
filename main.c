@@ -655,11 +655,11 @@ void server(int port) {
 		// fork ssh server
 		ssh_pid = fork();
 
-		if (ssh_pid > 0) {
+		if (ssh_pid == 0) {
 			serverssh(conf.ssh_port);
 			exit(0);
 		}
-		if (ssh_pid != 0) {
+		if (ssh_pid < 0) {
 			fprintf(stderr, "Error forking ssh server.");
 		}
 	}
