@@ -1321,6 +1321,11 @@ int mail_menu(struct user_record *user) {
 			c = lRet[0];
 		}
 		switch(tolower(c)) {
+			case '!':
+				{
+					mail_scan(user);
+				}
+				break;
 			case 'd':
 				{
 					s_printf("\r\n");
