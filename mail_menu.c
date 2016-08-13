@@ -1871,6 +1871,7 @@ void mail_scan(struct user_record *user) {
 	char c;
 	int i;
 	int j;
+	int lines = 0;
 
 	s_printf("\r\nScan for new mail? (Y/N) : ");
 	c = s_getc();
@@ -1880,7 +1881,13 @@ void mail_scan(struct user_record *user) {
 			if (conf.mail_conferences[i]->sec_level > user->sec_level) {
 				continue;
 			}
-			s_printf("\r\n%d. %s\r\n", i, conf.mail_conferences[i]->name);
+			s_printf("\r\n\e[1;32m%d. %s\e[0m\r\n", i, conf.mail_conferences[i]->name);
+			lines+=2;
+			if (lines == 22) {
+				s_printf("Press any key to continue...\r\n");
+				s_getc();
+				lines = 0;
+			}
 			for (j=0;j<conf.mail_conferences[i]->mail_area_count;j++) {
 				if (conf.mail_conferences[i]->mail_areas[j]->read_sec_level > user->sec_level) {
 					continue;
@@ -1903,12 +1910,24 @@ void mail_scan(struct user_record *user) {
 						msghs = read_message_headers(i, j, user);
 						if (msghs != NULL) {
 							if (msghs->msg_count > 0) {
-								s_printf("   --> %d. %s (%d new)\r\n", j, conf.mail_conferences[i]->mail_areas[j]->name, msghs->msg_count);
+								s_printf("\e[1;37m   --> %d. %s (%d new)\e[0m\r\n", j, conf.mail_conferences[i]->mail_areas[j]->name, msghs->msg_count);
+								lines++;
+								if (lines == 22) {
+									s_printf("Press any key to continue...\r\n");
+									s_getc();
+									lines = 0;
+								}
 							}
 							free_message_headers(msghs);
 						}
 					} else {
-						s_printf("   --> %d. %s (%d new)\r\n", j, conf.mail_conferences[i]->mail_areas[j]->name, jbh.ActiveMsgs);
+						s_printf("\e[1;37m   --> %d. %s (%d new)\e[0m\r\n", j, conf.mail_conferences[i]->mail_areas[j]->name, jbh.ActiveMsgs);
+						lines++;
+						if (lines == 22) {
+							s_printf("Press any key to continue...\r\n");
+							s_getc();
+							lines = 0;
+						}
 					}
 				} else {
 					if (jlr.HighReadMsg < (jbh.ActiveMsgs - 1)) {
@@ -1917,13 +1936,25 @@ void mail_scan(struct user_record *user) {
 							if (msghs != NULL) {
 								if (msghs->msg_count > 0) {
 									if (msghs->msgs[msghs->msg_count-1]->msg_no > jlr.HighReadMsg) {
-										s_printf("   --> %d. %s (%d new)\r\n", j, conf.mail_conferences[i]->mail_areas[j]->name, msghs->msgs[msghs->msg_count-1]->msg_no - jlr.HighReadMsg);
+										s_printf("\e[1;37m   --> %d. %s (%d new)\e[0m\r\n", j, conf.mail_conferences[i]->mail_areas[j]->name, msghs->msgs[msghs->msg_count-1]->msg_no - jlr.HighReadMsg);
+										lines++;
+										if (lines == 22) {
+											s_printf("Press any key to continue...\r\n");
+											s_getc();
+											lines = 0;
+										}
 									}
 								}
 								free_message_headers(msghs);
 							}
 						} else {
-							s_printf("   --> %d. %s (%d new)\r\n", j, conf.mail_conferences[i]->mail_areas[j]->name, (jbh.ActiveMsgs - 1) - jlr.HighReadMsg);
+							s_printf("\e[1;37m   --> %d. %s (%d new)\e[0m\r\n", j, conf.mail_conferences[i]->mail_areas[j]->name, (jbh.ActiveMsgs - 1) - jlr.HighReadMsg);
+							lines++;
+							if (lines == 22) {
+								s_printf("Press any key to continue...\r\n");
+								s_getc();
+								lines = 0;
+							}
 						}
 					} else {
 						JAM_CloseMB(jb);

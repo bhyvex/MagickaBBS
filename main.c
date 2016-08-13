@@ -656,6 +656,7 @@ void server(int port) {
 		ssh_pid = fork();
 
 		if (ssh_pid == 0) {
+			ssh_pid = -1;
 			serverssh(conf.ssh_port);
 			exit(0);
 		}
