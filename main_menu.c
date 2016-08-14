@@ -47,7 +47,7 @@ void main_menu(struct user_record *user) {
 			s_displayansi("mainmenu");
 
 
-			s_printf("\r\n\e[0mTL: %dm :> ", user->timeleft);
+			s_printf(get_string(142), user->timeleft);
 
 			c = s_getc();
 		} else {
@@ -75,21 +75,21 @@ void main_menu(struct user_record *user) {
 					if (conf.text_file_count > 0) {
 
 						while(1) {
-							s_printf("\r\n\e[1;32mText Files Collection\r\n");
-							s_printf("\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
+							s_printf(get_string(143));
+							s_printf(get_string(144));
 
 							for (i=0;i<conf.text_file_count;i++) {
-								s_printf("\e[1;30m[\e[1;34m%3d\e[1;30m] \e[1;37m%s\r\n", i, conf.text_files[i]->name);
+								s_printf(get_string(145), i, conf.text_files[i]->name);
 							}
-							s_printf("\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
-							s_printf("Enter the number of a text file to display or Q to quit: ");
+							s_printf(get_string(146));
+							s_printf(get_string(147));
 							s_readstring(buffer, 4);
 							if (tolower(buffer[0]) != 'q') {
 								i = atoi(buffer);
 								if (i >= 0 && i < conf.text_file_count) {
 									s_printf("\r\n");
 									s_displayansi_p(conf.text_files[i]->path);
-									s_printf("Press any key to continue...");
+									s_printf(get_string(6));
 									s_getc();
 									s_printf("\r\n");
 								}
@@ -98,8 +98,8 @@ void main_menu(struct user_record *user) {
 							}
 						}
 					} else {
-						s_printf("\r\nSorry, there are no text files to display\r\n");
-						s_printf("Press any key to continue...\r\n");
+						s_printf(get_string(148));
+						s_printf(get_string(6));
 						s_getc();
 					}
 				}
@@ -127,7 +127,7 @@ void main_menu(struct user_record *user) {
 					while (stat(buffer, &s) == 0) {
 						sprintf(buffer, "bulletin%d", i);
 						s_displayansi(buffer);
-						s_printf("\e[0mPress any key to continue...\r\n");
+						s_printf(get_string(6));
 						s_getc();
 						i++;
 						sprintf(buffer, "%s/bulletin%d.ans", conf.ansi_path, i);
@@ -151,7 +151,7 @@ void main_menu(struct user_record *user) {
 				break;
 			case 'g':
 				{
-					s_printf("\r\nAre you sure you want to log off? (Y/N)");
+					s_printf(get_string(53));
 					c = s_getc();
 					if (tolower(c) == 'y') {
 						doquit = 1;

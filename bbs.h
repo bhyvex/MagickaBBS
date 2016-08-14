@@ -96,7 +96,7 @@ struct bbs_config {
 	int ssh_port;
 	char *ssh_dsa_key;
 	char *ssh_rsa_key;
-
+	char *string_file;
 	char *irc_server;
 	int irc_port;
 	char *irc_channel;
@@ -192,4 +192,7 @@ extern int file_menu(struct user_record *user);
 extern void settings_menu(struct user_record *user);
 
 extern void lua_push_cfunctions(lua_State *L);
+
+extern void load_strings();
+extern char *get_string(int offset);
 #endif

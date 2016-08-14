@@ -345,25 +345,25 @@ void list_users(struct user_record *user) {
         sqlite3_close(db);
         exit(1);
     }
-    s_printf("\e[2J\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
-    s_printf("User Name        Location                         Times On\r\n");
-    s_printf("\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
+    s_printf(get_string(161));
+    s_printf(get_string(162));
+    s_printf(get_string(163));
     i = 0;
     while (sqlite3_step(res) == SQLITE_ROW) {
-		s_printf("\e[1;37m%-16s \e[1;36m%-32s \e[1;32m%5d\r\n", sqlite3_column_text(res, 0), sqlite3_column_text(res, 1), sqlite3_column_int(res, 2));
+		s_printf(get_string(164), sqlite3_column_text(res, 0), sqlite3_column_text(res, 1), sqlite3_column_int(res, 2));
 
 		i++;
 		if (i == 20) {
-			s_printf("Press any key to continue...\r\n");
+			s_printf(get_string(6));
 			s_getc();
 			i = 0;
 		}
 	}
-  s_printf("\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
+  s_printf(get_string(165));
   sqlite3_finalize(res);
   sqlite3_close(db);
 
-  s_printf("Press any key to continue...\r\n");
+  s_printf(get_string(6));
 	s_getc();
 }
 
@@ -422,17 +422,17 @@ struct user_record *new_user() {
 		passok = 0;
 		nameok = 0;
 		do {
-			s_printf("\r\nWhat is your login name: ");
+			s_printf(get_string(166));
 			s_readstring(buffer, 16);
 			s_printf("\r\n");
 			if (strlen(buffer) < 3) {
-				s_printf("Sorry, that name is too short.\r\n");
+				s_printf(get_string(167));
 				continue;
 			}
 
 			for (i=0;i<strlen(buffer);i++) {
 				if (!(tolower(buffer[i]) >= 97 && tolower(buffer[i]) <= 122)) {
-					s_printf("Sorry, invalid character, can only use alpha characters.\r\n");
+					s_printf(get_string(168));
 					nameok = 1;
 					break;
 				}
@@ -442,77 +442,77 @@ struct user_record *new_user() {
 				continue;
 			}
 			if (strcasecmp(buffer, "unknown") == 0) {
-				s_printf("Sorry, that name is reserved.\r\n");
+				s_printf(get_string(169));
 				continue;
 			}
 			if (strcasecmp(buffer, "all") == 0) {
-				s_printf("Sorry, that name is reserved.\r\n");
+				s_printf(get_string(169));
 				continue;
 			}
 			if (strcasecmp(buffer, "new") == 0) {
-				s_printf("Sorry, that name is reserved.\r\n");
+				s_printf(get_string(169));
 				continue;
 			}
 			user->loginname = strdup(buffer);
 			nameok = check_user(user->loginname);
 			if (!nameok) {
-				s_printf("Sorry, that name is in use.\r\n");
+				s_printf(get_string(170));
 				free(user->loginname);
 				memset(buffer, 0, 256);
 			}
 		} while (!nameok);
-		s_printf("What is your first name: ");
+		s_printf(get_string(171));
 		memset(buffer, 0, 256);
 		s_readstring(buffer, 32);
 		s_printf("\r\n");
 		user->firstname = strdup(buffer);
 
-		s_printf("What is your last name: ");
+		s_printf(get_string(172));
 		memset(buffer, 0, 256);
 		s_readstring(buffer, 32);
 		s_printf("\r\n");
 		user->lastname = strdup(buffer);
 
-		s_printf("What is your e-mail address: ");
+		s_printf(get_string(173));
 		memset(buffer, 0, 256);
 		s_readstring(buffer, 64);
 		s_printf("\r\n");
 		user->email = strdup(buffer);
 
-		s_printf("Where are you located: ");
+		s_printf(get_string(174));
 		memset(buffer, 0, 256);
 		s_readstring(buffer, 32);
 		s_printf("\r\n");
 		user->location = strdup(buffer);
 
 		do {
-			s_printf("What password would you like (at least 8 characters): ");
+			s_printf(get_string(175));
 			memset(buffer, 0, 256);
 			s_readstring(buffer, 16);
 			s_printf("\r\n");
 			if (strlen(buffer) >= 8) {
 				passok = 1;
 			} else {
-				s_printf("Password too short!\r\n");
+				s_printf(get_string(158));
 			}
 		} while (!passok);
 		gen_salt(&user->salt);
 		user->password = hash_sha256(buffer, user->salt);
 
-		s_printf("You Entered:\r\n");
-		s_printf("-------------------------------------\r\n");
-		s_printf("Login Name: ");
+		s_printf(get_string(176));
+		s_printf(get_string(177));
+		s_printf(get_string(178));
 		s_printf(user->loginname);
-		s_printf("\r\nFirst Name: ");
+		s_printf(get_string(179));
 		s_printf(user->firstname);
-		s_printf("\r\nLast Name: ");
+		s_printf(get_string(180));
 		s_printf(user->lastname);
-		s_printf("\r\nE-mail: ");
+		s_printf(get_string(181));
 		s_printf(user->email);
-		s_printf("\r\nLocation: ");
+		s_printf(get_string(182));
 		s_printf(user->location);
-		s_printf("\r\n-------------------------------------\r\n");
-		s_printf("Is this Correct? (Y/N)");
+		s_printf(get_string(183));
+		s_printf(get_string(184));
 		c = s_getchar();
 		while (tolower(c) != 'y' && tolower(c) != 'n') {
 			c = s_getchar();

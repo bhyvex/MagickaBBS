@@ -132,7 +132,7 @@ void timer_handler(int signum) {
 			gUser->timeleft--;
 
 			if (gUser->timeleft <= 0) {
-				s_printf("\r\n\r\nSorry, you're out of time today..\r\n");
+				s_printf(get_string(0));
 				disconnect("Out of Time");
 			}
 
@@ -142,7 +142,7 @@ void timer_handler(int signum) {
 			usertimeout--;
 		}
 		if (usertimeout <= 0) {
-			s_printf("\r\n\r\nTimeout waiting for input..\r\n");
+			s_printf(get_string(1));
 			disconnect("Timeout");
 		}
 	}
@@ -372,8 +372,8 @@ void display_last10_callers(struct user_record *user) {
 	struct tm l10_time;
 	FILE *fptr = fopen("last10.dat", "rb");
 
-	s_printf("\r\n\e[1;37mLast 10 callers:\r\n");
-	s_printf("\e[1;30m-------------------------------------------------------------------------------\r\n");
+	s_printf(get_string(2));
+	s_printf(get_string(3));
 
 	if (fptr != NULL) {
 
@@ -390,10 +390,10 @@ void display_last10_callers(struct user_record *user) {
 
 	for (z=0;z<i;z++) {
 		localtime_r(&callers[z].time, &l10_time);
-		s_printf("\e[1;37m%-16s \e[1;36m%-32s \e[1;32m%02d:%02d %02d-%02d-%02d\e[0m\r\n", callers[z].name, callers[z].location, l10_time.tm_hour, l10_time.tm_min, l10_time.tm_mday, l10_time.tm_mon + 1, l10_time.tm_year - 100);
+		s_printf(get_string(4), callers[z].name, callers[z].location, l10_time.tm_hour, l10_time.tm_min, l10_time.tm_mday, l10_time.tm_mon + 1, l10_time.tm_year - 100);
 	}
-	s_printf("\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
-	s_printf("Press any key to continue...\r\n");
+	s_printf(get_string(5));
+	s_printf(get_string(6));
 	s_getc();
 }
 
@@ -402,16 +402,16 @@ void display_info() {
 
 	uname(&name);
 
-	s_printf("\r\n\r\n\e[1;37mSystem Information\r\n");
-	s_printf("\e[1;30m----------------------------------------------\r\n");
-	s_printf("\e[1;32mBBS Name    : \e[1;37m%s\r\n", conf.bbs_name);
-	s_printf("\e[1;32mSysOp Name  : \e[1;37m%s\r\n", conf.sysop_name);
-	s_printf("\e[1;32mNode        : \e[1;37m%d\r\n", mynode);
-	s_printf("\e[1;32mBBS Version : \e[1;37mMagicka %d.%d (%s)\r\n", VERSION_MAJOR, VERSION_MINOR, VERSION_STR);
-	s_printf("\e[1;32mSystem      : \e[1;37m%s (%s)\r\n", name.sysname, name.machine);
-	s_printf("\e[1;30m----------------------------------------------\e[0m\r\n");
+	s_printf(get_string(7));
+	s_printf(get_string(8));
+	s_printf(get_string(9), conf.bbs_name);
+	s_printf(get_string(10), conf.sysop_name);
+	s_printf(get_string(11), mynode);
+	s_printf(get_string(12), VERSION_MAJOR, VERSION_MINOR, VERSION_STR);
+	s_printf(get_string(13), name.sysname, name.machine);
+	s_printf(get_string(14));
 
-	s_printf("Press any key to continue...\r\n");
+	s_printf(get_string(6));
 	s_getc();
 }
 
@@ -430,11 +430,11 @@ void automessage_write(struct user_record *user) {
 		timen = time(NULL);
 		localtime_r(&timen, &timenow);
 
-		sprintf(automsg, "Automessage Posted by %s @ %s", user->loginname, asctime(&timenow));
+		sprintf(automsg, get_string(15), user->loginname, asctime(&timenow));
 
 		automsg[strlen(automsg) - 1] = '\r';
 		automsg[strlen(automsg)] = '\n';
-		s_printf("\r\nEnter your message (4 lines):\r\n");
+		s_printf(get_string(16));
 		for (i=0;i<4;i++) {
 			s_printf("\r\n%d: ", i);
 			s_readstring(buffer, 75);
@@ -474,9 +474,9 @@ void automessage_display() {
 			dolog("Error opening automessage.txt");
 		}
 	} else {
-		s_printf("No automessage!\r\n");
+		s_printf(get_string(17));
 	}
-	s_printf("\e[0mPress any key to continue...\r\n");
+	s_printf(get_string(6));
 	s_getc();
 }
 
@@ -541,7 +541,7 @@ void runbbs_real(int socket, char *ip, int ssh) {
 	}
 
 	if (mynode == 0) {
-		s_printf("Sorry, all nodes are in use. Please try later\r\n");
+		s_printf(get_string(18));
 		if (!ssh) {
 			close(socket);
 		}
@@ -566,8 +566,8 @@ void runbbs_real(int socket, char *ip, int ssh) {
 	s_displayansi("issue");
 
 	if (!ssh) {
-		s_printf("\e[0mEnter your Login Name or NEW to create an account\r\n");
-		s_printf("Login:> ");
+		s_printf(get_string(19));
+		s_printf(get_string(20));
 
 		s_readstring(buffer, 25);
 
@@ -575,11 +575,11 @@ void runbbs_real(int socket, char *ip, int ssh) {
 			user = new_user();
 			gUser = user;
 		} else {
-			s_printf("\r\nPassword:> ");
+			s_printf(get_string(21));
 			s_readpass(password, 16);
 			user = check_user_pass(buffer, password);
 			if (user == NULL) {
-				s_printf("\r\nIncorrect Login.\r\n");
+				s_printf(get_string(22));
 				disconnect("Incorrect Login");
 			}
 
@@ -597,7 +597,7 @@ void runbbs_real(int socket, char *ip, int ssh) {
 
 					if (strcasecmp(user->loginname, buffer) == 0) {
 						fclose(nodefile);
-						s_printf("\r\nYou are already logged in.\r\n");
+						s_printf(get_string(23));
 						disconnect("Already Logged in");
 					}
 					fclose(nodefile);
@@ -607,7 +607,7 @@ void runbbs_real(int socket, char *ip, int ssh) {
 	} else {
 		if (gUser != NULL) {
 			user = gUser;
-			s_printf("\e[0mWelcome back %s. Press enter to log in...\r\n", gUser->loginname);
+			s_printf(get_string(24), gUser->loginname);
 			s_getc();
 			for (i=1;i<=conf.nodes;i++) {
 				sprintf(buffer, "%s/nodeinuse.%d", conf.bbs_path, i);
@@ -621,14 +621,14 @@ void runbbs_real(int socket, char *ip, int ssh) {
 
 					if (strcasecmp(user->loginname, buffer) == 0) {
 						fclose(nodefile);
-						s_printf("\r\nYou are already logged in.\r\n");
+						s_printf(get_string(23));
 						disconnect("Already Logged in");
 					}
 					fclose(nodefile);
 				}
 			}
 		} else {
-			s_printf("\e[0mWelcome to %s! Press enter to create an account...\r\n", conf.bbs_name);
+			s_printf(get_string(25), conf.bbs_name);
 			s_getc();
 		 	gUser = new_user();
 			user = gUser;
@@ -687,7 +687,7 @@ void runbbs_real(int socket, char *ip, int ssh) {
 		while (stat(buffer, &s) == 0) {
 			sprintf(buffer, "bulletin%d", i);
 			s_displayansi(buffer);
-			s_printf("\e[0mPress any key to continue...\r\n");
+			s_printf(get_string(6));
 			s_getc();
 			i++;
 			sprintf(buffer, "%s/bulletin%d.ans", conf.ansi_path, i);
@@ -703,9 +703,9 @@ void runbbs_real(int socket, char *ip, int ssh) {
 		// check email
 		i = mail_getemailcount(user);
 		if (i > 0) {
-			s_printf("\r\nYou have %d e-mail(s) in your inbox.\r\n", i);
+			s_printf(get_string(26), i);
 		} else {
-			s_printf("\r\nYou have no e-mail.\r\n");
+			s_printf(get_string(27));
 		}
 
 		mail_scan(user);

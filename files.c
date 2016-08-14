@@ -467,7 +467,7 @@ void list_files(struct user_record *user) {
     if (rc != SQLITE_OK) {
         sqlite3_finalize(res);
 		sqlite3_close(db);
-		s_printf("\r\nNo files in this area!\r\n");
+		s_printf(get_string(68));
 		return;
     }
 
@@ -492,7 +492,7 @@ void list_files(struct user_record *user) {
 	sqlite3_close(db);
 
 	if (files_c == 0) {
-		s_printf("\r\nNo files in this area!\r\n");
+		s_printf(get_string(68));
 		return;
 	}
 	s_printf("\r\n");
@@ -510,7 +510,7 @@ void list_files(struct user_record *user) {
 		} else {
 			file_unit = 'b';
 		}
-		s_printf("\r\n\r\n\e[1;30m[\e[1;34m%3d\e[1;30m] \e[1;33m%3ddloads \e[1;36m%4d%c \e[1;37m%-56s\r\n     \e[0;32m", i, files_e[i]->dlcount, file_size, file_unit, basename(files_e[i]->filename));
+		s_printf(get_string(69), i, files_e[i]->dlcount, file_size, file_unit, basename(files_e[i]->filename));
 		lines+=3;
 		for (j=0;j<strlen(files_e[i]->description);j++) {
 			if (files_e[i]->description[j] == '\n') {
@@ -519,7 +519,7 @@ void list_files(struct user_record *user) {
 				if (lines >= 18) {
 					lines = 0;
 					while (1) {
-						s_printf("\r\n\e[0mEnter # to tag, Q to quit, Enter to continue: ");
+						s_printf(get_string(70));
 						s_readstring(buffer, 5);
 						if (strlen(buffer) == 0) {
 							s_printf("\r\n");
@@ -552,18 +552,18 @@ void list_files(struct user_record *user) {
 										}
 										tagged_files[tagged_count] = strdup(files_e[z]->filename);
 										tagged_count++;
-										s_printf("\r\nTagged %s\r\n", basename(files_e[z]->filename));
+										s_printf(get_string(71), basename(files_e[z]->filename));
 									} else {
-										s_printf("\r\nAlready Tagged\r\n");
+										s_printf(get_string(72));
 									}
 								} else {
-									s_printf("\r\nSorry, you don't have permission to download from this area\r\n");
+									s_printf(get_string(73));
 								}
 							}
 						}
 					}
 				} else {
-					s_printf("     \e[0;32m");
+					s_printf(get_string(74));
 				}
 			} else {
 				s_putchar(files_e[i]->description[j]);
@@ -571,7 +571,7 @@ void list_files(struct user_record *user) {
 		}
 	}
 	while (1) {
-		s_printf("\r\n\e[0mEnter # to tag, Enter to quit: ");
+		s_printf(get_string(75));
 		s_readstring(buffer, 5);
 		if (strlen(buffer) == 0) {
 			for (z=0;z<files_c;z++) {
@@ -601,12 +601,12 @@ void list_files(struct user_record *user) {
 						}
 						tagged_files[tagged_count] = strdup(files_e[z]->filename);
 						tagged_count++;
-						s_printf("\r\nTagged %s\r\n", basename(files_e[z]->filename));
+						s_printf(get_string(71), basename(files_e[z]->filename));
 					} else {
-						s_printf("\r\nAlready Tagged\r\n");
+						s_printf(get_string(72));
 					}
 				} else {
-					s_printf("\r\nSorry, you don't have permission to download from this area\r\n");
+					s_printf(get_string(73));
 				}
 			}
 		}
@@ -650,7 +650,7 @@ int file_menu(struct user_record *user) {
 		if (do_internal_menu == 1) {
 			s_displayansi("filemenu");
 
-			s_printf("\e[0m\r\nDir: (%d) %s\r\nSub: (%d) %s\r\nTL: %dm :> ", user->cur_file_dir, conf.file_directories[user->cur_file_dir]->name, user->cur_file_sub, conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->name, user->timeleft);
+			s_printf(get_string(76), user->cur_file_dir, conf.file_directories[user->cur_file_dir]->name, user->cur_file_sub, conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->name, user->timeleft);
 
 			c = s_getc();
 		} else {
@@ -669,22 +669,22 @@ int file_menu(struct user_record *user) {
 		switch(tolower(c)) {
 			case 'i':
 				{
-					s_printf("\r\n\r\nFile Directories:\r\n\r\n");
+					s_printf(get_string(77));
 					for (i=0;i<conf.file_directory_count;i++) {
 						if (conf.file_directories[i]->sec_level <= user->sec_level) {
-							s_printf("  %d. %s\r\n", i, conf.file_directories[i]->name);
+							s_printf(get_string(78), i, conf.file_directories[i]->name);
 						}
 						if (i != 0 && i % 20 == 0) {
-							s_printf("Press any key to continue...\r\n");
+							s_printf(get_string(6));
 							c = s_getc();
 						}
 					}
-					s_printf("Enter the directory number: ");
+					s_printf(get_string(79));
 					s_readstring(prompt, 5);
 					if (tolower(prompt[0]) != 'q') {
 						j = atoi(prompt);
 						if (j < 0 || j >= conf.file_directory_count || conf.file_directories[j]->sec_level > user->sec_level) {
-							s_printf("\r\nInvalid directory number!\r\n");
+							s_printf(get_string(80));
 						} else {
 							s_printf("\r\n");
 							user->cur_file_dir = j;
@@ -695,21 +695,21 @@ int file_menu(struct user_record *user) {
 				break;
 			case 's':
 				{
-					s_printf("\r\n\r\nFile Subdirectories:\r\n\r\n");
+					s_printf(get_string(81));
 					for (i=0;i<conf.file_directories[user->cur_file_dir]->file_sub_count;i++) {
 						s_printf("  %d. %s\r\n", i, conf.file_directories[user->cur_file_dir]->file_subs[i]->name);
 
 						if (i != 0 && i % 20 == 0) {
-							s_printf("Press any key to continue...\r\n");
+							s_printf(get_string(6));
 							c = s_getc();
 						}
 					}
-					s_printf("Enter the sub directory number: ");
+					s_printf(get_string(82));
 					s_readstring(prompt, 5);
 					if (tolower(prompt[0]) != 'q') {
 						j = atoi(prompt);
 						if (j < 0 || j >= conf.file_directories[user->cur_file_dir]->file_sub_count) {
-							s_printf("\r\nInvalid sub directiry number!\r\n");
+							s_printf(get_string(83));
 						} else {
 							s_printf("\r\n");
 							user->cur_file_sub = j;
@@ -725,7 +725,7 @@ int file_menu(struct user_record *user) {
 					if (user->sec_level >= conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->upload_sec_level) {
 						upload(user);
 					} else {
-						s_printf("Sorry, you don't have permission to upload in this Sub\r\n");
+						s_printf(get_string(84));
 					}
 				}
 				break;
@@ -796,7 +796,7 @@ int file_menu(struct user_record *user) {
 				break;
 			case 'g':
 				{
-					s_printf("\r\nAre you sure you want to log off? (Y/N)");
+					s_printf(get_string(53));
 					c = s_getc();
 					if (tolower(c) == 'y') {
 						dofiles = 1;

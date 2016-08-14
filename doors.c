@@ -241,7 +241,7 @@ void rundoor(struct user_record *user, char *cmd, int stdio) {
 			sprintf(buffer, "%s %d %d", cmd, mynode, gSocket);
 			system(buffer);
 		} else {
-			s_printf("Non-STDIO door support on SSH is currently broken...\r\n");
+			s_printf(get_string(51));
 		}
 	}
 	timeoutpaused = 0;
@@ -283,7 +283,7 @@ int door_menu(struct user_record *user) {
 		if (do_internal_menu == 1) {
 			s_displayansi("doors");
 
-			s_printf("\e[0m\r\nTL: %dm :> ", user->timeleft);
+			s_printf(get_string(52), user->timeleft);
 
 			c = s_getc();
 		} else {
@@ -305,7 +305,7 @@ int door_menu(struct user_record *user) {
 				break;
 			case 'g':
 				{
-					s_printf("\r\nAre you sure you want to log off? (Y/N)");
+					s_printf(get_string(53));
 					c = s_getc();
 					if (tolower(c) == 'y') {
 						doquit = 1;

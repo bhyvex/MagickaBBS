@@ -1,0 +1,186 @@
+\r\n\r\nSorry, you're out of time today..\r\n
+\r\n\r\nTimeout waiting for input..\r\n
+\r\n\e[1;37mLast 10 callers:\r\n
+\e[1;30m-------------------------------------------------------------------------------\r\n
+\e[1;37m%-16s \e[1;36m%-32s \e[1;32m%02d:%02d %02d-%02d-%02d\e[0m\r\n
+\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n
+\e[1;37mPress any key to continue...\e[0m\r\n
+\r\n\r\n\e[1;37mSystem Information\r\n
+\e[1;30m----------------------------------------------\r\n
+\e[1;32mBBS Name    : \e[1;37m%s\r\n
+\e[1;32mSysOp Name  : \e[1;37m%s\r\n
+\e[1;32mNode        : \e[1;37m%d\r\n
+\e[1;32mBBS Version : \e[1;37mMagicka %d.%d (%s)\r\n
+\e[1;32mSystem      : \e[1;37m%s (%s)\r\n
+\e[1;30m----------------------------------------------\e[0m\r\n
+Automessage Posted by %s @ %s
+\r\nEnter your message (4 lines):\r\n
+No automessage!\r\n
+Sorry, all nodes are in use. Please try later\r\n
+\e[0mEnter your Login Name or NEW to create an account\r\n
+Login:> 
+\r\nPassword:> 
+\r\nIncorrect Login.\r\n
+\r\nYou are already logged in.\r\n
+\e[0mWelcome back %s. Press enter to log in...\r\n
+\e[0mWelcome to %s! Press enter to create an account...\r\n
+\r\nYou have %d e-mail(s) in your inbox.\r\n
+\r\nYou have no e-mail.\r\n
+\r\n\e[1;37mEnter the BBS Name: \e[0m
+\r\n\e[1;37mEnter the Sysop's Name: \e[0m
+\r\n\e[1;37mEnter the Telnet URL: \e[0m
+\r\nYou entered:\r\n
+\e[1;30m----------------------------------------------\e[0m\r\n
+\e[1;37mBBS Name: \e[1;32m%s\r\n
+\e[1;37mSysop: \e[1;32m%s\r\n
+\e[1;37mTelnet URL: \e[1;32m%s\r\n
+\e[1;30m----------------------------------------------\e[0m\r\n
+Is this correct? (Y/N) : 
+\r\n\e[1;32mAdded!\e[0m\r\n
+\r\n\e[1;31mAborted!\e[0m\r\n
+\r\nPlease enter the id of the BBS you want to delete:
+\r\nThere are no BBSes in the list yet!\r\n
+\r\nAre you sure you want to delete %s?\r\n
+\r\n\e[1;32mDeleted!\e[0m\r\n
+\r\nThat BBS entry either doesn't exist or wasn't created by you.\r\n
+\r\n\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n
+\e[1;30m[\e[1;34m%3d\e[1;30m] \e[1;37m%-18s \e[1;33m%-16s \e[1;32m%-37s\e[0m\r\n
+\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n
+\r\n\e[1;32mBBS Listings: \e[1;37m(\e[1;33mL\e[1;37m) \e[1;32mList, \e[1;37m(\e[1;33mA\e[1;37m) \e[1;32mAdd \e[1;37m(\e[1;33mD\e[1;37m) \e[1;32mDelete \e[1;37m(\e[1;33mQ\e[1;37m) \e[1;32mQuit\e[0m\r\n
+\r\nSorry, Chat is not supported on this system.\r\n
+\e[1;45;37m Type /Quit to Exit\e[K\e[0m\r\n
+Non-STDIO door support on SSH is currently broken...\r\n
+\e[0m\r\nTL: %dm :> 
+\r\nAre you sure you want to log off? (Y/N) 
+\r\nTO: 
+\r\n\r\nInvalid Username\r\n
+\r\nSUBJECT: 
+\e[2J\e[1;32mFrom    : \e[1;37m%s\r\n
+\e[1;32mSubject : \e[1;37m%s\r\n
+\e[1;32mDate    : \e[1;37m%s\r\n
+\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n
+\e[1;37mPress \e[1;36mR\e[1;37m to reply, \e[1;36mD\e[1;37m to delete \e[1;36mEnter\e[1;37m to quit...\e[0m\r\n
+\r\nYou have no email\r\n
+\e[2J\e[1;37;44m[MSG#] Subject                                 From             Date          \r\n\e[0m
+\e[1;30m[\e[1;34m%4d\e[1;30m]\e[1;32m*\e[1;37m%-39.39s \e[1;32m%-16.16s \e[1;35m%02d:%02d %02d-%02d-%02d\e[0m\r\n
+\e[1;30m[\e[1;34m%4d\e[1;30m] \e[1;37m%-39.39s \e[1;32m%-16.16s \e[1;35m%02d:%02d %02d-%02d-%02d\e[0m\r\n
+\e[1;37mEnter \e[1;36m# \e[1;37mto read, \e[1;36mQ \e[1;37mto quit or \e[1;36mEnter\e[1;37m to continue\e[0m\r\n
+\e[1;37mEnter \e[1;36m# \e[1;37mto read, or \e[1;36mEnter\e[1;37m to quit\e[0m\r\n
+\r\nNo files in this area!\r\n
+\r\n\r\n\e[1;30m[\e[1;34m%3d\e[1;30m] \e[1;33m%3ddloads \e[1;36m%4d%c \e[1;37m%-56s\r\n     \e[0;32m
+\r\n\e[0mEnter # to tag, Q to quit, Enter to continue: 
+\r\nTagged %s\r\n
+\r\nAlready Tagged\r\n
+\r\nSorry, you don't have permission to download from this area\r\n
+     \e[0;32m
+\r\n\e[0mEnter # to tag, Enter to quit: 
+\e[0m\r\nDir: (%d) %s\r\nSub: (%d) %s\r\nTL: %dm :> 
+\r\n\r\nFile Directories:\r\n\r\n
+  %d. %s\r\n
+Enter the directory number: 
+\r\nInvalid directory number!\r\n
+\r\n\r\nFile Subdirectories:\r\n\r\n
+Enter the sub directory number: 
+\r\nInvalid sub directory number!\r\n
+Sorry, you don't have permission to upload in this Sub\r\n
+\r\nUse external editor? (Y/N) 
+\r\n\e[1;32mMagicka Internal Editor, Type \e[1;37m/S \e[1;32mto save, \e[1;37m/A \e[1;32mto abort and \e[1;37m/? \e[1;32mfor help\r\n
+\e[1;30m-------------------------------------------------------------------------------\e[0m
+\r\n\e[1;30m[\e[1;34m%3d\e[1;30m]: \e[0m%s
+\r\nNo message to quote!\r\n
+\r\nQuote from Line: 
+\r\nQuote to Line: 
+Quoting Cancelled\r\n
+\e[1;33m\r\nHELP\r\n
+/S - Save Message\r\n
+/A - Abort Message\r\n
+/Q - Quote Message\r\n
+/E - Edit (Rewrite) Line\r\n
+/D - Delete Line\r\n
+/I - Insert Line\r\n
+/L - Relist Message\r\n\e[0m
+\r\nWhich line do you want to delete?
+\r\nWhich line do you want to edit?
+\r\n\e[1;30m[\e[1;34m%3d\e[1;30m]: \e[0m
+\r\nInsert before which line? 
+\e[2J\e[1;32mFrom    : \e[1;37m%s (%d:%d/%d.%d)\r\n
+\e[2J\e[1;32mFrom    : \e[1;37m%s\r\n
+\e[1;32mTo      : \e[1;37m%-27.27s \e[1;32mConf     : \e[1;37m%-27.27s\r\n
+\e[1;32mSubject : \e[1;37m%-27.27s \e[1;32mArea     : \e[1;37m%-27.27s\r\n
+\e[1;32mDate    : \e[1;37m%s    \e[1;32mMsgNo    : \e[1;37m%4d of %4d\r\n
+\e[1;32mAttribs : \e[1;37m%s\r\n
+\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n
+\r\n\e[1;37mPress \e[1;36mR \e[1;37mto reply, \e[1;36mQ \e[1;37mto quit, \e[1;36mB \e[1;37mto go Back, \e[1;36mSPACE \e[1;37mfor Next Mesage...
+\r\nSorry, you are not allowed to post in this area\r\n
+\r\n\r\nReplying to: %s\r\n
+Change Subject? (Y/N) 
+\r\nNew subject: 
+\r\nOk, not changing the subject line...
+\r\n\r\nNo more messages\r\n
+\e[0m\r\nConf: (%d) %s\r\nArea: (%d) %s\r\nTL: %dm :> 
+Read message [1-%d] or N for New: 
+\r\nADDR: 
+\r\n\r\nInvalid Address\r\n
+\r\nMailing to %d:%d/%d.%d\r\n
+\r\nMailing to @%d\r\n
+Start at message [1-%d] or N for New? 
+\e[2J\e[1;37;44m[MSG#] Subject                   From            To              Date          \r\n\e[0m
+\e[1;30m[\e[1;34m%4d\e[1;30m]\e[1;32m*\e[1;37m%-25.25s \e[1;32m%-15.15s \e[1;33m%-15.15s \e[1;35m%02d:%02d %02d-%02d-%02d\e[0m\r\n
+\e[1;30m[\e[1;34m%4d\e[1;30m] \e[1;37m%-25.25s \e[1;32m%-15.15s \e[1;33m%-15.15s \e[1;35m%02d:%02d %02d-%02d-%02d\e[0m\r\n
+(#) Read Message # (Q) Quit (ENTER) Continue\r\n
+\r\nThere is no mail in this area\r\n
+\r\n\r\nMail Conferences:\r\n\r\n
+  %d. %s\r\n
+Enter the conference number: 
+\r\nInvalid conference number!\r\n
+\r\n\r\nMail Areas:\r\n\r\n
+  %d. %s\r\n
+Enter the area number: 
+\r\nInvalid area number!\r\n
+\r\nScan for new mail? (Y/N) : 
+\r\n\e[1;32m%d. %s\e[0m\r\n
+\e[1;37m   --> %d. %s (%d new)\e[0m\r\n
+\r\n\e[0mTL: %dm :> 
+\r\n\e[1;32mText Files Collection\r\n
+\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n
+\e[1;30m[\e[1;34m%3d\e[1;30m] \e[1;37m%s\r\n
+\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n
+Enter the number of a text file to display or Q to quit:
+\r\nSorry, there are no text files to display\r\n
+\e[2J\e[1;32mYour Settings\r\n
+\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n
+\e[0;36mP. \e[1;37mPassword (\e[1;33mNot Shown\e[1;37m)\r\n
+\e[0;36mL. \e[1;37mLocation (\e[1;33m%s\e[1;37m)\r\n
+\e[0;36mQ. \e[1;37mQuit to Main Menu\r\n
+\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n
+\r\nEnter your current password: 
+\r\nEnter your new password (8 chars min):
+\r\nPassword Changed!\r\n
+\r\nPassword too short!\r\n
+\r\nPassword Incorrect!\r\n
+\r\nEnter your new location: 
+\e[2J\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n
+User Name        Location                         Times On\r\n
+\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n
+\e[1;37m%-16s \e[1;36m%-32s \e[1;32m%5d\r\n
+\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n
+\r\nWhat is your login name: 
+Sorry, that name is too short.\r\n
+Sorry, invalid character, can only use alpha characters.\r\n
+Sorry, that name is reserved.\r\n
+Sorry, that name is in use.\r\n
+What is your first name: 
+What is your last name: 
+What is your e-mail address: 
+Where are you located: 
+What password would you like (at least 8 characters): 
+You Entered:\r\n
+-------------------------------------\r\n
+Login Name: 
+\r\nFirst Name: 
+\r\nLast Name: 
+\r\nE-mail: 
+\r\nLocation: 
+\r\n-------------------------------------\r\n
+Is this Correct? (Y/N) 
+\e[1;37mPress any key to continue...\e[0m

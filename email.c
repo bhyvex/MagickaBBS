@@ -27,24 +27,24 @@ void send_email(struct user_record *user) {
   char *isql = "INSERT INTO email (sender, recipient, subject, body, date, seen) VALUES(?, ?, ?, ?, ?, 0)";
   char *err_msg = 0;
 
-	s_printf("\r\nTO: ");
+	s_printf(get_string(54));
 	s_readstring(buffer, 16);
 
 	if (strlen(buffer) == 0) {
-		s_printf("\r\nAborted\r\n");
+		s_printf(get_string(39));
 		return;
 	}
 	if (check_user(buffer)) {
-		s_printf("\r\n\r\nInvalid Username\r\n");
+		s_printf(get_string(55));
 		return;
 	}
 
 	recipient = strdup(buffer);
-	s_printf("\r\nSUBJECT: ");
+	s_printf(get_string(56));
 	s_readstring(buffer, 25);
 	if (strlen(buffer) == 0) {
 		free(recipient);
-		s_printf("\r\nAborted\r\n");
+		s_printf(get_string(39));
 		return;
 	}
 	subject = strdup(buffer);
@@ -150,14 +150,13 @@ void show_email(struct user_record *user, int msgno) {
 		date = (time_t)sqlite3_column_int(res, 4);
 
 
-		s_printf("\e[2J\e[1;32mFrom    : \e[1;37m%s\r\n", sender);
-		s_printf("\e[1;32mSubject : \e[1;37m%s\r\n", subject);
+		s_printf(get_string(57), sender);
+		s_printf(get_string(58), subject);
 		localtime_r(&date, &msg_date);
-		sprintf(buffer, "\e[1;32mDate    : \e[1;37m%s", asctime(&msg_date));
+		sprintf(buffer, "%s", asctime(&msg_date));
 		buffer[strlen(buffer) - 1] = '\0';
-		strcat(buffer, "\r\n");
-		s_printf(buffer);
-		s_printf("\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
+		s_printf(get_string(59), buffer);
+		s_printf(get_string(60));
 
 		lines = 0;
 		chars = 0;
@@ -168,7 +167,7 @@ void show_email(struct user_record *user, int msgno) {
 				s_printf("\r\n");
 				lines++;
 				if (lines == 19) {
-					s_printf("\e[1;37mPress a key to continue...\e[0m");
+					s_printf(get_string(6));
 					s_getc();
 					lines = 0;
 					s_printf("\e[5;1H\e[0J");
@@ -193,7 +192,7 @@ void show_email(struct user_record *user, int msgno) {
 		}
 		sqlite3_step(res);
 
-		s_printf("\e[1;37mPress \e[1;36mR\e[1;37m to reply, \e[1;36mD\e[1;37m to delete \e[1;36mEnter\e[1;37m to quit...\e[0m\r\n");
+		s_printf(get_string(61));
 		c = s_getc();
 		if (tolower(c) == 'r') {
 			if (subject != NULL) {
@@ -293,12 +292,12 @@ void list_emails(struct user_record *user) {
     dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
 		sqlite3_finalize(res);
 		sqlite3_close(db);
-		s_printf("\r\nYou have no email\r\n");
+		s_printf(get_string(62));
 		return;
   }
 
   msgid = 0;
-	s_printf("\e[2J\e[1;37;44m[MSG#] Subject                                 From             Date          \r\n\e[0m");
+	s_printf(get_string(63));
   while (sqlite3_step(res) == SQLITE_ROW) {
 		from = strdup((char *)sqlite3_column_text(res, 0));
 		subject = strdup((char *)sqlite3_column_text(res, 1));
@@ -306,15 +305,15 @@ void list_emails(struct user_record *user) {
 		date = (time_t)sqlite3_column_int(res, 3);
 		localtime_r(&date, &msg_date);
 		if (seen == 0) {
-			s_printf("\e[1;30m[\e[1;34m%4d\e[1;30m]\e[1;32m*\e[1;37m%-39.39s \e[1;32m%-16.16s \e[1;35m%02d:%02d %02d-%02d-%02d\e[0m\r\n", msgid + 1, subject, from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+			s_printf(get_string(64), msgid + 1, subject, from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 		} else {
-			s_printf("\e[1;30m[\e[1;34m%4d\e[1;30m] \e[1;37m%-39.39s \e[1;32m%-16.16s \e[1;35m%02d:%02d %02d-%02d-%02d\e[0m\r\n", msgid + 1, subject, from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+			s_printf(get_string(65), msgid + 1, subject, from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 		}
 		free(from);
 		free(subject);
 
 		if (msgid % 22 == 0 && msgid != 0) {
-			s_printf("\e[1;37mEnter \e[1;36m# \e[1;37mto read, \e[1;36mQ \e[1;37mto quit or \e[1;36mEnter\e[1;37m to continue\e[0m\r\n");
+			s_printf(get_string(66));
 			s_readstring(buffer, 5);
 			if (strlen(buffer) > 0) {
 				if (tolower(buffer[0]) == 'q') {
@@ -329,14 +328,14 @@ void list_emails(struct user_record *user) {
 					return;
 				}
 			}
-			s_printf("\e[2J\e[1;37;44m[MSG#] Subject                                 From             Date          \r\n\e[0m");
+			s_printf(get_string(63));
 		}
 		msgid++;
 	}
 	if (msgid == 0) {
-		s_printf( "\r\nYou have no email\r\n");
+		s_printf(get_string(62));
 	} else {
-		s_printf("\e[1;37mEnter \e[1;36m# \e[1;37mto read, or \e[1;36mEnter\e[1;37m to quit\e[0m\r\n");
+		s_printf(get_string(67));
 		s_readstring(buffer, 5);
 		if (strlen(buffer) > 0) {
 			msgtoread = atoi(buffer) - 1;

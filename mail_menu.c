@@ -344,7 +344,7 @@ char *external_editor(struct user_record *user, char *to, char *from, char *quot
 
 
 	if (conf.external_editor_cmd != NULL) {
-		s_printf("\r\nUse external editor? (Y/N) ");
+		s_printf(get_string(85));
 		c = s_getc();
 		if (tolower(c) == 'y') {
 
@@ -524,11 +524,11 @@ char *editor(struct user_record *user, char *quote, char *from, int email) {
 			}
 		}
 	}
-	s_printf("\r\n\e[1;32mMagicka Internal Editor, Type \e[1;37m/S \e[1;32mto save, \e[1;37m/A \e[1;32mto abort and \e[1;37m/? \e[1;32mfor help\r\n");
-	s_printf("\e[1;30m-------------------------------------------------------------------------------\e[0m");
+	s_printf(get_string(86));
+	s_printf(get_string(87));
 
 	while(!doquit) {
-		s_printf("\r\n\e[1;30m[\e[1;34m%3d\e[1;30m]: \e[0m%s", lines, next_line_buffer);
+		s_printf(get_string(88), lines, next_line_buffer);
 		strcpy(linebuffer, next_line_buffer);
 		s_readstring(&linebuffer[strlen(next_line_buffer)], 70 - strlen(next_line_buffer));
 		memset(next_line_buffer, 0, 70);
@@ -610,17 +610,17 @@ char *editor(struct user_record *user, char *quote, char *from, int email) {
 				return NULL;
 			} else if (toupper(linebuffer[1]) == 'Q') {
 				if (quote == NULL) {
-					s_printf("\r\nNo message to quote!\r\n");
+					s_printf(get_string(89));
 				} else {
 					s_printf("\r\n");
 					for (i=0;i<quotelines;i++) {
-						s_printf("\r\n\e[1;30m[\e[1;34m%3d\e[1;30m]: \e[0m%s", i, quotecontent[i]);
+						s_printf(get_string(88), i, quotecontent[i]);
 					}
 
-					s_printf("\r\nQuote from Line: ");
+					s_printf(get_string(90));
 					s_readstring(buffer, 5);
 					qfrom = atoi(buffer);
-					s_printf("\r\nQuote to Line: ");
+					s_printf(get_string(91));
 					s_readstring(buffer, 5);
 					qto = atoi(buffer);
 					s_printf("\r\n");
@@ -632,7 +632,7 @@ char *editor(struct user_record *user, char *quote, char *from, int email) {
 						qfrom = 0;
 					}
 					if (qfrom > qto) {
-						s_printf("Quoting Cancelled\r\n");
+						s_printf(get_string(92));
 					}
 
 					for (i=qfrom;i<=qto;i++) {
@@ -646,38 +646,38 @@ char *editor(struct user_record *user, char *quote, char *from, int email) {
 						lines++;
 					}
 
-					s_printf("\r\n\e[1;32mMagicka Internal Editor, Type \e[1;37m/S \e[1;32mto save, \e[1;37m/A \e[1;32mto abort and \e[1;37m/? \e[1;32mfor help\r\n");
-					s_printf("\e[1;30m-------------------------------------------------------------------------------\e[0m");
+					s_printf(get_string(86));
+					s_printf(get_string(87));
 
 					for (i=0;i<lines;i++) {
-						s_printf("\r\n\e[1;30m[\e[1;34m%3d\e[1;30m]: \e[0m%s", i, content[i]);
+						s_printf(get_string(88), i, content[i]);
 					}
 				}
 			} else if (toupper(linebuffer[1]) == 'L') {
-				s_printf("\r\n\e[1;32mMagicka Internal Editor, Type \e[1;37m/S \e[1;32mto save, \e[1;37m/A \e[1;32mto abort and \e[1;37m/? \e[1;32mfor help\r\n");
-				s_printf("\e[1;30m-------------------------------------------------------------------------------\e[0m");
+				s_printf(get_string(86));
+				s_printf(get_string(87));
 
 				for (i=0;i<lines;i++) {
-					s_printf("\r\n\e[1;30m[\e[1;34m%3d\e[1;30m]: \e[0m%s", i, content[i]);
+					s_printf(get_string(88), i, content[i]);
 				}
 			} else if (linebuffer[1] == '?') {
-				s_printf("\e[1;33m\r\nHELP\r\n");
-				s_printf("/S - Save Message\r\n");
-				s_printf("/A - Abort Message\r\n");
-				s_printf("/Q - Quote Message\r\n");
-				s_printf("/E - Edit (Rewrite) Line\r\n");
-				s_printf("/D - Delete Line\r\n");
-				s_printf("/I - Insert Line\r\n");
-				s_printf("/L - Relist Message\r\n\e[0m");
+				s_printf(get_string(93));
+				s_printf(get_string(94));
+				s_printf(get_string(95));
+				s_printf(get_string(96));
+				s_printf(get_string(97));
+				s_printf(get_string(98));
+				s_printf(get_string(99));
+				s_printf(get_string(100));
 			} else if (toupper(linebuffer[1]) == 'D') {
-				s_printf("\r\nWhich line do you want to delete? ");
+				s_printf(get_string(101));
 				s_readstring(buffer, 6);
 				if (strlen(buffer) == 0) {
-					s_printf("\r\nAborted...\r\n");
+					s_printf(get_string(39));
 				} else {
 					z = atoi(buffer);
 					if (z < 0 || z >= lines) {
-						s_printf("\r\nAborted...\r\n");
+						s_printf(get_string(39));
 					} else {
 						for (i=z;i<lines-1;i++) {
 							free(content[i]);
@@ -689,33 +689,33 @@ char *editor(struct user_record *user, char *quote, char *from, int email) {
 					}
 				}
 			} else if (toupper(linebuffer[1]) == 'E') {
-				s_printf("\r\nWhich line do you want to edit? ");
+				s_printf(get_string(102));
 				s_readstring(buffer, 6);
 				if (strlen(buffer) == 0) {
-					s_printf("\r\nAborted...\r\n");
+					s_printf(get_string(39));
 				} else {
 					z = atoi(buffer);
 					if (z < 0 || z >= lines) {
-						s_printf("\r\nAborted...\r\n");
+						s_printf(get_string(39));
 					} else {
-						s_printf("\r\n\e[1;30m[\e[1;34m%3d\e[1;30m]: \e[0m%s", z, content[z]);
-						s_printf("\r\n\e[1;30m[\e[1;34m%3d\e[1;30m]: \e[0m", z);
+						s_printf(get_string(88), z, content[z]);
+						s_printf(get_string(103), z);
 						s_readstring(linebuffer, 70);
 						free(content[z]);
 						content[z] = strdup(linebuffer);
 					}
 				}
 			} else if (toupper(linebuffer[1]) == 'I') {
-				s_printf("\r\nInsert before which line? ");
+				s_printf(get_string(104));
 				s_readstring(buffer, 6);
 				if (strlen(buffer) == 0) {
-					s_printf("\r\nAborted...\r\n");
+					s_printf(get_string(39));
 				} else {
 					z = atoi(buffer);
 					if (z < 0 || z >= lines) {
-						s_printf("\r\nAborted...\r\n");
+						s_printf(get_string(39));
 					} else {
-						s_printf("\r\n\e[1;30m[\e[1;34m%3d\e[1;30m]: \e[0m", z);
+						s_printf(get_string(103), z);
 						s_readstring(linebuffer, 70);
 						lines++;
 						content = (char **)realloc(content, sizeof(char *) * lines);
@@ -799,19 +799,19 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 
 		if (msghs->msgs[mailno]->oaddress != NULL && conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_FIDO) {
 			from_addr = parse_fido_addr(msghs->msgs[mailno]->oaddress);
-			s_printf("\e[2J\e[1;32mFrom    : \e[1;37m%s (%d:%d/%d.%d)\r\n", msghs->msgs[mailno]->from, from_addr->zone, from_addr->net, from_addr->node, from_addr->point);
+			s_printf(get_string(105), msghs->msgs[mailno]->from, from_addr->zone, from_addr->net, from_addr->node, from_addr->point);
 			free(from_addr);
 		} else {
-			s_printf("\e[2J\e[1;32mFrom    : \e[1;37m%s\r\n", msghs->msgs[mailno]->from);
+			s_printf(get_string(106), msghs->msgs[mailno]->from);
 		}
-		s_printf("\e[1;32mTo      : \e[1;37m%-27.27s \e[1;32mConf     : \e[1;37m%-27.27s\r\n", msghs->msgs[mailno]->to, conf.mail_conferences[user->cur_mail_conf]->name);
-		s_printf("\e[1;32mSubject : \e[1;37m%-27.27s \e[1;32mArea     : \e[1;37m%-27.27s\r\n", msghs->msgs[mailno]->subject, conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->name);
+		s_printf(get_string(107), msghs->msgs[mailno]->to, conf.mail_conferences[user->cur_mail_conf]->name);
+		s_printf(get_string(108), msghs->msgs[mailno]->subject, conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->name);
 		localtime_r((time_t *)&msghs->msgs[mailno]->msg_h->DateWritten, &msg_date);
-		sprintf(buffer, "\e[1;32mDate    : \e[1;37m%s", asctime(&msg_date));
+		sprintf(buffer, "%s", asctime(&msg_date));
 		buffer[strlen(buffer) - 1] = '\0';
-		s_printf("%s    \e[1;32mMsgNo    : \e[1;37m%4d of %4d\r\n", buffer, mailno + 1, msghs->msg_count);
-		s_printf("\e[1;32mAttribs : \e[1;37m%s\r\n", (msghs->msgs[mailno]->msg_h->Attribute & MSG_SENT ? "SENT" : ""));
-		s_printf("\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
+		s_printf(get_string(109), buffer, mailno + 1, msghs->msg_count);
+		s_printf(get_string(110), (msghs->msgs[mailno]->msg_h->Attribute & MSG_SENT ? "SENT" : ""));
+		s_printf(get_string(111));
 
 		body = (char *)malloc(msghs->msgs[mailno]->msg_h->TxtLen);
 
@@ -867,7 +867,7 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 				}
 				lines++;
 				if (lines >= 17) {
-					s_printf("\e[1;37mPress a key to continue...\e[0m");
+					s_printf(get_string(185));
 					s_getc();
 					lines = 0;
 					s_printf("\e[7;1H\e[0J");
@@ -939,14 +939,14 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 			}
 		}
 
-		s_printf("\r\n\e[1;37mPress \e[1;36mR \e[1;37mto reply, \e[1;36mQ \e[1;37mto quit, \e[1;36mB \e[1;37mto go Back, \e[1;36mSPACE \e[1;37mfor Next Mesage...");
+		s_printf(get_string(112));
 
 		c = s_getc();
 
 		if (tolower(c) == 'r') {
 			JAM_CloseMB(jb);
 			if (user->sec_level < conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->write_sec_level) {
-				s_printf("\r\nSorry, you are not allowed to post in this area\r\n");
+				s_printf(get_string(113));
 			} else {
 				if (msghs->msgs[mailno]->subject != NULL) {
 					if (strncasecmp(msghs->msgs[mailno]->subject, "RE:", 3) != 0) {
@@ -958,17 +958,17 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 				subject = (char *)malloc(strlen(buffer) + 1);
 				strcpy(subject, buffer);
 
-				s_printf("\r\n\r\nReplying to: %s\r\n", subject);
-				s_printf("Change Subject? (Y/N) ");
+				s_printf(get_string(114), subject);
+				s_printf(get_string(115));
 
 				c = s_getc();
 
 				if (tolower(c) == 'y') {
-					s_printf("\r\nNew subject: ");
+					s_printf(get_string(116));
 					s_readstring(buffer, 25);
 
 					if (strlen(buffer) == 0) {
-						s_printf("\r\nOk, not changing the subject line...");
+						s_printf(get_string(117));
 					} else {
 						free(subject);
 						subject = (char *)malloc(strlen(buffer) + 1);
@@ -1232,7 +1232,7 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 		} else if (c == ' ') {
 			mailno++;
 			if (mailno >= msghs->msg_count) {
-				s_printf("\r\n\r\nNo more messages\r\n");
+				s_printf(get_string(118));
 				doquit = 1;
 			}
 		} else if (tolower(c) == 'b') {
@@ -1304,7 +1304,7 @@ int mail_menu(struct user_record *user) {
 			s_displayansi("mailmenu");
 
 
-			s_printf("\e[0m\r\nConf: (%d) %s\r\nArea: (%d) %s\r\nTL: %dm :> ", user->cur_mail_conf, conf.mail_conferences[user->cur_mail_conf]->name, user->cur_mail_area, conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->name, user->timeleft);
+			s_printf(get_string(119), user->cur_mail_conf, conf.mail_conferences[user->cur_mail_conf]->name, user->cur_mail_area, conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->name, user->timeleft);
 
 			c = s_getc();
 		} else {
@@ -1344,7 +1344,7 @@ int mail_menu(struct user_record *user) {
 								all_unread = 1;
 							}
 							JAM_CloseMB(jb);
-							s_printf("Read message [1-%d] or N for New: ", msghs->msg_count);
+							s_printf(get_string(120), msghs->msg_count);
 
 							s_readstring(buffer, 6);
 
@@ -1377,13 +1377,13 @@ int mail_menu(struct user_record *user) {
 			case 'p':
 				{
 					if (user->sec_level < conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->write_sec_level) {
-						s_printf("\r\nSorry, you are not allowed to post in this area\r\n");
+						s_printf(get_string(113));
 						break;
 					}
 					if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_WWIV && conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type  == TYPE_ECHOMAIL_AREA) {
 						sprintf(buffer, "ALL");
 					} else {
-						s_printf("\r\nTO: ");
+						s_printf(get_string(54));
 						s_readstring(buffer, 16);
 					}
 					if (strlen(buffer) == 0) {
@@ -1392,41 +1392,41 @@ int mail_menu(struct user_record *user) {
 
 					if (conf.mail_conferences[user->cur_mail_conf]->networked == 0 && strcasecmp(buffer, "ALL") != 0) {
 						if (check_user(buffer)) {
-							s_printf("\r\n\r\nInvalid Username\r\n");
+							s_printf(get_string(55));
 							break;
 						}
 					}
 					if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NETMAIL_AREA) {
-						s_printf("\r\nADDR: ");
+						s_printf(get_string(121));
 						s_readstring(buffer2, 32);
 						if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_FIDO) {
 							from_addr = parse_fido_addr(buffer2);
 							if (!from_addr) {
-								s_printf("\r\n\r\nInvalid Address\r\n");
+								s_printf(get_string(122));
 								break;
 							} else {
 								if (from_addr->zone == 0 && from_addr->net == 0 && from_addr->node == 0 && from_addr->point == 0) {
 									free(from_addr);
-									s_printf("\r\n\r\nInvalid Address\r\n");
+									s_printf(get_string(122));
 									break;
 								}
-								s_printf(buffer2, "\r\nMailing to %d:%d/%d.%d\r\n", from_addr->zone, from_addr->net, from_addr->node, from_addr->point);
+								s_printf(get_string(123), from_addr->zone, from_addr->net, from_addr->node, from_addr->point);
 							}
 						} else if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_WWIV) {
 							wwiv_to = atoi(buffer2);
 							if (wwiv_to == 0) {
-								s_printf("\r\n\r\nInvalid Address\r\n");
+								s_printf(get_string(122));
 								break;
 							} else {
-								s_printf("\r\nMailing to @%d\r\n", wwiv_to);
+								s_printf(get_string(124), wwiv_to);
 							}
 						}
 					}
 					to = strdup(buffer);
-					s_printf("\r\nSUBJECT: ");
+					s_printf(get_string(56));
 					s_readstring(buffer, 25);
 					if (strlen(buffer) == 0) {
-						s_printf("\r\nAborted!\r\n");
+						s_printf(get_string(39));
 						free(to);
 						if (from_addr != NULL) {
 							free(from_addr);
@@ -1657,7 +1657,7 @@ int mail_menu(struct user_record *user) {
 								all_unread = 1;
 							}
 							JAM_CloseMB(jb);
-							s_printf("Start at message [1-%d] or N for New? ", msghs->msg_count);
+							s_printf(get_string(125), msghs->msg_count);
 
 							s_readstring(buffer, 6);
 							if (tolower(buffer[0]) == 'n') {
@@ -1679,18 +1679,18 @@ int mail_menu(struct user_record *user) {
 								}
 							}
 							closed = 0;
-							s_printf("\e[2J\e[1;37;44m[MSG#] Subject                   From            To              Date          \r\n\e[0m");
+							s_printf(get_string(126));
 
 							for (j=i-1;j<msghs->msg_count;j++) {
 								localtime_r((time_t *)&msghs->msgs[j]->msg_h->DateWritten, &msg_date);
 								if (msghs->msgs[j]->msg_no > jlr.HighReadMsg || all_unread) {
-									s_printf("\e[1;30m[\e[1;34m%4d\e[1;30m]\e[1;32m*\e[1;37m%-25.25s \e[1;32m%-15.15s \e[1;33m%-15.15s \e[1;35m%02d:%02d %02d-%02d-%02d\e[0m\r\n", j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+									s_printf(get_string(127), j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 								} else {
-									s_printf("\e[1;30m[\e[1;34m%4d\e[1;30m] \e[1;37m%-25.25s \e[1;32m%-15.15s \e[1;33m%-15.15s \e[1;35m%02d:%02d %02d-%02d-%02d\e[0m\r\n", j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+									s_printf(get_string(128), j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 								}
 
 								if ((j - (i - 1)) != 0 && (j - (i - 1)) % 20 == 0) {
-									s_printf("(#) Read Message # (Q) Quit (ENTER) Continue\r\n");
+									s_printf(get_string(129));
 									s_readstring(buffer, 6);
 
 									if (tolower(buffer[0]) == 'q') {
@@ -1704,12 +1704,12 @@ int mail_menu(struct user_record *user) {
 											break;
 										}
 									}
-									s_printf("\e[2J\e[1;37;44m[MSG#] Subject                   From            To              Date          \r\n\e[0m");
+									s_printf(get_string(126));
 								}
 
 							}
 							if (closed == 0) {
-								s_printf("(#) Read Message # (ENTER) Quit\r\n");
+								s_printf(get_string(129));
 								s_readstring(buffer, 6);
 								if (strlen(buffer) > 0) {
 									z = atoi(buffer);
@@ -1724,28 +1724,28 @@ int mail_menu(struct user_record *user) {
 							free_message_headers(msghs);
 						}
 					} else {
-						s_printf("\r\nThere is no mail in this area\r\n");
+						s_printf(get_string(130));
 					}
 				}
 				break;
 			case 'c':
 				{
-					s_printf("\r\n\r\nMail Conferences:\r\n\r\n");
+					s_printf(get_string(131));
 					for (i=0;i<conf.mail_conference_count;i++) {
 						if (conf.mail_conferences[i]->sec_level <= user->sec_level) {
-							s_printf("  %d. %s\r\n", i, conf.mail_conferences[i]->name);
+							s_printf(get_string(132), i, conf.mail_conferences[i]->name);
 						}
 						if (i != 0 && i % 20 == 0) {
-							s_printf("Press any key to continue...\r\n");
+							s_printf(get_string(6));
 							c = s_getc();
 						}
 					}
-					s_printf("Enter the conference number: ");
+					s_printf(get_string(133));
 					s_readstring(buffer, 5);
 					if (tolower(buffer[0]) != 'q') {
 						j = atoi(buffer);
 						if (j < 0 || j >= conf.mail_conference_count || conf.mail_conferences[j]->sec_level > user->sec_level) {
-							s_printf("\r\nInvalid conference number!\r\n");
+							s_printf(get_string(134));
 						} else {
 							s_printf("\r\n");
 							user->cur_mail_conf = j;
@@ -1756,22 +1756,22 @@ int mail_menu(struct user_record *user) {
 				break;
 			case 'a':
 				{
-					s_printf("\r\n\r\nMail Areas:\r\n\r\n");
+					s_printf(get_string(135));
 					for (i=0;i<conf.mail_conferences[user->cur_mail_conf]->mail_area_count;i++) {
 						if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[i]->read_sec_level <= user->sec_level) {
-							s_printf("  %d. %s\r\n", i, conf.mail_conferences[user->cur_mail_conf]->mail_areas[i]->name);
+							s_printf(get_string(136), i, conf.mail_conferences[user->cur_mail_conf]->mail_areas[i]->name);
 						}
 						if (i != 0 && i % 20 == 0) {
-							s_printf("Press any key to continue...\r\n");
+							s_printf(get_string(6));
 							c = s_getc();
 						}
 					}
-					s_printf("Enter the area number: ");
+					s_printf(get_string(137));
 					s_readstring(buffer, 5);
 					if (tolower(buffer[0]) != 'q') {
 						j = atoi(buffer);
 						if (j < 0 || j >= conf.mail_conferences[user->cur_mail_conf]->mail_area_count || conf.mail_conferences[user->cur_mail_conf]->mail_areas[j]->read_sec_level > user->sec_level) {
-							s_printf("\r\nInvalid area number!\r\n");
+							s_printf(get_string(138));
 						} else {
 							s_printf("\r\n");
 							user->cur_mail_area = j;
@@ -1786,7 +1786,7 @@ int mail_menu(struct user_record *user) {
 				break;
 			case 'g':
 				{
-					s_printf("\r\nAre you sure you want to log off? (Y/N)");
+					s_printf(get_string(53));
 					c = s_getc();
 					if (tolower(c) == 'y') {
 						domail = 1;
@@ -1878,7 +1878,7 @@ void mail_scan(struct user_record *user) {
 	int j;
 	int lines = 0;
 
-	s_printf("\r\nScan for new mail? (Y/N) : ");
+	s_printf(get_string(139));
 	c = s_getc();
 
 	if (tolower(c) == 'y') {
@@ -1886,10 +1886,10 @@ void mail_scan(struct user_record *user) {
 			if (conf.mail_conferences[i]->sec_level > user->sec_level) {
 				continue;
 			}
-			s_printf("\r\n\e[1;32m%d. %s\e[0m\r\n", i, conf.mail_conferences[i]->name);
+			s_printf(get_string(140), i, conf.mail_conferences[i]->name);
 			lines+=2;
 			if (lines == 22) {
-				s_printf("Press any key to continue...\r\n");
+				s_printf(get_string(6));
 				s_getc();
 				lines = 0;
 			}
@@ -1915,10 +1915,10 @@ void mail_scan(struct user_record *user) {
 						msghs = read_message_headers(i, j, user);
 						if (msghs != NULL) {
 							if (msghs->msg_count > 0) {
-								s_printf("\e[1;37m   --> %d. %s (%d new)\e[0m\r\n", j, conf.mail_conferences[i]->mail_areas[j]->name, msghs->msg_count);
+								s_printf(get_string(141), j, conf.mail_conferences[i]->mail_areas[j]->name, msghs->msg_count);
 								lines++;
 								if (lines == 22) {
-									s_printf("Press any key to continue...\r\n");
+									s_printf(get_string(6));
 									s_getc();
 									lines = 0;
 								}
@@ -1926,10 +1926,10 @@ void mail_scan(struct user_record *user) {
 							free_message_headers(msghs);
 						}
 					} else {
-						s_printf("\e[1;37m   --> %d. %s (%d new)\e[0m\r\n", j, conf.mail_conferences[i]->mail_areas[j]->name, jbh.ActiveMsgs);
+						s_printf(get_string(141), j, conf.mail_conferences[i]->mail_areas[j]->name, jbh.ActiveMsgs);
 						lines++;
 						if (lines == 22) {
-							s_printf("Press any key to continue...\r\n");
+							s_printf(get_string(6));
 							s_getc();
 							lines = 0;
 						}
@@ -1941,10 +1941,10 @@ void mail_scan(struct user_record *user) {
 							if (msghs != NULL) {
 								if (msghs->msg_count > 0) {
 									if (msghs->msgs[msghs->msg_count-1]->msg_no > jlr.HighReadMsg) {
-										s_printf("\e[1;37m   --> %d. %s (%d new)\e[0m\r\n", j, conf.mail_conferences[i]->mail_areas[j]->name, msghs->msgs[msghs->msg_count-1]->msg_no - jlr.HighReadMsg);
+										s_printf(get_string(141), j, conf.mail_conferences[i]->mail_areas[j]->name, msghs->msgs[msghs->msg_count-1]->msg_no - jlr.HighReadMsg);
 										lines++;
 										if (lines == 22) {
-											s_printf("Press any key to continue...\r\n");
+											s_printf(get_string(6));
 											s_getc();
 											lines = 0;
 										}
@@ -1953,10 +1953,10 @@ void mail_scan(struct user_record *user) {
 								free_message_headers(msghs);
 							}
 						} else {
-							s_printf("\e[1;37m   --> %d. %s (%d new)\e[0m\r\n", j, conf.mail_conferences[i]->mail_areas[j]->name, (jbh.ActiveMsgs - 1) - jlr.HighReadMsg);
+							s_printf(get_string(141), j, conf.mail_conferences[i]->mail_areas[j]->name, (jbh.ActiveMsgs - 1) - jlr.HighReadMsg);
 							lines++;
 							if (lines == 22) {
-								s_printf("Press any key to continue...\r\n");
+								s_printf(get_string(6));
 								s_getc();
 								lines = 0;
 							}
@@ -1969,7 +1969,7 @@ void mail_scan(struct user_record *user) {
 				JAM_CloseMB(jb);
 			}
 		}
-		s_printf("\r\nPress any key to continue...\r\n");
+		s_printf(get_string(6));
 		s_getc();
 	}
 }

@@ -121,7 +121,7 @@ void chat_system(struct user_record *user) {
 
 	memset(inputbuffer, 0, 80);
   if (conf.irc_server == NULL) {
-		s_putstring("\r\nSorry, Chat is not supported on this system.\r\n");
+		s_putstring(get_string(49));
 		return;
 	}
 	row_at = 0;
@@ -282,7 +282,7 @@ void chat_system(struct user_record *user) {
 			for (i=line_at+1;i<22;i++) {
 				s_putstring("\r\n");
 			}
-			s_putstring("\e[1;45;37m Type /Quit to Exit\e[K\e[0m\r\n");
+			s_putstring(get_string(50));
 			if (inputbuffer_at > 0) {
 				s_putstring(inputbuffer);
 			}

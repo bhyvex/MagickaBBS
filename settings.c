@@ -11,23 +11,23 @@ void settings_menu(struct user_record *user) {
 	char *hash;
 
 	while (!dosettings) {
-		s_printf("\e[2J\e[1;32mYour Settings\r\n");
-		s_printf("\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
-		s_printf("\e[0;36mP. \e[1;37mPassword (\e[1;33mNot Shown\e[1;37m)\r\n");
-		s_printf("\e[0;36mL. \e[1;37mLocation (\e[1;33m%s\e[1;37m)\r\n", user->location);
-		s_printf("\e[0;36mQ. \e[1;37mQuit to Main Menu\r\n");
-		s_printf("\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n");
+		s_printf(get_string(149));
+		s_printf(get_string(150));
+		s_printf(get_string(151));
+		s_printf(get_string(152), user->location);
+		s_printf(get_string(153));
+		s_printf(get_string(154));
 
 		c = s_getc();
 
 		switch(tolower(c)) {
 			case 'p':
 				{
-					s_printf("\r\nEnter your current password: ");
+					s_printf(get_string(155));
 					s_readpass(buffer, 16);
 					hash = hash_sha256(buffer, user->salt);
 					if (strcmp(hash, user->password) == 0) {
-						s_printf("\r\nEnter your new password (8 chars min): ");
+						s_printf(get_string(156));
 						s_readstring(buffer, 16);
 						if (strlen(buffer) >= 8) {
 							free(user->password);
@@ -37,18 +37,18 @@ void settings_menu(struct user_record *user) {
 							user->password = hash_sha256(buffer, user->salt);
 
 							save_user(user);
-							s_printf("\r\nPassword Changed!\r\n");
+							s_printf(get_string(157));
 						} else {
-							s_printf("\r\nPassword too short!\r\n");
+							s_printf(get_string(158));
 						}
 					} else {
-						s_printf("\r\nPassword Incorrect!\r\n");
+						s_printf(get_string(159));
 					}
 				}
 				break;
 			case 'l':
 				{
-					s_printf("\r\nEnter your new location: ");
+					s_printf(get_string(160));
 					s_readstring(buffer, 32);
 					free(user->location);
 					user->location = (char *)malloc(strlen(buffer) + 1);

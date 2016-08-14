@@ -311,6 +311,8 @@ static int handler(void* user, const char* section, const char* name,
 			conf->netmail_sem = strdup(value);
 		} else if (strcasecmp(name, "pid file") == 0) {
 			conf->pid_file = strdup(value);
+		} else if (strcasecmp(name, "string file") == 0) {
+			conf->string_file = strdup(value);
 		}
 	} else if (strcasecmp(section, "mail conferences") == 0) {
 		if (conf->mail_conference_count == 0) {
@@ -738,6 +740,7 @@ int main(int argc, char **argv) {
 	conf.echomail_sem = NULL;
 	conf.netmail_sem = NULL;
 	conf.telnet_port = 0;
+	conf.string_file = NULL;
 
 	// Load BBS data
 	if (ini_parse(argv[1], handler, &conf) <0) {
@@ -763,6 +766,8 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Unable to load configuration ini (doors.ini)!\n");
 		exit(-1);
 	}
+
+	load_strings();
 
 	if (conf.fork) {
 		if (stat(conf.pid_file, &s) == 0) {
