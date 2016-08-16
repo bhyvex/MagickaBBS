@@ -105,7 +105,7 @@ minix:
 	$(MAKE) $(ALL) CC="clang" SYSCFLAGS="-DLUA_USE_LINUX" SYSLIBS="-L/usr/pkg/lib -Wl,-E -lreadline"
 
 freebsd:
-	$(MAKE) $(ALL) SYSCFLAGS="-DLUA_USE_LINUX" SYSLIBS="-Wl,-E -lreadline"
+	$(MAKE) $(ALL) CC="cc" SYSCFLAGS="-DLUA_USE_LINUX -I/usr/local/include" SYSLIBS="-Wl,-E -L/usr/local/lib -lreadline"
 
 generic: $(ALL)
 

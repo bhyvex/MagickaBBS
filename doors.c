@@ -174,7 +174,7 @@ void rundoor(struct user_record *user, char *cmd, int stdio) {
 		if (openpty(&master, &slave, NULL, NULL, &ws) == 0) {
 			sa.sa_handler = doorchld_handler;
 			sigemptyset(&sa.sa_mask);
-			sa.sa_flags = SA_RESTART;
+			sa.sa_flags = SA_RESTART | SA_SIGINFO;
 			if (sigaction(SIGCHLD, &sa, NULL) == -1) {
 				perror("sigaction");
 				exit(1);

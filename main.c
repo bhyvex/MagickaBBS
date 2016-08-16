@@ -22,6 +22,9 @@
 #else
 #  include <libutil.h>
 #endif
+#if defined(ENABLE_WWW)
+#  include <microhttpd.h>
+#endif
 #include <termios.h>
 #include "bbs.h"
 #include "inih/ini.h"
@@ -33,6 +36,10 @@ int ssh_pid = -1;
 int bbs_pid = 0;
 int server_socket = -1;
 
+#if defined(ENABLE_WWW)
+struct MHD_Daemon *www_daemon;
+#endif
+
 void sigterm_handler(int s)
 {
 	if (ssh_pid != -1) {
@@ -41,6 +48,11 @@ void sigterm_handler(int s)
 	if (server_socket != -1) {
 		close(server_socket);
 	}
+#if defined(ENABLE_WWW)
+	if (www_daemon != NULL) {
+		MHD_stop_daemon(www_daemon);
+	}
+#endif
 	remove(conf.pid_file);
 	exit(0);
 }
@@ -259,6 +271,14 @@ static int handler(void* user, const char* section, const char* name,
 			} else {
 				conf->ssh_server = 0;
 			}
+		} else if (strcasecmp(name, "enable www") == 0) {
+			if (strcasecmp(value, "true") == 0) {
+				conf->www_server = 1;
+			} else {
+				conf->www_server = 0;
+			}
+		} else if (strcasecmp(name, "www port") == 0) {
+			conf->www_port = atoi(value);
 		} else if (strcasecmp(name, "ssh port") == 0) {
 			conf->ssh_port = atoi(value);
 		} else if (strcasecmp(name, "ssh dsa key") == 0) {
@@ -313,6 +333,8 @@ static int handler(void* user, const char* section, const char* name,
 			conf->pid_file = strdup(value);
 		} else if (strcasecmp(name, "string file") == 0) {
 			conf->string_file = strdup(value);
+		} else if (strcasecmp(name, "www path") == 0) {
+			conf->www_path = strdup(value);
 		}
 	} else if (strcasecmp(section, "mail conferences") == 0) {
 		if (conf->mail_conference_count == 0) {
@@ -627,29 +649,34 @@ void server(int port) {
 	int client_sock, c;
 	int pid;
 	struct sockaddr_in server, client;
+#if defined(ENABLE_WWW)
+	www_daemon = NULL;
+#endif
 
 	sa.sa_handler = sigchld_handler; // reap all dead processes
 	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = SA_RESTART;
+	sa.sa_flags = SA_RESTART | SA_SIGINFO;
 	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
+			perror("sigaction - sigchld");
 			remove(conf.pid_file);
-			perror("sigaction");
 			exit(1);
 	}
 
 	st.sa_handler = sigterm_handler;
 	sigemptyset(&st.sa_mask);
+	st.sa_flags = SA_SIGINFO;
 	if (sigaction(SIGTERM, &st, NULL) == -1) {
+			perror("sigaction - sigterm");
 			remove(conf.pid_file);
-			perror("sigaction");
 			exit(1);
 	}
 
 	sq.sa_handler = sigterm_handler;
 	sigemptyset(&sq.sa_mask);
+	sq.sa_flags = SA_SIGINFO;
 	if (sigaction(SIGQUIT, &sq, NULL) == -1) {
+			perror("sigaction - sigquit");
 			remove(conf.pid_file);
-			perror("sigaction");
 			exit(1);
 	}
 
@@ -666,6 +693,12 @@ void server(int port) {
 			fprintf(stderr, "Error forking ssh server.");
 		}
 	}
+
+#if defined(ENABLE_WWW) 
+	if (conf.www_server && conf.www_path != NULL) {
+		www_daemon = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY, conf.www_port, NULL, NULL, &www_handler, NULL, MHD_OPTION_END);
+	}
+#endif
 
 	server_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (server_socket == -1) {
@@ -741,7 +774,8 @@ int main(int argc, char **argv) {
 	conf.netmail_sem = NULL;
 	conf.telnet_port = 0;
 	conf.string_file = NULL;
-
+	conf.www_path = NULL;
+	
 	// Load BBS data
 	if (ini_parse(argv[1], handler, &conf) <0) {
 		fprintf(stderr, "Unable to load configuration ini (%s)!\n", argv[1]);

@@ -2,6 +2,9 @@
 #define __BBS_H__
 
 #include <time.h>
+#if defined(ENABLE_WWW)
+#include <microhttpd.h>
+#endif
 #include "lua/lua.h"
 #include "lua/lauxlib.h"
 
@@ -91,7 +94,9 @@ struct bbs_config {
 	char *netmail_sem;
 	char *default_tagline;
 	int telnet_port;
-
+	int www_server;
+	int www_port;
+	char *www_path;
 	int ssh_server;
 	int ssh_port;
 	char *ssh_dsa_key;
@@ -195,4 +200,9 @@ extern void lua_push_cfunctions(lua_State *L);
 
 extern void load_strings();
 extern char *get_string(int offset);
+
+#if defined(ENABLE_WWW)
+extern int www_handler(void * cls, struct MHD_Connection * connection, const char * url, const char * method, const char * version, const char * upload_data, size_t * upload_data_size, void ** ptr);
+#endif
+
 #endif
