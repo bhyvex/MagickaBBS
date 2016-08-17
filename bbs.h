@@ -205,6 +205,7 @@ extern void chomp(char *string);
 #if defined(ENABLE_WWW)
 extern void www_init();
 extern int www_handler(void * cls, struct MHD_Connection * connection, const char * url, const char * method, const char * version, const char * upload_data, size_t * upload_data_size, void ** ptr);
+extern char *www_email_summary(struct user_record *user);
 #endif
 
 #endif

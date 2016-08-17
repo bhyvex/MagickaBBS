@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <b64/cdecode.h>
 #include "bbs.h"
 
 extern struct bbs_config conf;
@@ -70,6 +71,59 @@ char *www_get_mime_type(const char *extension) {
 		}
 	}
 	return default_mime_type;
+}
+
+int www_401(char *header, char *footer, struct MHD_Connection * connection) {
+	char buffer[4096];
+	char *page;
+	struct stat s;
+	char *whole_page;
+	struct MHD_Response *response;
+	int ret;
+	FILE *fptr;
+		
+	snprintf(buffer, 4096, "%s/401.tpl", conf.www_path);
+			
+	page = NULL;
+			
+	if (stat(buffer, &s) == 0) {
+		page = (char *)malloc(s.st_size + 1);
+		if (page == NULL) {
+			return -1;
+		}
+		memset(page, 0, s.st_size + 1);
+		fptr = fopen(buffer, "r");
+		if (fptr) {
+			fread(page, s.st_size, 1, fptr);
+			fclose(fptr);
+		} else {
+			free(page);
+			page = NULL;
+		}
+	}
+			
+	if (page == NULL) {
+		page = (char *)malloc(16);
+		if (page == NULL) {
+			return -1;
+		}
+		sprintf(page, "Missing Content");
+	}
+				
+	whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
+			
+	sprintf(whole_page, "%s%s%s", header, page, footer);
+
+	response = MHD_create_response_from_buffer (strlen(whole_page), (void*)whole_page, MHD_RESPMEM_PERSISTENT);
+	
+	MHD_add_response_header(response, "WWW-Authenticate", "Basic realm=\"BBS Area\"");
+	
+	ret = MHD_queue_response (connection, 401, response);
+	MHD_destroy_response (response);
+	free(whole_page);
+	free(page);
+		
+	return 0;
 }
 
 int www_404(char *header, char *footer, struct MHD_Connection * connection) {
@@ -174,6 +228,40 @@ int www_403(char *header, char *footer, struct MHD_Connection * connection) {
 	return 0;
 }
 
+struct user_record *www_auth_ok(struct MHD_Connection *connection, const char *url) {
+	char *user_password = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Authorization");
+	base64_decodestate state;
+	char decoded_pass[34];
+	int len;
+	char *username;
+	char *password;
+	int i;
+	
+	if (user_password == NULL) {
+		return NULL;
+	}
+	
+	if (strncasecmp(user_password, "basic ", 6) == 0) {
+		if (strlen(&user_password[6]) <= 48) {
+			base64_init_decodestate(&state);
+			len = base64_decode_block(&user_password[6], strlen(&user_password[6]), decoded_pass, &state);
+			decoded_pass[len] = '\0';
+			
+			username = decoded_pass;
+			for (i=0;i<strlen(decoded_pass);i++) {
+				if (decoded_pass[i] == ':') {
+					decoded_pass[i] = '\0';
+					password = &decoded_pass[i+1];
+					break;
+				}
+			}
+			return check_user_pass(username, password);
+		}
+	}
+	
+	return NULL;
+}
+
 int www_handler(void * cls, struct MHD_Connection * connection, const char * url, const char * method, const char * version, const char * upload_data, size_t * upload_data_size, void ** ptr) {
 	struct MHD_Response *response;
 	
@@ -188,6 +276,18 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 	char *mime;
 	int i;
 	int fno;
+	const char *url_ = url;
+	struct user_record *user;
+
+
+	
+	static int apointer;
+	
+	if (&apointer != *ptr) {
+		*ptr = &apointer;
+		return MHD_YES;
+	}
+	*ptr = NULL;
 	
 	snprintf(buffer, 4096, "%s/header.tpl", conf.www_path);
 	
@@ -282,6 +382,24 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 				sprintf(page, "Missing Content");
 			}
 				
+			whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
+			
+			sprintf(whole_page, "%s%s%s", header, page, footer);
+		} else if (strcasecmp(url, "/email/") == 0 || strncasecmp(url, "/email", 6) == 0) {
+			user = www_auth_ok(connection, url_);
+			
+			if (user == NULL) {
+				www_401(header, footer, connection);
+				free(header);
+				free(footer);
+				return MHD_YES;		
+			}
+			page = www_email_summary(user);
+			if (page == NULL) {
+				free(header);
+				free(footer);
+				return MHD_NO;		
+			}
 			whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
 			
 			sprintf(whole_page, "%s%s%s", header, page, footer);

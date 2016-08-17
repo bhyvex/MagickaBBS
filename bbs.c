@@ -24,7 +24,7 @@ int sshBBS;
 int usertimeout;
 int timeoutpaused;
 
-char *ipaddress;
+char *ipaddress = NULL;
 
 void sigterm_handler2(int s)
 {
@@ -512,6 +512,7 @@ void runbbs_real(int socket, char *ip, int ssh) {
 
 	st.sa_handler = sigterm_handler2;
 	sigemptyset(&st.sa_mask);
+	st.sa_flags = SA_SIGINFO;
 	if (sigaction(SIGTERM, &st, NULL) == -1) {
 		dolog("Failed to setup sigterm handler.");
 		exit(1);

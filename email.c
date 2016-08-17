@@ -296,7 +296,7 @@ void list_emails(struct user_record *user) {
 		return;
   }
 
-  msgid = 0;
+	msgid = 0;
 	s_printf(get_string(63));
   while (sqlite3_step(res) == SQLITE_ROW) {
 		from = strdup((char *)sqlite3_column_text(res, 0));
