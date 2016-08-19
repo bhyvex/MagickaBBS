@@ -66,3 +66,45 @@
 .email-view-date {
 	color: #222;
 }
+
+.menu ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #333333;
+}
+
+.menu li {
+    float: left;
+}
+
+.menu li a {
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 16px;
+    text-decoration: none;
+}
+
+.menu li a:hover {
+    background-color: #111111;
+}
+
+.email-reply-form {
+	margin-left: 20px;
+}
+.button {
+	padding-bottom:10px;
+}
+.button a {
+	width: auto;
+	padding: 5px;
+	color: white;
+	background-color: #333;
+	text-decoration: none;
+}
+
+.button a:hover {
+	background-color: #111111;
+}

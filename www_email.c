@@ -4,11 +4,162 @@
 #include <sqlite3.h>
 #include <time.h>
 #include <stdlib.h>
-
+#include <sys/utsname.h>
 #include "bbs.h"
 
 
 extern struct bbs_config conf;
+
+int www_send_email(struct user_record *user, char *recipient, char *subject, char *ibody) {
+	char buffer[256];
+	sqlite3 *db;
+	sqlite3_stmt *res;
+	int rc;
+    char *csql = "CREATE TABLE IF NOT EXISTS email ("
+    					"id INTEGER PRIMARY KEY,"
+						"sender TEXT COLLATE NOCASE,"
+						"recipient TEXT COLLATE NOCASE,"
+						"subject TEXT,"
+						"body TEXT,"
+						"date INTEGER,"
+						"seen INTEGER);";
+	char *isql = "INSERT INTO email (sender, recipient, subject, body, date, seen) VALUES(?, ?, ?, ?, ?, 0)";
+	char *err_msg = 0;
+	char *body;
+	struct utsname name;
+	int i;
+	int pos;
+	
+	if (check_user(recipient)) {
+		return 0;
+	}
+	
+	uname(&name);
+	
+	snprintf(buffer, 256, "\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s \r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, conf.default_tagline);
+	
+	body = (char *)malloc(strlen(ibody) + strlen(buffer) + 1);
+	memset(body, 0, strlen(ibody) + strlen(buffer) + 1);
+	pos = 0;
+	for (i = 0;i<strlen(ibody);i++) {
+		if (ibody[i] != '\n') {
+			body[pos] = ibody[i];
+			pos++;
+		}
+	}
+	
+	strcat(body, buffer);
+	
+	sprintf(buffer, "%s/email.sq3", conf.bbs_path);
+
+	rc = sqlite3_open(buffer, &db);
+	if (rc != SQLITE_OK) {
+		sqlite3_close(db);
+
+		return 0;
+	}
+
+
+	rc = sqlite3_exec(db, csql, 0, 0, &err_msg);
+	if (rc != SQLITE_OK ) {
+		sqlite3_free(err_msg);
+		sqlite3_close(db);
+
+		return 0;
+	}
+
+	rc = sqlite3_prepare_v2(db, isql, -1, &res, 0);
+
+	if (rc == SQLITE_OK) {
+		sqlite3_bind_text(res, 1, user->loginname, -1, 0);
+		sqlite3_bind_text(res, 2, recipient, -1, 0);
+		sqlite3_bind_text(res, 3, subject, -1, 0);
+		sqlite3_bind_text(res, 4, body, -1, 0);
+		sqlite3_bind_int(res, 5, time(NULL));
+	} else {
+		sqlite3_finalize(res);
+		sqlite3_close(db);
+		return 0;
+	}
+	sqlite3_step(res);
+
+	
+
+	sqlite3_finalize(res);
+	sqlite3_close(db);
+	return 1;
+}
+
+char *www_new_email() {
+	char *page;
+	int max_len;
+	int len;
+	char buffer[4096];
+	
+	page = (char *)malloc(4096);
+	max_len = 4096;
+	len = 0;
+	memset(page, 0, 4096);
+	
+	sprintf(buffer, "<div class=\"content-header\"><h2>New Email</h2></div>\n");
+	if (len + strlen(buffer) > max_len - 1) {
+		max_len += 4096;
+		page = (char *)realloc(page, max_len);
+	}
+	strcat(page, buffer);
+	len += strlen(buffer);
+
+	sprintf(buffer, "<form action=\"/email/\" method=\"POST\">\n");
+	if (len + strlen(buffer) > max_len - 1) {
+		max_len += 4096;
+		page = (char *)realloc(page, max_len);
+	}	
+	strcat(page, buffer);
+	len += strlen(buffer);
+
+	sprintf(buffer, "<input type=\"text\" name=\"recipient\" /><br />\n");
+	if (len + strlen(buffer) > max_len - 1) {
+		max_len += 4096;
+		page = (char *)realloc(page, max_len);
+	}	
+	strcat(page, buffer);
+	len += strlen(buffer);
+
+	sprintf(buffer, "<input type=\"text\" name=\"subject\" /><br />\n");
+	if (len + strlen(buffer) > max_len - 1) {
+		max_len += 4096;
+		page = (char *)realloc(page, max_len);
+	}	
+	strcat(page, buffer);
+	len += strlen(buffer);
+
+	sprintf(buffer, "<textarea name=\"body\" rows=25 cols=80></textarea>\n<br />");
+	if (len + strlen(buffer) > max_len - 1) {
+		max_len += 4096;
+		page = (char *)realloc(page, max_len);
+	}	
+	strcat(page, buffer);
+	len += strlen(buffer);
+
+	sprintf(buffer, "<input type=\"submit\" name=\"submit\" value=\"Send\" />\n<br />");
+	if (len + strlen(buffer) > max_len - 1) {
+		max_len += 4096;
+		page = (char *)realloc(page, max_len);
+	}	
+	strcat(page, buffer);
+	len += strlen(buffer);
+
+
+	sprintf(buffer, "</form>\n");
+	if (len + strlen(buffer) > max_len - 1) {
+		max_len += 4096;
+		page = (char *)realloc(page, max_len);
+	}	
+	strcat(page, buffer);
+	len += strlen(buffer);
+	
+	return page;	
+}
 
 char *www_email_display(struct user_record *user, int email) {
 	char *page;
@@ -141,7 +292,77 @@ char *www_email_display(struct user_record *user, int email) {
 			len += strlen(buffer);
 		}
 	
+		sprintf(buffer, "<div class=\"email-reply-form\">\n");
+		if (len + strlen(buffer) > max_len - 1) {
+			max_len += 4096;
+			page = (char *)realloc(page, max_len);
+		}	
+		strcat(page, buffer);
+		len += strlen(buffer);
+		sprintf(buffer, "<h3>Reply</h3>\n");
+		if (len + strlen(buffer) > max_len - 1) {
+			max_len += 4096;
+			page = (char *)realloc(page, max_len);
+		}
+		strcat(page, buffer);
+		len += strlen(buffer);
+		
+		sprintf(buffer, "<form action=\"/email/\" method=\"POST\">\n");
+		if (len + strlen(buffer) > max_len - 1) {
+			max_len += 4096;
+			page = (char *)realloc(page, max_len);
+		}	
+		strcat(page, buffer);
+		len += strlen(buffer);
 
+		sprintf(buffer, "<input type=\"hidden\" name=\"recipient\" value=\"%s\" />\n", from);
+		if (len + strlen(buffer) > max_len - 1) {
+			max_len += 4096;
+			page = (char *)realloc(page, max_len);
+		}	
+		strcat(page, buffer);
+		len += strlen(buffer);
+
+		sprintf(buffer, "<input type=\"text\" name=\"subject\" value=\"RE: %s\" /><br />\n", subject);
+		if (len + strlen(buffer) > max_len - 1) {
+			max_len += 4096;
+			page = (char *)realloc(page, max_len);
+		}	
+		strcat(page, buffer);
+		len += strlen(buffer);
+
+		sprintf(buffer, "<textarea name=\"body\" rows=25 cols=80></textarea>\n<br />");
+		if (len + strlen(buffer) > max_len - 1) {
+			max_len += 4096;
+			page = (char *)realloc(page, max_len);
+		}	
+		strcat(page, buffer);
+		len += strlen(buffer);
+
+		sprintf(buffer, "<input type=\"submit\" name=\"submit\" value=\"Reply\" />\n<br />");
+		if (len + strlen(buffer) > max_len - 1) {
+			max_len += 4096;
+			page = (char *)realloc(page, max_len);
+		}	
+		strcat(page, buffer);
+		len += strlen(buffer);
+
+
+		sprintf(buffer, "</form>\n");
+		if (len + strlen(buffer) > max_len - 1) {
+			max_len += 4096;
+			page = (char *)realloc(page, max_len);
+		}	
+		strcat(page, buffer);
+		len += strlen(buffer);
+
+		sprintf(buffer, "</div>\n");
+		if (len + strlen(buffer) > max_len - 1) {
+			max_len += 4096;
+			page = (char *)realloc(page, max_len);
+		}	
+		strcat(page, buffer);
+		len += strlen(buffer);
 		
 		free(from);
 		free(body);
@@ -215,6 +436,15 @@ char *www_email_summary(struct user_record *user) {
 	}
 	strcat(page, buffer);
 	len += strlen(buffer);
+	
+	sprintf(buffer, "<div class=\"button\"><a href=\"/email/new\">New Email</a></div>\n");
+	if (len + strlen(buffer) > max_len - 1) {
+		max_len += 4096;
+		page = (char *)realloc(page, max_len);
+	}
+	strcat(page, buffer);
+	len += strlen(buffer);
+	
 	sprintf(buffer, "%s/email.sq3", conf.bbs_path);
 
 	rc = sqlite3_open(buffer, &db);

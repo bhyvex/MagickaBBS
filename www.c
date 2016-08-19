@@ -8,6 +8,11 @@
 #include <b64/cdecode.h>
 #include "bbs.h"
 
+#define GET 1
+#define POST 2
+
+#define POSTBUFFERSIZE 8192
+
 extern struct bbs_config conf;
 
 struct mime_type {
@@ -17,6 +22,91 @@ struct mime_type {
 
 static struct mime_type **mime_types;
 static int mime_types_count;
+
+struct connection_info_s {
+	int connection_type;
+	struct user_record *user;
+	char *url;
+	char **keys;
+	char **values;
+	int count;
+	struct MHD_PostProcessor *pp;
+};
+
+void www_request_completed(void *cls, struct MHD_Connection *connection, void **con_cls, enum MHD_RequestTerminationCode toe) {
+	struct connection_info_s *con_info = *con_cls;
+	int i;
+	if (con_info == NULL) {
+		return;
+	}
+	
+	if (con_info->connection_type == POST) {
+
+		if (con_info->count > 0) {
+			for (i=0;i<con_info->count;i++) {
+				free(con_info->values[i]);
+				free(con_info->keys[i]);
+			}
+			free(con_info->values);
+			free(con_info->keys);
+		}
+		
+		if (con_info->user != NULL) {
+			free(con_info->user->loginname);
+			free(con_info->user->password);
+			free(con_info->user->firstname);
+			free(con_info->user->lastname);
+			free(con_info->user->email);
+			free(con_info->user->location);
+			free(con_info->user->sec_info);
+			free(con_info->user);
+		}
+		
+		MHD_destroy_post_processor(con_info->pp);
+	}
+	free(con_info->url);
+	free(con_info);
+}
+
+static int iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key, const char *filename, const char *content_type, const char *transfer_encoding, const char *data, uint64_t off, size_t size) {
+	struct connection_info_s *con_info = coninfo_cls;
+
+	int i;
+	
+	if (con_info != NULL) {
+		if (con_info->connection_type == POST) {
+			for (i=0;i<con_info->count;i++) {
+				if (strcmp(con_info->keys[i], key) == 0) {
+					con_info->values[i] = (char *)realloc(con_info->values[i], strlen(con_info->values[i] + size + 1));
+					strcat(con_info->values[i], data);
+					return MHD_YES;
+				}
+			}
+			
+			if (con_info->count == 0) {
+				con_info->keys = (char **)malloc(sizeof(char *));
+				con_info->values = (char **)malloc(sizeof(char *));
+			} else {
+				con_info->keys = (char **)realloc(con_info->keys, sizeof(char *) * (con_info->count + 1));
+				con_info->values = (char **)realloc(con_info->values, sizeof(char *) * (con_info->count + 1));				
+			}
+			con_info->keys[con_info->count] = strdup(key);
+			con_info->values[con_info->count] = strdup(data);;
+			con_info->count++;
+			if (strcmp(con_info->url, "/email/") == 0 || strcmp(con_info->url, "/email") == 0) {
+				if (con_info->count == 3) {
+					return MHD_NO;
+				}
+			}
+			
+			return MHD_YES;
+		} else {
+			return MHD_NO;
+		}
+	}
+
+	return MHD_NO;
+}
 
 void www_init() {
 	FILE *fptr;
@@ -278,16 +368,39 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 	int fno;
 	const char *url_ = url;
 	struct user_record *user;
-
-
+	char *subj, *to, *body;
+	struct connection_info_s *con_inf;
 	
-	static int apointer;
 	
-	if (&apointer != *ptr) {
-		*ptr = &apointer;
-		return MHD_YES;
+	if (strcmp(method, "GET") == 0) {
+		if (*ptr == NULL) {
+			con_inf = (struct connection_info_s *)malloc(sizeof(struct connection_info_s));
+			if (!con_inf) {
+				return MHD_NO;
+			}
+			con_inf->connection_type = GET;
+			con_inf->user = NULL;
+			con_inf->count = 0;
+			con_inf->url = strdup(url);
+			*ptr = con_inf;
+			return MHD_YES;
+		}
+	} else if (strcmp(method, "POST") == 0) {
+		if (*ptr == NULL) {
+			con_inf = (struct connection_info_s *)malloc(sizeof(struct connection_info_s));
+			if (!con_inf) {
+				return MHD_NO;
+			}
+			con_inf->connection_type = POST;
+			con_inf->user = NULL;
+			con_inf->count = 0;
+			con_inf->url = strdup(url);
+			*ptr = con_inf;
+			return MHD_YES;
+		}
 	}
-	*ptr = NULL;
+	
+	con_inf = *ptr;
 	
 	snprintf(buffer, 4096, "%s/header.tpl", conf.www_path);
 	
@@ -403,6 +516,24 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 			whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
 
 			sprintf(whole_page, "%s%s%s", header, page, footer);
+		} else if(strcasecmp(url, "/email/new") == 0) {
+			user = www_auth_ok(connection, url_);
+			
+			if (user == NULL) {
+				www_401(header, footer, connection);
+				free(header);
+				free(footer);
+				return MHD_YES;		
+			}
+			page = www_new_email();
+			if (page == NULL) {
+				free(header);
+				free(footer);
+				return MHD_NO;		
+			}
+			whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
+			
+			sprintf(whole_page, "%s%s%s", header, page, footer);						
 		} else if (strncasecmp(url, "/email/", 7) == 0) {
 			user = www_auth_ok(connection, url_);
 			
@@ -478,9 +609,64 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 			return MHD_YES;	
 		}
 	} else if (strcmp(method, "POST") == 0) {
-		free(header);
-		free(footer);		
-		return MHD_NO;
+		if (strcasecmp(url, "/email/") == 0 || strcasecmp(url, "/email") == 0) {
+			con_inf->user = www_auth_ok(connection, url_);
+			user = www_auth_ok(connection, url_);
+			
+			if (user == NULL) {
+				www_401(header, footer, connection);
+				free(header);
+				free(footer);
+				return MHD_YES;		
+			}
+						
+			con_inf->pp = MHD_create_post_processor(connection, POSTBUFFERSIZE, iterate_post, (void*) con_inf);   
+			
+			if (*upload_data_size != 0) {
+				MHD_post_process (con_inf->pp, upload_data, *upload_data_size);
+				*upload_data_size = 0;
+          
+				return MHD_YES;
+			}
+			subj = NULL;
+			to = NULL;
+			body = NULL;
+			for (i=0;i<con_inf->count;i++) {
+				if (strcmp(con_inf->keys[i], "recipient") == 0) {
+					to = con_inf->values[i];
+				} else if (strcmp(con_inf->keys[i], "subject") == 0) {
+					subj = con_inf->values[i];
+				} else if (strcmp(con_inf->keys[i], "body") == 0) {
+					body = con_inf->values[i];
+				}
+			}
+			if (!www_send_email(con_inf->user, to, subj, body)) {
+				page = (char *)malloc(50);
+				if (page == NULL) {
+					free(header);
+					free(footer);					
+					return MHD_NO;
+				}
+				sprintf(page, "<h1>Error Sending Email (Check User Exists?)</h1>");
+			} else {
+				page = (char *)malloc(21);
+				if (page == NULL) {
+					free(header);
+					free(footer);					
+					return MHD_NO;
+				}
+				sprintf(page, "<h1>Email Sent!</h1>");
+			}
+			whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
+			
+			sprintf(whole_page, "%s%s%s", header, page, footer);
+	
+			
+		} else {
+			free(header);
+			free(footer);		
+			return MHD_NO;
+		}
 	}
 	response = MHD_create_response_from_buffer (strlen (whole_page), (void*) whole_page, MHD_RESPMEM_PERSISTENT);
 	

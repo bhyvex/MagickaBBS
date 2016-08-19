@@ -697,7 +697,7 @@ void server(int port) {
 #if defined(ENABLE_WWW) 
 	if (conf.www_server && conf.www_path != NULL) {
 		www_init();
-		www_daemon = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY, conf.www_port, NULL, NULL, &www_handler, NULL, MHD_OPTION_END);
+		www_daemon = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY, conf.www_port, NULL, NULL, &www_handler, NULL, MHD_OPTION_NOTIFY_COMPLETED, &www_request_completed, NULL, MHD_OPTION_END);
 	}
 #endif
 
