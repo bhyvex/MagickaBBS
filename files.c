@@ -569,6 +569,53 @@ void list_files(struct user_record *user) {
 				s_putchar(files_e[i]->description[j]);
 			}
 		}
+		if (lines >= 18) {
+			lines = 0;
+			while (1) {
+				s_printf(get_string(70));
+				s_readstring(buffer, 5);
+				if (strlen(buffer) == 0) {
+					s_printf("\r\n");
+					break;
+				} else if (tolower(buffer[0]) == 'q') {
+					for (z=0;z<files_c;z++) {
+						free(files_e[z]->filename);
+						free(files_e[z]->description);
+						free(files_e[z]);
+					}
+					free(files_e);
+					s_printf("\r\n");
+					return;
+				}  else {
+					z = atoi(buffer);
+					if (z >= 0 && z < files_c) {
+						if (conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->download_sec_level <= user->sec_level) {
+							match = 0;
+							for (k=0;k<tagged_count;k++) {
+								if (strcmp(tagged_files[k], files_e[z]->filename) == 0) {
+									match = 1;
+									break;
+								}
+							}
+							if (match == 0) {
+								if (tagged_count == 0) {
+									tagged_files = (char **)malloc(sizeof(char *));
+								} else {
+									tagged_files = (char **)realloc(tagged_files, sizeof(char *) * (tagged_count + 1));
+								}
+								tagged_files[tagged_count] = strdup(files_e[z]->filename);
+								tagged_count++;
+								s_printf(get_string(71), basename(files_e[z]->filename));
+							} else {
+								s_printf(get_string(72));
+							}
+						} else {
+							s_printf(get_string(73));
+						}
+					}
+				}
+			}
+		}		
 	}
 	while (1) {
 		s_printf(get_string(75));
