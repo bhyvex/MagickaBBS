@@ -1,3 +1,68 @@
 .footer {
 	font-size: small;
 }
+
+.div-table {
+	display: table;
+	width: auto;
+	background-color: #eee;
+	border: 1px solid #666666;
+	border-spacing: 5px;
+}
+
+.email-summary-seen {
+	display: table-row;
+	width: auto;
+	clear: both;
+	background-color: #eee;
+}
+
+.email-summary {
+	display: table-row;
+	width: auto;
+	clear: both;
+	background-color: #b2ffb0;
+}
+
+.email-id {
+	float: left;
+	display: table-column;
+	width: 100px;
+}
+
+.email-subject {
+	float: left;
+	display: table-column;
+	width: 400px;
+}
+
+.email-from {
+	float: left;
+	display: table-column;
+	width: 200px;
+}
+
+.email-date {
+	float: left;
+	display: table-column;
+	width: 200px;
+}
+
+.email-view-header {
+	background-color: #eee;
+	border: 1px solid #666666;
+	padding: 5px;
+	margin-bottom: 10px;
+}
+
+.email-view-subject {
+	font-size: xx-large;
+}
+
+.email-view-from {
+	color: #222;
+}
+
+.email-view-date {
+	color: #222;
+}

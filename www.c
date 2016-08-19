@@ -385,7 +385,7 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 			whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
 			
 			sprintf(whole_page, "%s%s%s", header, page, footer);
-		} else if (strcasecmp(url, "/email/") == 0 || strncasecmp(url, "/email", 6) == 0) {
+		} else if (strcasecmp(url, "/email/") == 0 || strcasecmp(url, "/email") == 0) {
 			user = www_auth_ok(connection, url_);
 			
 			if (user == NULL) {
@@ -401,8 +401,26 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 				return MHD_NO;		
 			}
 			whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
-			
+
 			sprintf(whole_page, "%s%s%s", header, page, footer);
+		} else if (strncasecmp(url, "/email/", 7) == 0) {
+			user = www_auth_ok(connection, url_);
+			
+			if (user == NULL) {
+				www_401(header, footer, connection);
+				free(header);
+				free(footer);
+				return MHD_YES;		
+			}
+			page = www_email_display(user, atoi(&url[7]));
+			if (page == NULL) {
+				free(header);
+				free(footer);
+				return MHD_NO;		
+			}
+			whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
+			
+			sprintf(whole_page, "%s%s%s", header, page, footer);			
 		} else if (strncasecmp(url, "/static/", 8) == 0) {
 			// sanatize path
 			if (strstr(url, "/..") != NULL) {
@@ -464,12 +482,12 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 		free(footer);		
 		return MHD_NO;
 	}
-	
 	response = MHD_create_response_from_buffer (strlen (whole_page), (void*) whole_page, MHD_RESPMEM_PERSISTENT);
+	
+	MHD_add_response_header(response, MHD_HTTP_HEADER_CONTENT_TYPE, "text/html");
 	
 	ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
 	MHD_destroy_response (response);
-	free(whole_page);
 	free(page);
 	free(header);
 	free(footer);
