@@ -48,6 +48,12 @@
 	width: 200px;
 }
 
+.email-delete {
+	float: left;
+	display: table-column;
+	width: 30px;
+}
+
 .email-view-header {
 	background-color: #eee;
 	border: 1px solid #666666;

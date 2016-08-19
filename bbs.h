@@ -210,6 +210,7 @@ extern char *www_email_summary(struct user_record *user);
 extern char *www_email_display(struct user_record *user, int email);
 extern int www_send_email(struct user_record *user, char *recipient, char *subject, char *body);
 extern char *www_new_email();
+extern int www_email_delete(struct user_record *user, int id);
 #endif
 
 #endif

@@ -10,6 +10,57 @@
 
 extern struct bbs_config conf;
 
+int www_email_delete(struct user_record *user, int id) {
+	char buffer[256];
+	sqlite3 *db;
+	sqlite3_stmt *res;
+	int rc;
+    char *csql = "CREATE TABLE IF NOT EXISTS email ("
+    					"id INTEGER PRIMARY KEY,"
+						"sender TEXT COLLATE NOCASE,"
+						"recipient TEXT COLLATE NOCASE,"
+						"subject TEXT,"
+						"body TEXT,"
+						"date INTEGER,"
+						"seen INTEGER);";
+	char *dsql = "DELETE FROM email WHERE id=? AND recipient LIKE ?";
+	char *err_msg = 0;
+	
+	sprintf(buffer, "%s/email.sq3", conf.bbs_path);
+
+	rc = sqlite3_open(buffer, &db);
+	if (rc != SQLITE_OK) {
+		sqlite3_close(db);
+
+		return 0;
+	}
+
+
+	rc = sqlite3_exec(db, csql, 0, 0, &err_msg);
+	if (rc != SQLITE_OK ) {
+		sqlite3_free(err_msg);
+		sqlite3_close(db);
+
+		return 0;
+	}
+
+	rc = sqlite3_prepare_v2(db, dsql, -1, &res, 0);
+
+	if (rc == SQLITE_OK) {
+		sqlite3_bind_int(res, 1, id);
+		sqlite3_bind_text(res, 2, user->loginname, -1, 0);
+	} else {
+		sqlite3_finalize(res);
+		sqlite3_close(db);
+		return 0;
+	}
+	sqlite3_step(res);
+
+	sqlite3_finalize(res);
+	sqlite3_close(db);
+	return 1;
+}
+
 int www_send_email(struct user_record *user, char *recipient, char *subject, char *ibody) {
 	char buffer[256];
 	sqlite3 *db;
@@ -406,12 +457,13 @@ char *www_email_summary(struct user_record *user) {
 	sqlite3 *db;
 	sqlite3_stmt *res;
 	int rc;
-	char *email_summary_sql = "SELECT sender,subject,seen,date FROM email WHERE recipient LIKE ?";
+	char *email_summary_sql = "SELECT id,sender,subject,seen,date FROM email WHERE recipient LIKE ?";
 	struct tm msg_date;
 	time_t date;
 	char *from;
 	char *subject;
 	int seen;
+	int id;
 	int msgid = 0;
 	char *err_msg = 0;
 	char *email_create_sql = "CREATE TABLE IF NOT EXISTS email ("
@@ -482,13 +534,14 @@ char *www_email_summary(struct user_record *user) {
 	len += strlen(buffer);
 	
 	while (sqlite3_step(res) == SQLITE_ROW) {
-		from = strdup((char *)sqlite3_column_text(res, 0));
-		subject = strdup((char *)sqlite3_column_text(res, 1));
-		seen = sqlite3_column_int(res, 2);
-		date = (time_t)sqlite3_column_int(res, 3);
+		id = sqlite3_column_int(res, 0);
+		from = strdup((char *)sqlite3_column_text(res, 1));
+		subject = strdup((char *)sqlite3_column_text(res, 2));
+		seen = sqlite3_column_int(res, 3);
+		date = (time_t)sqlite3_column_int(res, 4);
 		localtime_r(&date, &msg_date);
 		if (seen == 0) {
-			sprintf(buffer, "<div class=\"email-summary\"><div class=\"email-id\">%d</div><div class=\"email-subject\"><a href=\"/email/%d\">%s</a></div><div class=\"email-from\">%s</div><div class=\"email-date\">%.2d:%.2d %.2d-%.2d-%.2d</div></div>\n", msgid + 1, msgid + 1, subject, from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+			sprintf(buffer, "<div class=\"email-summary\"><div class=\"email-id\">%d</div><div class=\"email-subject\"><a href=\"/email/%d\">%s</a></div><div class=\"email-from\">%s</div><div class=\"email-date\">%.2d:%.2d %.2d-%.2d-%.2d</div><div class=\"email-delete\"><a href=\"/email/delete/%d\"><img src=\"/static/delete.png\" alt=\"delete\" /></a></div></div>\n", msgid + 1, msgid + 1, subject, from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100, id);
 			if (len + strlen(buffer) > max_len - 1) {
 				max_len += 4096;
 				page = (char *)realloc(page, max_len);
@@ -496,7 +549,7 @@ char *www_email_summary(struct user_record *user) {
 			strcat(page, buffer);
 			len += strlen(buffer);
 		} else {
-			sprintf(buffer, "<div class=\"email-summary-seen\"><div class=\"email-id\">%d</div><div class=\"email-subject\"><a href=\"/email/%d\">%s</a></div><div class=\"email-from\">%s</div><div class=\"email-date\">%.2d:%.2d %.2d-%.2d-%.2d</div></div>\n", msgid + 1, msgid + 1, subject, from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+			sprintf(buffer, "<div class=\"email-summary-seen\"><div class=\"email-id\">%d</div><div class=\"email-subject\"><a href=\"/email/%d\">%s</a></div><div class=\"email-from\">%s</div><div class=\"email-date\">%.2d:%.2d %.2d-%.2d-%.2d</div><div class=\"email-delete\"><a href=\"/email/delete/%d\"><img src=\"/static/delete.png\" alt=\"delete\" /></a></div></div>\n", msgid + 1, msgid + 1, subject, from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100, id);
 			if (len + strlen(buffer) > max_len - 1) {
 				max_len += 4096;
 				page = (char *)realloc(page, max_len);

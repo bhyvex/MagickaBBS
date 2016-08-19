@@ -50,20 +50,20 @@ void www_request_completed(void *cls, struct MHD_Connection *connection, void **
 			free(con_info->values);
 			free(con_info->keys);
 		}
-		
-		if (con_info->user != NULL) {
-			free(con_info->user->loginname);
-			free(con_info->user->password);
-			free(con_info->user->firstname);
-			free(con_info->user->lastname);
-			free(con_info->user->email);
-			free(con_info->user->location);
-			free(con_info->user->sec_info);
-			free(con_info->user);
-		}
-		
+	
 		MHD_destroy_post_processor(con_info->pp);
 	}
+	if (con_info->user != NULL) {
+		free(con_info->user->loginname);
+		free(con_info->user->password);
+		free(con_info->user->firstname);
+		free(con_info->user->lastname);
+		free(con_info->user->email);
+		free(con_info->user->location);
+		free(con_info->user->sec_info);
+		free(con_info->user);
+	}	
+	
 	free(con_info->url);
 	free(con_info);
 }
@@ -367,7 +367,6 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 	int i;
 	int fno;
 	const char *url_ = url;
-	struct user_record *user;
 	char *subj, *to, *body;
 	struct connection_info_s *con_inf;
 	
@@ -499,15 +498,15 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 			
 			sprintf(whole_page, "%s%s%s", header, page, footer);
 		} else if (strcasecmp(url, "/email/") == 0 || strcasecmp(url, "/email") == 0) {
-			user = www_auth_ok(connection, url_);
+			con_inf->user = www_auth_ok(connection, url_);
 			
-			if (user == NULL) {
+			if (con_inf->user == NULL) {
 				www_401(header, footer, connection);
 				free(header);
 				free(footer);
 				return MHD_YES;		
 			}
-			page = www_email_summary(user);
+			page = www_email_summary(con_inf->user);
 			if (page == NULL) {
 				free(header);
 				free(footer);
@@ -517,9 +516,9 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 
 			sprintf(whole_page, "%s%s%s", header, page, footer);
 		} else if(strcasecmp(url, "/email/new") == 0) {
-			user = www_auth_ok(connection, url_);
+			con_inf->user = www_auth_ok(connection, url_);
 			
-			if (user == NULL) {
+			if (con_inf->user == NULL) {
 				www_401(header, footer, connection);
 				free(header);
 				free(footer);
@@ -534,16 +533,51 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 			whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
 			
 			sprintf(whole_page, "%s%s%s", header, page, footer);						
-		} else if (strncasecmp(url, "/email/", 7) == 0) {
-			user = www_auth_ok(connection, url_);
+		} else if (strncasecmp(url, "/email/delete/", 14) == 0) {
+			con_inf->user = www_auth_ok(connection, url_);
 			
-			if (user == NULL) {
+			if (con_inf->user == NULL) {
 				www_401(header, footer, connection);
 				free(header);
 				free(footer);
 				return MHD_YES;		
 			}
-			page = www_email_display(user, atoi(&url[7]));
+			
+			if (!www_email_delete(con_inf->user, atoi(&url[14]))) {
+				page = (char *)malloc(31);
+				if (page == NULL) {
+					free(header);
+					free(footer);					
+					return MHD_NO;
+				}
+				sprintf(page, "<h1>Error Deleting Email.</h1>");
+			} else {
+				page = (char *)malloc(24);
+				if (page == NULL) {
+					free(header);
+					free(footer);					
+					return MHD_NO;
+				}
+				sprintf(page, "<h1>Email Deleted!</h1>");
+			}
+			if (page == NULL) {
+				free(header);
+				free(footer);
+				return MHD_NO;		
+			}
+			whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
+			
+			sprintf(whole_page, "%s%s%s", header, page, footer);						
+		} else if (strncasecmp(url, "/email/", 7) == 0) {
+			con_inf->user = www_auth_ok(connection, url_);
+			
+			if (con_inf->user == NULL) {
+				www_401(header, footer, connection);
+				free(header);
+				free(footer);
+				return MHD_YES;		
+			}
+			page = www_email_display(con_inf->user, atoi(&url[7]));
 			if (page == NULL) {
 				free(header);
 				free(footer);
@@ -611,9 +645,8 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 	} else if (strcmp(method, "POST") == 0) {
 		if (strcasecmp(url, "/email/") == 0 || strcasecmp(url, "/email") == 0) {
 			con_inf->user = www_auth_ok(connection, url_);
-			user = www_auth_ok(connection, url_);
-			
-			if (user == NULL) {
+
+			if (con_inf->user == NULL) {
 				www_401(header, footer, connection);
 				free(header);
 				free(footer);
