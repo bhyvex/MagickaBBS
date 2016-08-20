@@ -416,7 +416,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		strcat(page, buffer);
 		len += strlen(buffer);
 
-		free(body);
+
 		
 				sprintf(buffer, "<div class=\"msg-reply-form\">\n");
 		if (len + strlen(buffer) > max_len - 1) {
@@ -529,7 +529,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 				strcat(page, buffer);
 				len += strlen(buffer);			
 			}
-			
+			free(body);
 			sprintf(buffer, "</textarea>\n<br />");
 			if (len + strlen(buffer) > max_len - 1) {
 				max_len += 4096;
