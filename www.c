@@ -198,7 +198,7 @@ int www_401(char *header, char *footer, struct MHD_Connection * connection) {
 			
 	sprintf(whole_page, "%s%s%s", header, page, footer);
 
-	response = MHD_create_response_from_buffer (strlen(whole_page), (void*)whole_page, MHD_RESPMEM_PERSISTENT);
+	response = MHD_create_response_from_buffer (strlen(whole_page), (void*)whole_page, MHD_RESPMEM_MUST_FREE);
 	
 	MHD_add_response_header(response, "WWW-Authenticate", "Basic realm=\"BBS Area\"");
 	
@@ -250,7 +250,7 @@ int www_404(char *header, char *footer, struct MHD_Connection * connection) {
 			
 	sprintf(whole_page, "%s%s%s", header, page, footer);
 
-	response = MHD_create_response_from_buffer (strlen(whole_page), (void*)whole_page, MHD_RESPMEM_PERSISTENT);
+	response = MHD_create_response_from_buffer (strlen(whole_page), (void*)whole_page, MHD_RESPMEM_MUST_FREE);
 	
 	ret = MHD_queue_response (connection, MHD_HTTP_NOT_FOUND, response);
 	MHD_destroy_response (response);
@@ -300,7 +300,7 @@ int www_403(char *header, char *footer, struct MHD_Connection * connection) {
 			
 	sprintf(whole_page, "%s%s%s", header, page, footer);
 
-	response = MHD_create_response_from_buffer (strlen(whole_page), (void*)whole_page, MHD_RESPMEM_PERSISTENT);
+	response = MHD_create_response_from_buffer (strlen(whole_page), (void*)whole_page, MHD_RESPMEM_MUST_FREE);
 	
 	ret = MHD_queue_response (connection, MHD_HTTP_NOT_FOUND, response);
 	MHD_destroy_response (response);
@@ -860,7 +860,7 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 			return MHD_NO;
 		}
 	}
-	response = MHD_create_response_from_buffer (strlen (whole_page), (void*) whole_page, MHD_RESPMEM_PERSISTENT);
+	response = MHD_create_response_from_buffer (strlen (whole_page), (void*) whole_page, MHD_RESPMEM_MUST_FREE);
 	
 	MHD_add_response_header(response, MHD_HTTP_HEADER_CONTENT_TYPE, "text/html");
 	
