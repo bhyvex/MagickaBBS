@@ -364,12 +364,12 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		if (JAM_ReadLastRead(jb, user->id, &jlr) == JAM_NO_USER) {
 			jlr.UserCRC = JAM_Crc32(user->loginname, strlen(user->loginname));
 			jlr.UserID = user->id;
-			jlr.HighReadMsg = msg;
+			jlr.HighReadMsg = msg - 1;
 		}
 
-		jlr.LastReadMsg = msg;
+		jlr.LastReadMsg = msg - 1;
 		if (jlr.HighReadMsg < msg) {
-			jlr.HighReadMsg = msg;
+			jlr.HighReadMsg = msg - 1;
 		}	
 
 		JAM_WriteLastRead(jb, user->id, &jlr);

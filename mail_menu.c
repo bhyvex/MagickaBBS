@@ -776,7 +776,7 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 			jlr.HighReadMsg = msghs->msgs[mailno]->msg_no;
 		}
 
-		jlr.LastReadMsg = mailno;
+		jlr.LastReadMsg = msghs->msgs[mailno]->msg_no;
 		if (jlr.HighReadMsg < msghs->msgs[mailno]->msg_no) {
 			jlr.HighReadMsg = msghs->msgs[mailno]->msg_no;
 		}
