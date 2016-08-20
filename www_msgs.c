@@ -417,7 +417,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 			strcat(page, buffer);
 			len += strlen(buffer);
 			
-			sprintf(buffer, "<form action=\"/msgs/\" method=\"POST\">\n");
+			sprintf(buffer, "<form action=\"/msgs/\" method=\"POST\" enctype=\"application/x-www-form-urlencoded\">\n");
 			if (len + strlen(buffer) > max_len - 1) {
 				max_len += 4096;
 				page = (char *)realloc(page, max_len);
@@ -727,7 +727,7 @@ char *www_new_msg(struct user_record *user, int conference, int area) {
 	strcat(page, buffer);
 	len += strlen(buffer);
 
-	sprintf(buffer, "<form action=\"/msgs/\" method=\"POST\">\n");
+	sprintf(buffer, "<form action=\"/msgs/\" method=\"POST\" enctype=\"application/x-www-form-urlencoded\">\n");
 	if (len + strlen(buffer) > max_len - 1) {
 		max_len += 4096;
 		page = (char *)realloc(page, max_len);

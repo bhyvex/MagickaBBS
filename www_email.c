@@ -160,7 +160,7 @@ char *www_new_email() {
 	strcat(page, buffer);
 	len += strlen(buffer);
 
-	sprintf(buffer, "<form action=\"/email/\" method=\"POST\">\n");
+	sprintf(buffer, "<form action=\"/email/\" method=\"POST\" enctype=\"application/x-www-form-urlencoded\">\n");
 	if (len + strlen(buffer) > max_len - 1) {
 		max_len += 4096;
 		page = (char *)realloc(page, max_len);
@@ -358,7 +358,7 @@ char *www_email_display(struct user_record *user, int email) {
 		strcat(page, buffer);
 		len += strlen(buffer);
 		
-		sprintf(buffer, "<form action=\"/email/\" method=\"POST\">\n");
+		sprintf(buffer, "<form action=\"/email/\" method=\"POST\" enctype=\"application/x-www-form-urlencoded\">\n");
 		if (len + strlen(buffer) > max_len - 1) {
 			max_len += 4096;
 			page = (char *)realloc(page, max_len);
