@@ -41,7 +41,7 @@ static int new_messages(struct user_record *user, int conference, int area) {
 			count = jbh.ActiveMsgs;
 		}
 	} else {
-		if (jlr.HighReadMsg < (jbh.ActiveMsgs - 1)) {
+		if (jlr.HighReadMsg < jbh.ActiveMsgs) {
 			if (conf.mail_conferences[conference]->mail_areas[area]->type == TYPE_NETMAIL_AREA) {
 				msghs = read_message_headers(conference, area, user);
 				if (msghs != NULL) {
