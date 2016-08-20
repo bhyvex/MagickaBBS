@@ -93,16 +93,6 @@ static int iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char 
 			con_info->keys[con_info->count] = strdup(key);
 			con_info->values[con_info->count] = strdup(data);
 			con_info->count++;
-			if (strcmp(con_info->url, "/email/") == 0 || strcmp(con_info->url, "/email") == 0) {
-				if (con_info->count == 3) {
-					return MHD_NO;
-				}
-			}
-			if (strcmp(con_info->url, "/msgs/") == 0 || strcmp(con_info->url, "/msgs") == 0) {
-				if (con_info->count == 6) {
-					return MHD_NO;
-				}
-			}
 			return MHD_YES;
 		} else {
 			return MHD_NO;
