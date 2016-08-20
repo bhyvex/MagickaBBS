@@ -9,6 +9,58 @@
 
 extern struct bbs_config conf;
 
+static int new_messages(struct user_record *user, int conference, int area) {
+	int count = 0;
+	s_JamBase *jb;
+	s_JamBaseHeader jbh;
+	s_JamLastRead jlr;
+	struct msg_headers *msghs;
+		
+	jb = open_jam_base(conf.mail_conferences[conference]->mail_areas[area]->path);
+	if (!jb) {
+		return 0;
+	}
+	if (JAM_ReadMBHeader(jb, &jbh) != 0) {
+		JAM_CloseMB(jb);
+		return 0;
+	}
+	if (JAM_ReadLastRead(jb, user->id, &jlr) == JAM_NO_USER) {
+		if (jbh.ActiveMsgs == 0) {
+			JAM_CloseMB(jb);
+			return 0;
+		}
+		if (conf.mail_conferences[conference]->mail_areas[area]->type == TYPE_NETMAIL_AREA) {
+			msghs = read_message_headers(conference, area, user);
+			if (msghs != NULL) {
+				if (msghs->msg_count > 0) {
+					count = msghs->msg_count;
+				}
+				free_message_headers(msghs);
+			}
+		} else {
+			count = jbh.ActiveMsgs;
+		}
+	} else {
+		if (jlr.HighReadMsg < (jbh.ActiveMsgs - 1)) {
+			if (conf.mail_conferences[conference]->mail_areas[area]->type == TYPE_NETMAIL_AREA) {
+				msghs = read_message_headers(conference, area, user);
+				if (msghs != NULL) {
+					if (msghs->msg_count > 0) {
+						if (msghs->msgs[msghs->msg_count-1]->msg_no > jlr.HighReadMsg) {
+							count = msghs->msgs[msghs->msg_count-1]->msg_no - jlr.HighReadMsg;
+						}
+					}
+					free_message_headers(msghs);
+				}
+			} else {
+				count = (jbh.ActiveMsgs - 1) - jlr.HighReadMsg;
+			}
+		}
+	}
+	JAM_CloseMB(jb);
+	return count;
+}
+
 char *www_msgs_arealist(struct user_record *user) {
 	char *page;
 	int max_len;
@@ -41,7 +93,12 @@ char *www_msgs_arealist(struct user_record *user) {
 
 			for (j=0;j<conf.mail_conferences[i]->mail_area_count; j++) {
 				if (conf.mail_conferences[i]->mail_areas[j]->read_sec_level <= user->sec_level) {
-					sprintf(buffer, "<div class=\"area-list-item\"><a href=\"/msgs/%d/%d/\">%s</a></div>\n", i, j, conf.mail_conferences[i]->mail_areas[j]->name);
+					
+					if (new_messages(user, i, j) > 0) {
+						sprintf(buffer, "<div class=\"area-list-new\"><a href=\"/msgs/%d/%d/\">%s</a></div>\n", i, j, conf.mail_conferences[i]->mail_areas[j]->name);
+					} else {
+						sprintf(buffer, "<div class=\"area-list-item\"><a href=\"/msgs/%d/%d/\">%s</a></div>\n", i, j, conf.mail_conferences[i]->mail_areas[j]->name);
+					}
 					if (len + strlen(buffer) > max_len - 1) {
 						max_len += 4096;
 						page = (char *)realloc(page, max_len);
