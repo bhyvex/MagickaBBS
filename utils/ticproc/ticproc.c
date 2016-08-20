@@ -195,8 +195,8 @@ int add_file(struct ticfile_t *ticfile) {
 	fclose(fptr);
 
 
-	if (crc != strtol(ticfile->crc, NULL, 16)) {
-		fprintf(stderr, "CRC Mismatch, bailing 0x%x != 0x%x\n", crc, strtol(ticfile->crc, NULL, 16));
+	if (crc != strtoul(ticfile->crc, NULL, 16)) {
+		fprintf(stderr, "CRC Mismatch, bailing 0x%x != 0x%x\n", crc, strtoul(ticfile->crc, NULL, 16));
 		sqlite3_close(db);
 		return -1;
 	}
