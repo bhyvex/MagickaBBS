@@ -84,15 +84,15 @@ char *www_msgs_messagelist(struct user_record *user, int conference, int area, i
 	strcat(page, buffer);
 	len += strlen(buffer);
 	
-
-	sprintf(buffer, "<div class=\"button\"><a href=\"/msgs/new/%d/%d\">New Message</a></div>\n", conference, area);
-	if (len + strlen(buffer) > max_len - 1) {
-		max_len += 4096;
-		page = (char *)realloc(page, max_len);
+	if (conf.mail_conferences[conference]->mail_areas[area]->type != TYPE_NETMAIL_AREA) {
+		sprintf(buffer, "<div class=\"button\"><a href=\"/msgs/new/%d/%d\">New Message</a></div>\n", conference, area);
+		if (len + strlen(buffer) > max_len - 1) {
+			max_len += 4096;
+			page = (char *)realloc(page, max_len);
+		}
+		strcat(page, buffer);
+		len += strlen(buffer);	
 	}
-	strcat(page, buffer);
-	len += strlen(buffer);	
-	
 	mhrs = read_message_headers(conference, area, user);
 	
 	if (mhrs == NULL) {
@@ -321,7 +321,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		len = 0;
 		memset(page, 0, 4096);
 		
-		sprintf(buffer, "<div class=\"content-header\"><h2>%s - %s</h2></div>\n", conf.mail_conferences[conference]->name, conf.mail_conferences[conference]->mail_areas[area]->name);
+		sprintf(buffer, "<div class=\"content-header\"><a href=\"/msgs/%d/%d\"><h2>%s - %s</h2></a></div>\n", conference, area, conf.mail_conferences[conference]->name, conf.mail_conferences[conference]->mail_areas[area]->name);
 		if (len + strlen(buffer) > max_len - 1) {
 			max_len += 4096;
 			page = (char *)realloc(page, max_len);
