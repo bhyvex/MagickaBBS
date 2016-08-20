@@ -515,7 +515,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 				if (body[i] == '\r' || chars == 78) {
 					sprintf(buffer, "\n&gt; ");
 					if (chars == 78) {
-						sprintf(buffer, "%c", body[i]);
+						sprintf(buffer, "\n&gt; %c", body[i]);
 						chars = 1;
 					}
 				} else {

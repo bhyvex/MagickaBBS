@@ -431,7 +431,7 @@ char *www_email_display(struct user_record *user, int email) {
 			if (body[i] == '\r' || chars == 78) {
 				sprintf(buffer, "\n&gt; ");
 				if (chars == 78) {
-					sprintf(buffer, "%c", body[i]);
+					sprintf(buffer, "\n&gt; %c", body[i]);
 					chars = 1;
 				}
 			} else {
