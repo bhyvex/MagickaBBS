@@ -6,6 +6,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <b64/cdecode.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 #include "bbs.h"
 
 #define GET 1
@@ -14,6 +16,7 @@
 #define POSTBUFFERSIZE 65536
 
 extern struct bbs_config conf;
+extern char *ipaddress;
 
 struct mime_type {
 	char *ext;
@@ -32,6 +35,13 @@ struct connection_info_s {
 	int count;
 	struct MHD_PostProcessor *pp;
 };
+
+void *www_logger(void * cls, const char * uri, struct MHD_Connection *con) {
+	struct sockaddr_in *so = (struct sockaddr_in *)MHD_get_connection_info(con, MHD_CONNECTION_INFO_CLIENT_ADDRESS)->client_addr;
+	ipaddress = strdup(inet_ntoa(so->sin_addr));
+	dolog("%s", uri);
+	return NULL;
+}
 
 void www_request_completed(void *cls, struct MHD_Connection *connection, void **con_cls, enum MHD_RequestTerminationCode toe) {
 	struct connection_info_s *con_info = *con_cls;
@@ -66,6 +76,7 @@ void www_request_completed(void *cls, struct MHD_Connection *connection, void **
 	
 	free(con_info->url);
 	free(con_info);
+	free(ipaddress);
 }
 
 static int iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char *key, const char *filename, const char *content_type, const char *transfer_encoding, const char *data, uint64_t off, size_t size) {
