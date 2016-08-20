@@ -11,7 +11,7 @@
 #define GET 1
 #define POST 2
 
-#define POSTBUFFERSIZE 8192
+#define POSTBUFFERSIZE 65536
 
 extern struct bbs_config conf;
 
