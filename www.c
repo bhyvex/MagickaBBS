@@ -77,7 +77,7 @@ static int iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char 
 		if (con_info->connection_type == POST) {
 			for (i=0;i<con_info->count;i++) {
 				if (strcmp(con_info->keys[i], key) == 0) {
-					con_info->values[i] = (char *)realloc(con_info->values[i], strlen(con_info->values[i] + size + 1));
+					con_info->values[i] = (char *)realloc(con_info->values[i], strlen(con_info->values[i]) + size + 1);
 					strcat(con_info->values[i], data);
 					return MHD_YES;
 				}
@@ -91,7 +91,7 @@ static int iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char 
 				con_info->values = (char **)realloc(con_info->values, sizeof(char *) * (con_info->count + 1));				
 			}
 			con_info->keys[con_info->count] = strdup(key);
-			con_info->values[con_info->count] = strdup(data);;
+			con_info->values[con_info->count] = strdup(data);
 			con_info->count++;
 			if (strcmp(con_info->url, "/email/") == 0 || strcmp(con_info->url, "/email") == 0) {
 				if (con_info->count == 3) {
