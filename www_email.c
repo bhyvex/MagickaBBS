@@ -168,7 +168,7 @@ char *www_new_email() {
 	strcat(page, buffer);
 	len += strlen(buffer);
 
-	sprintf(buffer, "<input type=\"text\" name=\"recipient\" /><br />\n");
+	sprintf(buffer, "To : <input type=\"text\" name=\"recipient\" /><br />\n");
 	if (len + strlen(buffer) > max_len - 1) {
 		max_len += 4096;
 		page = (char *)realloc(page, max_len);
@@ -176,7 +176,7 @@ char *www_new_email() {
 	strcat(page, buffer);
 	len += strlen(buffer);
 
-	sprintf(buffer, "<input type=\"text\" name=\"subject\" /><br />\n");
+	sprintf(buffer, "Subject : <input type=\"text\" name=\"subject\" /><br />\n");
 	if (len + strlen(buffer) > max_len - 1) {
 		max_len += 4096;
 		page = (char *)realloc(page, max_len);
@@ -374,7 +374,11 @@ char *www_email_display(struct user_record *user, int email) {
 		strcat(page, buffer);
 		len += strlen(buffer);
 
-		sprintf(buffer, "<input type=\"text\" name=\"subject\" value=\"RE: %s\" /><br />\n", subject);
+		if (strncasecmp(subject, "re:", 3) == 0) {
+			sprintf(buffer, "Subject : <input type=\"text\" name=\"subject\" value=\"%s\" /><br />\n", subject);
+		} else {
+			sprintf(buffer, "Subject : <input type=\"text\" name=\"subject\" value=\"RE: %s\" /><br />\n", subject);
+		}
 		if (len + strlen(buffer) > max_len - 1) {
 			max_len += 4096;
 			page = (char *)realloc(page, max_len);

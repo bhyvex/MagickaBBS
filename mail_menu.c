@@ -16,22 +16,6 @@
 extern struct bbs_config conf;
 extern struct user_record *gUser;
 extern int mynode;
-struct jam_msg {
-	int msg_no;
-	s_JamMsgHeader *msg_h;
-	char *from;
-	char *to;
-	char *subject;
-	char *oaddress;
-	char *daddress;
-	char *msgid;
-	char *replyid;
-};
-
-struct msg_headers {
-	struct jam_msg **msgs;
-	int msg_count;
-};
 
 s_JamBase *open_jam_base(char *path) {
 	int ret;
@@ -89,16 +73,16 @@ void free_message_headers(struct msg_headers *msghs) {
 	free(msghs);
 }
 
-int msg_is_to(char *addressed_to, char *address, int type, int rn, int msgconf) {
+int msg_is_to(struct user_record *user, char *addressed_to, char *address, int type, int rn, int msgconf) {
 	char *myname;
 	char *wwiv_addressee;
 	struct fido_addr *dest;
 	int j;
 	if (rn) {
-		myname = (char *)malloc(strlen(gUser->firstname) + strlen(gUser->lastname) + 2);
-		sprintf(myname, "%s %s", gUser->firstname, gUser->lastname);
+		myname = (char *)malloc(strlen(user->firstname) + strlen(user->lastname) + 2);
+		sprintf(myname, "%s %s", user->firstname, user->lastname);
 	} else {
-		myname = strdup(gUser->loginname);
+		myname = strdup(user->loginname);
 	}
 	if (type == NETWORK_WWIV) {
 		wwiv_addressee = strdup(addressed_to);
@@ -145,15 +129,15 @@ int msg_is_to(char *addressed_to, char *address, int type, int rn, int msgconf) 
 	}
 }
 
-int msg_is_from(char *addressed_from, char *address, int type, int rn, int msgconf) {
+int msg_is_from(struct user_record *user, char *addressed_from, char *address, int type, int rn, int msgconf) {
 	char *myname;
 	struct fido_addr *orig;
 	int j;
 	if (rn) {
-		myname = (char *)malloc(strlen(gUser->firstname) + strlen(gUser->lastname) + 2);
-		sprintf(myname, "%s %s", gUser->firstname, gUser->lastname);
+		myname = (char *)malloc(strlen(user->firstname) + strlen(user->lastname) + 2);
+		sprintf(myname, "%s %s", user->firstname, user->lastname);
 	} else {
-		myname = strdup(gUser->loginname);
+		myname = strdup(user->loginname);
 	}
 	if (type == NETWORK_WWIV) {
 		free(myname);
@@ -277,8 +261,8 @@ struct msg_headers *read_message_headers(int msgconf, int msgarea, struct user_r
 			JAM_DelSubPacket(jsp);
 
 			if (jmh.Attribute & MSG_PRIVATE) {
-				if (!msg_is_to(jamm->to, jamm->daddress, conf.mail_conferences[msgconf]->nettype, conf.mail_conferences[msgconf]->realnames, msgconf) &&
-				    !msg_is_from(jamm->from, jamm->oaddress, conf.mail_conferences[msgconf]->nettype, conf.mail_conferences[msgconf]->realnames, msgconf)) {
+				if (!msg_is_to(gUser, jamm->to, jamm->daddress, conf.mail_conferences[msgconf]->nettype, conf.mail_conferences[msgconf]->realnames, msgconf) &&
+				    !msg_is_from(gUser, jamm->from, jamm->oaddress, conf.mail_conferences[msgconf]->nettype, conf.mail_conferences[msgconf]->realnames, msgconf)) {
 
 					if (jamm->subject != NULL) {
 						free(jamm->subject);

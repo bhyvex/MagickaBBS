@@ -98,7 +98,11 @@ static int iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char 
 					return MHD_NO;
 				}
 			}
-			
+			if (strcmp(con_info->url, "/msgs/") == 0 || strcmp(con_info->url, "/msgs") == 0) {
+				if (con_info->count == 6) {
+					return MHD_NO;
+				}
+			}
 			return MHD_YES;
 		} else {
 			return MHD_NO;
@@ -369,7 +373,12 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 	const char *url_ = url;
 	char *subj, *to, *body;
 	struct connection_info_s *con_inf;
-	
+	int conference, area, msg;
+	char *url_copy;
+	char *aptr;
+	const char *val;
+	int skip;
+	char *replyid;
 	
 	if (strcmp(method, "GET") == 0) {
 		if (*ptr == NULL) {
@@ -585,7 +594,110 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 			}
 			whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
 			
+			sprintf(whole_page, "%s%s%s", header, page, footer);
+		} else if (strcasecmp(url, "/msgs/") == 0 || strcasecmp(url, "/msgs") == 0) {
+			con_inf->user = www_auth_ok(connection, url_);
+			
+			if (con_inf->user == NULL) {
+				www_401(header, footer, connection);
+				free(header);
+				free(footer);
+				return MHD_YES;		
+			}
+			page = www_msgs_arealist(con_inf->user);
+			if (page == NULL) {
+				free(header);
+				free(footer);
+				return MHD_NO;		
+			}
+			whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
+			
+			sprintf(whole_page, "%s%s%s", header, page, footer);
+		} else if (strncasecmp(url, "/msgs/new/", 10) == 0) {
+			con_inf->user = www_auth_ok(connection, url_);
+		
+			if (con_inf->user == NULL) {
+				www_401(header, footer, connection);
+				free(header);
+				free(footer);
+				return MHD_YES;		
+			}			
+			conference = -1;
+			area = -1;
+			url_copy = strdup(&url[10]);
+	
+			aptr = strtok(url_copy, "/");
+			if (aptr != NULL) {
+				conference = atoi(aptr);
+				aptr = strtok(NULL, "/");
+				if (aptr != NULL) {
+					area = atoi(aptr);
+				}
+			}
+			free(url_copy);
+			
+			if (area != -1 && conference != -1) {
+				page = www_new_msg(con_inf->user, conference, area);
+			} else {
+				free(header);
+				free(footer);
+				return MHD_NO;	
+			}
+			whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
+			
 			sprintf(whole_page, "%s%s%s", header, page, footer);			
+		} else if (strncasecmp(url, "/msgs/", 6) == 0) {
+			con_inf->user = www_auth_ok(connection, url_);
+		
+			if (con_inf->user == NULL) {
+				www_401(header, footer, connection);
+				free(header);
+				free(footer);
+				return MHD_YES;		
+			}			
+			conference = -1;
+			area = -1;
+			msg = -1;
+			url_copy = strdup(&url[6]);
+	
+			aptr = strtok(url_copy, "/");
+			if (aptr != NULL) {
+				conference = atoi(aptr);
+				aptr = strtok(NULL, "/");
+				if (aptr != NULL) {
+					area = atoi(aptr);
+					aptr = strtok(NULL, "/");
+					if (aptr != NULL) {
+						msg = atoi(aptr);
+					}
+				}
+			}
+			free(url_copy);
+			
+			val = MHD_lookup_connection_value (connection, MHD_GET_ARGUMENT_KIND, "skip");
+			
+			if (val != NULL) {
+				skip = atoi(val); 
+			} else {
+				skip = 0;
+			}
+
+			if (conference != -1 && area != -1 && msg == -1) {
+				page = www_msgs_messagelist(con_inf->user, conference, area, skip);
+			} else if (conference != -1 && area != -1 && msg != -1) {
+				page = www_msgs_messageview(con_inf->user, conference, area, msg);
+				//page = NULL;
+			}
+			
+			
+			if (page == NULL) {
+				free(header);
+				free(footer);
+				return MHD_NO;		
+			}
+			whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
+			
+			sprintf(whole_page, "%s%s%s", header, page, footer);
 		} else if (strncasecmp(url, "/static/", 8) == 0) {
 			// sanatize path
 			if (strstr(url, "/..") != NULL) {
@@ -689,6 +801,66 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 					return MHD_NO;
 				}
 				sprintf(page, "<h1>Email Sent!</h1>");
+			}
+			whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
+			
+			sprintf(whole_page, "%s%s%s", header, page, footer);
+	
+		} else if (strcasecmp(url, "/msgs/") == 0 || strcasecmp(url, "/msgs") == 0) {
+			con_inf->user = www_auth_ok(connection, url_);
+
+			if (con_inf->user == NULL) {
+				www_401(header, footer, connection);
+				free(header);
+				free(footer);
+				return MHD_YES;		
+			}
+						
+			con_inf->pp = MHD_create_post_processor(connection, POSTBUFFERSIZE, iterate_post, (void*) con_inf);   
+			
+			if (*upload_data_size != 0) {
+				MHD_post_process (con_inf->pp, upload_data, *upload_data_size);
+				*upload_data_size = 0;
+          
+				return MHD_YES;
+			}
+			subj = NULL;
+			to = NULL;
+			body = NULL;
+			replyid = NULL;
+
+			
+			for (i=0;i<con_inf->count;i++) {
+				if (strcmp(con_inf->keys[i], "recipient") == 0) {
+					to = con_inf->values[i];
+				} else if (strcmp(con_inf->keys[i], "subject") == 0) {
+					subj = con_inf->values[i];
+				} else if (strcmp(con_inf->keys[i], "body") == 0) {
+					body = con_inf->values[i];
+				} else if (strcmp(con_inf->keys[i], "conference") == 0) {
+					conference = atoi(con_inf->values[i]);
+				} else if (strcmp(con_inf->keys[i], "area") == 0) {
+					area = atoi(con_inf->values[i]);
+				} else if (strcmp(con_inf->keys[i], "replyid") == 0) {
+					replyid = con_inf->values[i];
+				}
+			}
+			if (!www_send_msg(con_inf->user, to, subj, conference, area, replyid, body)) {
+				page = (char *)malloc(50);
+				if (page == NULL) {
+					free(header);
+					free(footer);					
+					return MHD_NO;
+				}
+				sprintf(page, "<h1>Error Sending Message</h1>");
+			} else {
+				page = (char *)malloc(21);
+				if (page == NULL) {
+					free(header);
+					free(footer);					
+					return MHD_NO;
+				}
+				sprintf(page, "<h1>Message Sent!</h1>");
 			}
 			whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
 			

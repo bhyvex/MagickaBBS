@@ -7,6 +7,7 @@
 #endif
 #include "lua/lua.h"
 #include "lua/lauxlib.h"
+#include "jamlib/jam.h"
 
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 3
@@ -147,6 +148,23 @@ struct user_record {
 	int timeson;
 };
 
+struct jam_msg {
+	int msg_no;
+	s_JamMsgHeader *msg_h;
+	char *from;
+	char *to;
+	char *subject;
+	char *oaddress;
+	char *daddress;
+	char *msgid;
+	char *replyid;
+};
+
+struct msg_headers {
+	struct jam_msg **msgs;
+	int msg_count;
+};
+
 extern void automessage_write(struct user_record *user);
 extern void automessage_display();
 extern void dolog(char *fmt, ...);
@@ -176,10 +194,15 @@ extern void list_users(struct user_record *user);
 
 extern void main_menu(struct user_record *user);
 
+extern s_JamBase *open_jam_base(char *path);
+extern void free_message_headers(struct msg_headers *msghs);
+extern struct msg_headers *read_message_headers(int msgconf, int msgarea, struct user_record *user);
 extern void mail_scan(struct user_record *user);
 extern int mail_menu(struct user_record *user);
 extern char *editor(struct user_record *user, char *quote, char *from, int email);
 extern char *external_editor(struct user_record *user, char *to, char *from, char *quote, char *qfrom, char *subject, int email);
+extern int msg_is_to(struct user_record *user, char *addressed_to, char *address, int type, int rn, int msgconf);
+extern int msg_is_from(struct user_record *user, char *addressed_from, char *address, int type, int rn, int msgconf);
 
 extern int door_menu(struct user_record *user);
 extern void rundoor(struct user_record *user, char *cmd, int stdio);
@@ -211,6 +234,11 @@ extern char *www_email_display(struct user_record *user, int email);
 extern int www_send_email(struct user_record *user, char *recipient, char *subject, char *body);
 extern char *www_new_email();
 extern int www_email_delete(struct user_record *user, int id);
+extern char *www_msgs_arealist(struct user_record *user);
+extern char *www_msgs_messagelist(struct user_record *user, int conference, int area, int skip);
+extern char *www_msgs_messageview(struct user_record *user, int conference, int area, int msg);
+extern int www_send_msg(struct user_record *user, char *to, char *subj, int conference, int area, char *replyid, char *body);
+extern char *www_new_msg(struct user_record *user, int conference, int area);
 #endif
 
 #endif

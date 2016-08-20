@@ -11,6 +11,7 @@
 		<ul>
 			<li><a href="/">Home</a></li>
 			<li><a href="/email/">Email</a></li>
+			<li><a href="/msgs/">Conferences</a></li>
 		</ul>
 	</div>
 	<hr />
