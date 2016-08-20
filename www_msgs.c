@@ -545,6 +545,8 @@ int www_send_msg(struct user_record *user, char *to, char *subj, int conference,
 	char *body2;
 	char *tagline;
 	struct utsname name;
+	int pos;
+	
 	if (conference < 0 || conference >= conf.mail_conference_count || area < 0 || area >= conf.mail_conferences[conference]->mail_area_count) {
 		return 0;
 	}
@@ -676,12 +678,10 @@ int www_send_msg(struct user_record *user, char *to, char *subj, int conference,
 		}
 		body2 = (char *)malloc(strlen(body) + 2 + strlen(buffer));		
 		memset(body2, 0, strlen(body) + 2 + strlen(buffer));
-		
+		pos = 0;
 		for (z =0;z < strlen(body); z++) {
-			if (body[z] == '\n') {
-				body2[z] = '\r';
-			} else {
-				body2[z] = body[z];
+			if (body[z] != '\n') {
+				body2[pos++] = body[z];
 			}
 		}
 		strcat(body2, buffer);
