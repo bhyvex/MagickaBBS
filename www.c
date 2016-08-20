@@ -214,7 +214,6 @@ int www_401(char *header, char *footer, struct MHD_Connection * connection) {
 	
 	ret = MHD_queue_response (connection, 401, response);
 	MHD_destroy_response (response);
-	free(whole_page);
 	free(page);
 		
 	return 0;
@@ -265,7 +264,6 @@ int www_404(char *header, char *footer, struct MHD_Connection * connection) {
 	
 	ret = MHD_queue_response (connection, MHD_HTTP_NOT_FOUND, response);
 	MHD_destroy_response (response);
-	free(whole_page);
 	free(page);
 		
 	return 0;
@@ -316,7 +314,6 @@ int www_403(char *header, char *footer, struct MHD_Connection * connection) {
 	
 	ret = MHD_queue_response (connection, MHD_HTTP_NOT_FOUND, response);
 	MHD_destroy_response (response);
-	free(whole_page);
 	free(page);
 		
 	return 0;
