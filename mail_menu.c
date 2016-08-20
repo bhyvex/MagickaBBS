@@ -773,12 +773,12 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 		if (JAM_ReadLastRead(jb, user->id, &jlr) == JAM_NO_USER) {
 			jlr.UserCRC = JAM_Crc32(user->loginname, strlen(user->loginname));
 			jlr.UserID = user->id;
-			jlr.HighReadMsg = msghs->msgs[mailno]->msg_no;
+			jlr.HighReadMsg = msghs->msgs[mailno]->msg_h->MsgNum;
 		}
 
-		jlr.LastReadMsg = msghs->msgs[mailno]->msg_no;
-		if (jlr.HighReadMsg < msghs->msgs[mailno]->msg_no) {
-			jlr.HighReadMsg = msghs->msgs[mailno]->msg_no;
+		jlr.LastReadMsg = msghs->msgs[mailno]->msg_h->MsgNum;
+		if (jlr.HighReadMsg < msghs->msgs[mailno]->msg_h->MsgNum) {
+			jlr.HighReadMsg = msghs->msgs[mailno]->msg_h->MsgNum;
 		}
 
 		if (msghs->msgs[mailno]->oaddress != NULL && conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_FIDO) {
@@ -1336,7 +1336,7 @@ int mail_menu(struct user_record *user) {
 								if (all_unread == 0) {
 									k = jlr.HighReadMsg;
 									for (i=0;i<msghs->msg_count;i++) {
-										if (msghs->msgs[i]->msg_no == k) {
+										if (msghs->msgs[i]->msg_h->MsgNum == k) {
 											break;
 										}
 									}
@@ -1648,7 +1648,7 @@ int mail_menu(struct user_record *user) {
 								if (all_unread == 0) {
 									k = jlr.HighReadMsg;
 									for (i=0;i<msghs->msg_count;i++) {
-										if (msghs->msgs[i]->msg_no == k) {
+										if (msghs->msgs[i]->msg_h->MsgNum == k) {
 											break;
 										}
 									}
@@ -1667,7 +1667,7 @@ int mail_menu(struct user_record *user) {
 
 							for (j=i-1;j<msghs->msg_count;j++) {
 								localtime_r((time_t *)&msghs->msgs[j]->msg_h->DateWritten, &msg_date);
-								if (msghs->msgs[j]->msg_no > jlr.HighReadMsg || all_unread) {
+								if (msghs->msgs[j]->msg_h->MsgNum > jlr.HighReadMsg || all_unread) {
 									s_printf(get_string(127), j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 								} else {
 									s_printf(get_string(128), j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
@@ -1919,13 +1919,13 @@ void mail_scan(struct user_record *user) {
 						}
 					}
 				} else {
-					if (jlr.HighReadMsg < (jbh.ActiveMsgs - 1)) {
+					if (jlr.HighReadMsg < jbh.ActiveMsgs) {
 						if (conf.mail_conferences[i]->mail_areas[j]->type == TYPE_NETMAIL_AREA) {
 							msghs = read_message_headers(i, j, user);
 							if (msghs != NULL) {
 								if (msghs->msg_count > 0) {
 									if (msghs->msgs[msghs->msg_count-1]->msg_no > jlr.HighReadMsg) {
-										s_printf(get_string(141), j, conf.mail_conferences[i]->mail_areas[j]->name, msghs->msgs[msghs->msg_count-1]->msg_no - jlr.HighReadMsg);
+										s_printf(get_string(141), j, conf.mail_conferences[i]->mail_areas[j]->name, msghs->msgs[msghs->msg_count-1]->msg_h->MsgNum - jlr.HighReadMsg);
 										lines++;
 										if (lines == 22) {
 											s_printf(get_string(6));
@@ -1937,7 +1937,7 @@ void mail_scan(struct user_record *user) {
 								free_message_headers(msghs);
 							}
 						} else {
-							s_printf(get_string(141), j, conf.mail_conferences[i]->mail_areas[j]->name, (jbh.ActiveMsgs - 1) - jlr.HighReadMsg);
+							s_printf(get_string(141), j, conf.mail_conferences[i]->mail_areas[j]->name, jbh.ActiveMsgs - jlr.HighReadMsg);
 							lines++;
 							if (lines == 22) {
 								s_printf(get_string(6));

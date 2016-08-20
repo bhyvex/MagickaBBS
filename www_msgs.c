@@ -47,7 +47,7 @@ static int new_messages(struct user_record *user, int conference, int area) {
 				if (msghs != NULL) {
 					if (msghs->msg_count > 0) {
 						if (msghs->msgs[msghs->msg_count-1]->msg_no > jlr.HighReadMsg) {
-							count = msghs->msgs[msghs->msg_count-1]->msg_no - jlr.HighReadMsg;
+							count = msghs->msgs[msghs->msg_count-1]->msg_h->MsgNum - jlr.HighReadMsg;
 						}
 					}
 					free_message_headers(msghs);
@@ -364,12 +364,12 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		if (JAM_ReadLastRead(jb, user->id, &jlr) == JAM_NO_USER) {
 			jlr.UserCRC = JAM_Crc32(user->loginname, strlen(user->loginname));
 			jlr.UserID = user->id;
-			jlr.HighReadMsg = msg - 1;
+			jlr.HighReadMsg = msg;
 		}
 
-		jlr.LastReadMsg = msg - 1;
+		jlr.LastReadMsg = msg;
 		if (jlr.HighReadMsg < msg) {
-			jlr.HighReadMsg = msg - 1;
+			jlr.HighReadMsg = msg;
 		}	
 
 		JAM_WriteLastRead(jb, user->id, &jlr);
