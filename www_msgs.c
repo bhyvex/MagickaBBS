@@ -205,7 +205,8 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 	int max_len;
 	int len;
 	char buffer[4096];	
-	
+	int chars;
+	int i;
 	if (conference < 0 || conference >= conf.mail_conference_count || area < 0 || area >= conf.mail_conferences[conference]->mail_area_count) {
 		return NULL;
 	}
@@ -384,6 +385,13 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		}	
 		strcat(page, buffer);
 		len += strlen(buffer);
+		sprintf(buffer, "<div id=\"msgbody\">\n");
+		if (len + strlen(buffer) > max_len - 1) {
+			max_len += 4096;
+			page = (char *)realloc(page, max_len);
+		}	
+		strcat(page, buffer);
+		len += strlen(buffer);
 			
 		
 		for (z=0;z<jmh.TxtLen;z++) {
@@ -399,6 +407,15 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 			strcat(page, buffer);
 			len += strlen(buffer);			
 		}
+		
+		sprintf(buffer, "</div>\n");
+		if (len + strlen(buffer) > max_len - 1) {
+			max_len += 4096;
+			page = (char *)realloc(page, max_len);
+		}	
+		strcat(page, buffer);
+		len += strlen(buffer);
+
 		free(body);
 		
 				sprintf(buffer, "<div class=\"msg-reply-form\">\n");
@@ -468,13 +485,59 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 			strcat(page, buffer);
 			len += strlen(buffer);
 
-			sprintf(buffer, "<textarea name=\"body\" rows=25 cols=80></textarea>\n<br />");
+			sprintf(buffer, "<textarea name=\"body\" rows=25 cols=80 id=\"replybody\">");
 			if (len + strlen(buffer) > max_len - 1) {
 				max_len += 4096;
 				page = (char *)realloc(page, max_len);
 			}	
 			strcat(page, buffer);
 			len += strlen(buffer);
+
+			sprintf(buffer, "%s said....\n\n", from);
+			if (len + strlen(buffer) > max_len - 1) {
+				max_len += 4096;
+				page = (char *)realloc(page, max_len);
+			}	
+			strcat(page, buffer);
+			len += strlen(buffer);
+
+			sprintf(buffer, "&gt; ");
+			if (len + strlen(buffer) > max_len - 1) {
+				max_len += 4096;
+				page = (char *)realloc(page, max_len);
+			}	
+			strcat(page, buffer);
+			len += strlen(buffer);
+
+			chars = 0;
+			
+			for (i=0;i<strlen(body);i++) {
+				if (body[i] == '\r' || chars == 78) {
+					sprintf(buffer, "\n&gt; ");
+					if (chars == 78) {
+						sprintf(buffer, "%c", body[i]);
+						chars = 1;
+					}
+				} else {
+					sprintf(buffer, "%c", body[i]);
+					chars ++;
+				}
+				if (len + strlen(buffer) > max_len - 1) {
+					max_len += 4096;
+					page = (char *)realloc(page, max_len);
+				}	
+				strcat(page, buffer);
+				len += strlen(buffer);			
+			}
+			
+			sprintf(buffer, "</textarea>\n<br />");
+			if (len + strlen(buffer) > max_len - 1) {
+				max_len += 4096;
+				page = (char *)realloc(page, max_len);
+			}	
+			strcat(page, buffer);
+			len += strlen(buffer);
+
 
 			sprintf(buffer, "<input type=\"submit\" name=\"submit\" value=\"Reply\" />\n<br />");
 			if (len + strlen(buffer) > max_len - 1) {

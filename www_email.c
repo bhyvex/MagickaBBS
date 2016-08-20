@@ -227,6 +227,7 @@ char *www_email_display(struct user_record *user, int email) {
 	char *body;
 	int id;
 	int i;
+	int chars;
 	char *err_msg = 0;
 	char *email_create_sql = "CREATE TABLE IF NOT EXISTS email ("
     					"id INTEGER PRIMARY KEY,"
@@ -328,7 +329,14 @@ char *www_email_display(struct user_record *user, int email) {
 		}	
 		strcat(page, buffer);
 		len += strlen(buffer);
-		
+		sprintf(buffer, "<div id=\"msgbody\">\n");
+		if (len + strlen(buffer) > max_len - 1) {
+			max_len += 4096;
+			page = (char *)realloc(page, max_len);
+		}	
+		strcat(page, buffer);
+		len += strlen(buffer);
+
 		for (i=0;i<strlen(body);i++) {
 			if (body[i] == '\r') {
 				sprintf(buffer, "<br />");
@@ -342,7 +350,14 @@ char *www_email_display(struct user_record *user, int email) {
 			strcat(page, buffer);
 			len += strlen(buffer);
 		}
-	
+		sprintf(buffer, "</div>\n");
+		if (len + strlen(buffer) > max_len - 1) {
+			max_len += 4096;
+			page = (char *)realloc(page, max_len);
+		}	
+		strcat(page, buffer);
+		len += strlen(buffer);
+
 		sprintf(buffer, "<div class=\"email-reply-form\">\n");
 		if (len + strlen(buffer) > max_len - 1) {
 			max_len += 4096;
@@ -386,7 +401,52 @@ char *www_email_display(struct user_record *user, int email) {
 		strcat(page, buffer);
 		len += strlen(buffer);
 
-		sprintf(buffer, "<textarea name=\"body\" rows=25 cols=80></textarea>\n<br />");
+		sprintf(buffer, "<textarea name=\"body\" rows=25 cols=80 id=\"replybody\">");
+		if (len + strlen(buffer) > max_len - 1) {
+			max_len += 4096;
+			page = (char *)realloc(page, max_len);
+		}	
+		strcat(page, buffer);
+		len += strlen(buffer);
+
+		sprintf(buffer, "%s said....\n\n", from);
+		if (len + strlen(buffer) > max_len - 1) {
+			max_len += 4096;
+			page = (char *)realloc(page, max_len);
+		}	
+		strcat(page, buffer);
+		len += strlen(buffer);
+
+		sprintf(buffer, "&gt; ");
+		if (len + strlen(buffer) > max_len - 1) {
+			max_len += 4096;
+			page = (char *)realloc(page, max_len);
+		}	
+		strcat(page, buffer);
+		len += strlen(buffer);
+
+		chars = 0;
+		
+		for (i=0;i<strlen(body);i++) {
+			if (body[i] == '\r' || chars == 78) {
+				sprintf(buffer, "\n&gt; ");
+				if (chars == 78) {
+					sprintf(buffer, "%c", body[i]);
+					chars = 1;
+				}
+			} else {
+				sprintf(buffer, "%c", body[i]);
+				chars ++;
+			}
+			if (len + strlen(buffer) > max_len - 1) {
+				max_len += 4096;
+				page = (char *)realloc(page, max_len);
+			}	
+			strcat(page, buffer);
+			len += strlen(buffer);			
+		}
+		
+		sprintf(buffer, "</textarea>\n<br />");
 		if (len + strlen(buffer) > max_len - 1) {
 			max_len += 4096;
 			page = (char *)realloc(page, max_len);
