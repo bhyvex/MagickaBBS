@@ -512,12 +512,12 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 			chars = 0;
 			
 			for (i=0;i<strlen(body);i++) {
-				if (body[i] == '\r' || chars == 78) {
+				if (body[i] == '\r') {
 					sprintf(buffer, "\n&gt; ");
-					if (chars == 78) {
-						sprintf(buffer, "\n&gt; %c", body[i]);
-						chars = 1;
-					}
+					chars = 0;
+				} else if (chars == 78) {
+					sprintf(buffer, "\n&gt; %c", body[i]);
+					chars = 1;
 				} else {
 					sprintf(buffer, "%c", body[i]);
 					chars ++;
