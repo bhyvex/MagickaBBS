@@ -53,7 +53,7 @@ static int new_messages(struct user_record *user, int conference, int area) {
 					free_message_headers(msghs);
 				}
 			} else {
-				count = (jbh.ActiveMsgs - 1) - jlr.HighReadMsg;
+				count = jbh.ActiveMsgs - jlr.HighReadMsg;
 			}
 		}
 	}
