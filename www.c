@@ -870,6 +870,10 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 			free(footer);		
 			return MHD_NO;
 		}
+	} else {
+		free(header);
+		free(footer);		
+		return MHD_NO;		
 	}
 	response = MHD_create_response_from_buffer (strlen (whole_page), (void*) whole_page, MHD_RESPMEM_MUST_FREE);
 	
