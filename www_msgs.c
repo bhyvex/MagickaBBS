@@ -295,7 +295,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 					free(replyid);
 				}
 				JAM_CloseMB(jb);
-					return NULL;
+				return NULL;
 			}
 		}
 		body = (char *)malloc(jmh.TxtLen);

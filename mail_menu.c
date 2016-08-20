@@ -261,8 +261,8 @@ struct msg_headers *read_message_headers(int msgconf, int msgarea, struct user_r
 			JAM_DelSubPacket(jsp);
 
 			if (jmh.Attribute & MSG_PRIVATE) {
-				if (!msg_is_to(gUser, jamm->to, jamm->daddress, conf.mail_conferences[msgconf]->nettype, conf.mail_conferences[msgconf]->realnames, msgconf) &&
-				    !msg_is_from(gUser, jamm->from, jamm->oaddress, conf.mail_conferences[msgconf]->nettype, conf.mail_conferences[msgconf]->realnames, msgconf)) {
+				if (!msg_is_to(user, jamm->to, jamm->daddress, conf.mail_conferences[msgconf]->nettype, conf.mail_conferences[msgconf]->realnames, msgconf) &&
+				    !msg_is_from(user, jamm->from, jamm->oaddress, conf.mail_conferences[msgconf]->nettype, conf.mail_conferences[msgconf]->realnames, msgconf)) {
 
 					if (jamm->subject != NULL) {
 						free(jamm->subject);
