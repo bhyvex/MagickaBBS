@@ -417,7 +417,7 @@ char *www_email_display(struct user_record *user, int email) {
 		strcat(page, buffer);
 		len += strlen(buffer);
 
-		sprintf(buffer, "&gt; ");
+		sprintf(buffer, "> ");
 		if (len + strlen(buffer) > max_len - 1) {
 			max_len += 4096;
 			page = (char *)realloc(page, max_len);
@@ -429,10 +429,10 @@ char *www_email_display(struct user_record *user, int email) {
 		
 		for (i=0;i<strlen(body);i++) {
 			if (body[i] == '\r') {
-				sprintf(buffer, "\n&gt; ");
+				sprintf(buffer, "\n> ");
 				chars = 0;
 			} else if (chars == 78) {
-				sprintf(buffer, "\n&gt; %c", body[i]);
+				sprintf(buffer, "\n> %c", body[i]);
 				chars = 1;
 			} else {
 				sprintf(buffer, "%c", body[i]);

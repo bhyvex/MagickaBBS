@@ -299,7 +299,8 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 				return NULL;
 			}
 		}
-		body = (char *)malloc(jmh.TxtLen);
+		body = (char *)malloc(jmh.TxtLen + 1);
+		memset(body, 0, jmh.TxtLen + 1);
 
 		JAM_ReadMsgText(jb, jmh.TxtOffset,jmh.TxtLen, (char *)body);
 
@@ -501,7 +502,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 			strcat(page, buffer);
 			len += strlen(buffer);
 
-			sprintf(buffer, "&gt; ");
+			sprintf(buffer, "> ");
 			if (len + strlen(buffer) > max_len - 1) {
 				max_len += 4096;
 				page = (char *)realloc(page, max_len);
@@ -511,12 +512,12 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 
 			chars = 0;
 			
-			for (i=0;i<strlen(body);i++) {
+			for (i=0;i<jmh.TxtLen;i++) {
 				if (body[i] == '\r') {
-					sprintf(buffer, "\n&gt; ");
+					sprintf(buffer, "\n> ");
 					chars = 0;
 				} else if (chars == 78) {
-					sprintf(buffer, "\n&gt; %c", body[i]);
+					sprintf(buffer, "\n> %c", body[i]);
 					chars = 1;
 				} else {
 					sprintf(buffer, "%c", body[i]);
@@ -745,6 +746,7 @@ int www_send_msg(struct user_record *user, char *to, char *subj, int conference,
 		for (z =0;z < strlen(body); z++) {
 			if (body[z] != '\n') {
 				body2[pos++] = body[z];
+				body2[pos] = '\0';
 			}
 		}
 		strcat(body2, buffer);
