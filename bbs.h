@@ -240,6 +240,7 @@ extern char *www_msgs_messagelist(struct user_record *user, int conference, int 
 extern char *www_msgs_messageview(struct user_record *user, int conference, int area, int msg);
 extern int www_send_msg(struct user_record *user, char *to, char *subj, int conference, int area, char *replyid, char *body);
 extern char *www_new_msg(struct user_record *user, int conference, int area);
+extern char *www_last10();
 #endif
 
 #endif

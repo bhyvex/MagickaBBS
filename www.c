@@ -507,6 +507,16 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 			whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
 			
 			sprintf(whole_page, "%s%s%s", header, page, footer);
+		} else if (strcasecmp(url, "/last10/") == 0 || strcasecmp(url, "/last10") == 0) {
+			page = www_last10();
+			if (page == NULL) {
+				free(header);
+				free(footer);
+				return MHD_NO;		
+			}
+			whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
+
+			sprintf(whole_page, "%s%s%s", header, page, footer);
 		} else if (strcasecmp(url, "/email/") == 0 || strcasecmp(url, "/email") == 0) {
 			con_inf->user = www_auth_ok(connection, url_);
 			
