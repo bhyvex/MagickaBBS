@@ -62,8 +62,10 @@ void www_request_completed(void *cls, struct MHD_Connection *connection, void **
 			free(con_info->values);
 			free(con_info->keys);
 		}
-	
-		MHD_destroy_post_processor(con_info->pp);
+
+		if (con_info->pp != NULL) {	
+			MHD_destroy_post_processor(con_info->pp);
+		}
 	}
 	if (con_info->user != NULL) {
 		free(con_info->user->loginname);
@@ -84,7 +86,12 @@ static int iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char 
 	struct connection_info_s *con_info = coninfo_cls;
 
 	int i;
-	
+
+	if (size == 0) {
+		return MHD_NO;
+	}
+
+
 	if (con_info != NULL) {
 		if (con_info->connection_type == POST) {
 			for (i=0;i<con_info->count;i++) {
@@ -389,6 +396,7 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 			con_inf->user = NULL;
 			con_inf->count = 0;
 			con_inf->url = strdup(url);
+			con_inf->pp = NULL;
 			*ptr = con_inf;
 			return MHD_YES;
 		}
@@ -402,6 +410,7 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 			con_inf->user = NULL;
 			con_inf->count = 0;
 			con_inf->url = strdup(url);
+			con_inf->pp = NULL;
 			*ptr = con_inf;
 			return MHD_YES;
 		}
@@ -779,10 +788,11 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 				free(footer);
 				return MHD_YES;		
 			}
-						
-			con_inf->pp = MHD_create_post_processor(connection, POSTBUFFERSIZE, iterate_post, (void*) con_inf);   
-			
+		        if (con_inf->pp == NULL) {				
+				con_inf->pp = MHD_create_post_processor(connection, POSTBUFFERSIZE, iterate_post, (void*) con_inf);   
+			}	
 			if (*upload_data_size != 0) {
+				
 				MHD_post_process (con_inf->pp, upload_data, *upload_data_size);
 				*upload_data_size = 0;
           
@@ -830,8 +840,9 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 				free(footer);
 				return MHD_YES;		
 			}
-						
-			con_inf->pp = MHD_create_post_processor(connection, POSTBUFFERSIZE, iterate_post, (void*) con_inf);   
+			if (con_inf->pp == NULL) {			
+				con_inf->pp = MHD_create_post_processor(connection, POSTBUFFERSIZE, iterate_post, (void*) con_inf);   
+			}
 			
 			if (*upload_data_size != 0) {
 				MHD_post_process (con_inf->pp, upload_data, *upload_data_size);
