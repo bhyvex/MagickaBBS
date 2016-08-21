@@ -7,6 +7,9 @@
 #include "bbs.h"
 #include "jamlib/jam.h"
 
+#define IN 0
+#define OUT 1
+
 extern struct bbs_config conf;
 
 static int new_messages(struct user_record *user, int conference, int area) {
@@ -454,6 +457,10 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		for (z=0;z<jmh.TxtLen;z++) {
 			if (body[z] == '\r') {
 				sprintf(buffer, "<br />");
+			} else if (body[z] == '<') {
+				sprintf(buffer, "&lt;");
+			} else if (body[z] == '>') {
+				sprintf(buffer, "&gt;");
 			} else {
 				sprintf(buffer, "%c", body[z]);
 			}

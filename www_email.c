@@ -340,6 +340,10 @@ char *www_email_display(struct user_record *user, int email) {
 		for (i=0;i<strlen(body);i++) {
 			if (body[i] == '\r') {
 				sprintf(buffer, "<br />");
+			} else if (body[z] == '<') {
+				sprintf(buffer, "&lt;");
+			} else if (body[z] == '>') {
+				sprintf(buffer, "&gt;");
 			} else {
 				sprintf(buffer, "%c", body[i]);
 			}
