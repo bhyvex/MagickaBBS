@@ -195,3 +195,28 @@
 .button a:hover {
 	background-color: #111111;
 }
+
+.last10-row {
+	display: table-row;
+	width: auto;
+	clear: both;
+	background-color: #eee;
+}
+
+.last10-name {
+	float: left;
+	display: table-column;
+	width: 200px;
+}
+
+.last10-location {
+	float: left;
+	display: table-column;
+	width: 200px;
+}
+
+.last10-date {
+	float: left;
+	display: table-column;
+	width: 200px;
+}

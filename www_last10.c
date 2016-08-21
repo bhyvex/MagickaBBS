@@ -55,7 +55,7 @@ char *www_last10() {
 	
 	for (z=0;z<i;z++) {
 		localtime_r(&callers[z].time, &l10_time);
-		sprintf(buffer, "<div class=\"last10-name\">%s</div><div class=\"last10-location\">%s</div><div class=\"last10-date\">%.2d:%.2d %.2d-%.2d-%.2d</div>\n", callers[z].name, callers[z].location, l10_time.tm_hour, l10_time.tm_min, l10_time.tm_mday, l10_time.tm_mon + 1, l10_time.tm_year - 100);
+		sprintf(buffer, "<div class=\"last10-row\"><div class=\"last10-name\">%s</div><div class=\"last10-location\">%s</div><div class=\"last10-date\">%.2d:%.2d %.2d-%.2d-%.2d</div></div>\n", callers[z].name, callers[z].location, l10_time.tm_hour, l10_time.tm_min, l10_time.tm_mday, l10_time.tm_mon + 1, l10_time.tm_year - 100);
 		if (len + strlen(buffer) > max_len - 1) {
 			max_len += 4096;
 			page = (char *)realloc(page, max_len);
