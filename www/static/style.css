@@ -206,13 +206,13 @@
 .last10-name {
 	float: left;
 	display: table-column;
-	width: 200px;
+	width: 300px;
 }
 
 .last10-location {
 	float: left;
 	display: table-column;
-	width: 200px;
+	width: 300px;
 }
 
 .last10-date {
