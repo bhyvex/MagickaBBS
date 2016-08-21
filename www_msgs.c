@@ -46,7 +46,7 @@ static int new_messages(struct user_record *user, int conference, int area) {
 				msghs = read_message_headers(conference, area, user);
 				if (msghs != NULL) {
 					if (msghs->msg_count > 0) {
-						if (msghs->msgs[msghs->msg_count-1]->msg_no > jlr.HighReadMsg) {
+						if (msghs->msgs[msghs->msg_count-1]->msg_h->MsgNum > jlr.HighReadMsg) {
 							count = msghs->msgs[msghs->msg_count-1]->msg_h->MsgNum - jlr.HighReadMsg;
 						}
 					}
@@ -227,14 +227,13 @@ char *www_msgs_messagelist(struct user_record *user, int conference, int area, i
 	
 	if (skip + 50 <= mhrs->msg_count) {
 		sprintf(buffer, "<div class=\"msg-summary-next\"><a href=\"/msgs/%d/%d/?skip=%d\">Next</a></div>\n", conference, area, skip + 50);
+		if (len + strlen(buffer) > max_len - 1) {
+			max_len += 4096;
+			page = (char *)realloc(page, max_len);
+		}
+		strcat(page, buffer);
+		len += strlen(buffer);
 	}
-
-	if (len + strlen(buffer) > max_len - 1) {
-		max_len += 4096;
-		page = (char *)realloc(page, max_len);
-	}
-	strcat(page, buffer);
-	len += strlen(buffer);
 	free_message_headers(mhrs);
 	return page;			
 }

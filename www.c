@@ -404,6 +404,8 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 			*ptr = con_inf;
 			return MHD_YES;
 		}
+	} else {
+		return MHD_NO;
 	}
 	
 	con_inf = *ptr;
