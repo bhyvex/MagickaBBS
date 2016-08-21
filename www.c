@@ -686,14 +686,18 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 				page = www_msgs_messagelist(con_inf->user, conference, area, skip);
 			} else if (conference != -1 && area != -1 && msg != -1) {
 				page = www_msgs_messageview(con_inf->user, conference, area, msg);
-				//page = NULL;
 			}
 			
 			
 			if (page == NULL) {
+				if (www_403(header, footer, connection) != 0) {
+					free(header);
+					free(footer);
+					return MHD_NO;	
+				}
 				free(header);
 				free(footer);
-				return MHD_NO;		
+				return MHD_YES;		
 			}
 			whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
 			
