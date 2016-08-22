@@ -1,16 +1,3 @@
-# README!!
-
-If you are upgrading from a version prior to https://github.com/apamment/MagickaBBS/commit/73aa146b8470727f036f732d2c9c267048ee455b You will need to make and run the update_pass utility on your
-user database. This will convert all plain text passwords to sha256 hashed and salted passwords.
-
-eg.
-
-		cd utils/update_pass
-		make
-		./update_pass ../../users.sq3
-
-Although you probably should make a backup of your database first in case things go wrong...
-
 # MagickaBBS
 Linux/FreeBSD bulletin board system (Should also work on NetBSD and OpenBSD, if it doesn't it's a bug)
 
@@ -83,3 +70,25 @@ If you want to install Magicka BBS, follow these steps.
 but you will need to use an SQLite Manager to modify users.sq3 and set security levels, as there is no user editor yet.
 
 For information on how to configure your BBS, check the wiki https://github.com/apamment/MagickaBBS/wiki
+
+# About the webserver
+
+Magicka now includes a built in webserver based on libmicrohttpd. It is not built by default, if you'd like to build it you will
+need a recent version of libmicrohttpd (raspbian doesn't have a recent enough version, and you will need to build it from source).
+You will also need libb64-dev. Once you have these prerequisites, you can build magicka with `make -f Makefile.linux.WWW` or 
+`make -f Makefile.freebsd.WWW` be sure to do this from a clean source tree.
+
+The webserver will use templates in the www/ folder to create internal webpages on the fly, anything in www/static/ is served up as is.
+
+# README!!
+
+If you are upgrading from a version prior to https://github.com/apamment/MagickaBBS/commit/73aa146b8470727f036f732d2c9c267048ee455b You will need to make and run the update_pass utility on your
+user database. This will convert all plain text passwords to sha256 hashed and salted passwords.
+
+eg.
+
+		cd utils/update_pass
+		make
+		./update_pass ../../users.sq3
+
+Although you probably should make a backup of your database first in case things go wrong...
