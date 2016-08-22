@@ -166,7 +166,6 @@ int add_file(struct ticfile_t *ticfile) {
 		sqlite3_close(db);
 		return -1;
 	}
-
 	// figure out source and dest filenames
 	if (ticfile->lname != NULL) {
 		snprintf(src_filename, 4096, "%s/%s", conf.inbound, ticfile->lname);
@@ -179,7 +178,6 @@ int add_file(struct ticfile_t *ticfile) {
 		snprintf(src_filename, 4096, "%s/%s", conf.inbound, ticfile->file);
 		snprintf(dest_filename, 4096, "%s/%s", conf.file_areas[i]->path, ticfile->file);
 	}
-
 	// check crc
 	fptr = fopen(src_filename, "rb");
 	if (!fptr) {
@@ -187,18 +185,20 @@ int add_file(struct ticfile_t *ticfile) {
 		sqlite3_close(db);
 		return -1;
 	}
-	if (Crc32_ComputeFile(fptr, &crc) == -1) {
-		fprintf(stderr, "Error computing CRC\n");
-		sqlite3_close(db);
-		return -1;
-	}
-	fclose(fptr);
 
+	if (ticfile->crc != NULL) {
+		if (Crc32_ComputeFile(fptr, &crc) == -1) {
+			fprintf(stderr, "Error computing CRC\n");
+			sqlite3_close(db);
+			return -1;
+		}
+		fclose(fptr);
 
-	if (crc != strtoul(ticfile->crc, NULL, 16)) {
-		fprintf(stderr, "CRC Mismatch, bailing 0x%x != 0x%x\n", crc, strtoul(ticfile->crc, NULL, 16));
-		sqlite3_close(db);
-		return -1;
+		if (crc != strtoul(ticfile->crc, NULL, 16)) {
+			fprintf(stderr, "CRC Mismatch, bailing 0x%x != 0x%x\n", crc, strtoul(ticfile->crc, NULL, 16));
+			sqlite3_close(db);
+			return -1;
+		}
 	}
 
 	// password is good, or not needed, check replaces
@@ -231,11 +231,9 @@ int add_file(struct ticfile_t *ticfile) {
 				free(fname);
 			}
 		}
+		sqlite3_finalize(res);
 	}
-	sqlite3_finalize(res);
-
 	// add the file
-
 	if (stat(dest_filename, &s) == 0) {
 		// uh oh, filename collision.
 		fprintf(stderr, "Filename collision! %s\n", dest_filename);
@@ -377,9 +375,7 @@ int process_tic_file(char *ticfilen) {
 		fgets(buffer, 1024, fptr);
 	}
 	fclose(fptr);
-
 	ret = add_file(&ticfile);
-
 	if (ticfile.area != NULL) {
 		free(ticfile.area);
 	}
