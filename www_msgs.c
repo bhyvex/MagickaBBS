@@ -329,6 +329,10 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		}
 		JAM_DelSubPacket(jsp);					
 		
+		if (subject == NULL) {
+			subject = strdup("(No Subject)");
+		}
+		
 		if (jmh.Attribute & MSG_PRIVATE) {
 			if (!msg_is_to(user, to, daddress, conf.mail_conferences[conference]->nettype, conf.mail_conferences[conference]->realnames, conference) &&
 				    !msg_is_from(user, from, oaddress, conf.mail_conferences[conference]->nettype, conf.mail_conferences[conference]->realnames, conference)) {
