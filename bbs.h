@@ -183,6 +183,7 @@ extern char s_getc();
 extern void disconnect(char *calledby);
 extern void display_info();
 extern void display_last10_callers(struct user_record *user);
+extern int do_logout();
 
 extern void gen_salt(char **s);
 extern char *hash_sha256(char *pass, char *salt);

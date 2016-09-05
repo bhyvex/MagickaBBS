@@ -717,9 +717,61 @@ void runbbs_real(int socket, char *ip, int ssh) {
 	// main menu
 	main_menu(user);
 
-	s_displayansi("goodbye");
+
 	dolog("%s is logging out, on node %d", user->loginname, mynode);
 	disconnect("Log out");
+}
+
+int do_logout() {
+	char buffer[256];
+	struct stat s;
+	lua_State *L;
+	int ret = 0;
+	char c;
+	int result;
+	int do_internal_logout = 1;
+	
+	if (conf.script_path != NULL) {
+		sprintf(buffer, "%s/logout_stanza.lua", conf.script_path);
+		if (stat(buffer, &s) == 0) {
+			L = luaL_newstate();
+			luaL_openlibs(L);
+			lua_push_cfunctions(L);
+			luaL_loadfile(L, buffer);
+			result = lua_pcall(L, 0, 1, 0);
+			if (result) {
+				dolog("Failed to run script: %s", lua_tostring(L, -1));
+				do_internal_logout = 1;
+				lua_close(L);
+			} else {
+				do_internal_logout = 0;
+			}
+		}
+	}
+
+	if (do_internal_logout == 1) {
+		s_printf(get_string(53));
+		c = s_getc();
+		if (tolower(c) == 'y') {
+			s_displayansi("goodbye");
+			ret = 1;
+		} else {
+			ret = 0;
+		}
+	} else {
+		lua_getglobal(L, "logout");
+		result = lua_pcall(L, 0, 1, 0);
+		if (result) {
+			dolog("Failed to run script: %s", lua_tostring(L, -1));
+			lua_close(L);
+			return 0;
+		}
+		ret = lua_tointeger(L, -1);
+		lua_pop(L, 1);
+		lua_close(L);
+	}
+	
+	return ret;
 }
 
 void runbbs(int socket, char *ip) {

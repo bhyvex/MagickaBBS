@@ -305,12 +305,8 @@ int door_menu(struct user_record *user) {
 				break;
 			case 'g':
 				{
-					s_printf(get_string(53));
-					c = s_getc();
-					if (tolower(c) == 'y') {
-						doquit = 1;
-						dodoors = 1;
-					}
+					doquit = do_logout();
+					dodoors = doquit;
 				}
 				break;
 			default:

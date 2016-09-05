@@ -843,12 +843,8 @@ int file_menu(struct user_record *user) {
 				break;
 			case 'g':
 				{
-					s_printf(get_string(53));
-					c = s_getc();
-					if (tolower(c) == 'y') {
-						dofiles = 1;
-						doquit = 1;
-					}
+					doquit = do_logout();
+					dofiles = doquit;
 				}
 				break;
 		}
