@@ -137,16 +137,19 @@ int add_file(struct ticfile_t *ticfile) {
 	}
 
 	if (i == conf.filearea_count) {
+		fprintf(stderr, "Couldn't find area %s\n", ticfile->area);
 		return -1;
 	}
 
 	if (ticfile->password == NULL) {
 		if (!conf.ignore_pass) {
+			fprintf(stderr, "No Password in Tic file\n");
 			return -1;
 		}
 	} else {
 		if (!conf.ignore_pass) {
 			if (strcasecmp(conf.file_areas[i]->password, ticfile->password) != 0) {
+				fprintf(stderr, "Password mismatch\n");
 				return -1;
 			}
 		}
@@ -181,6 +184,7 @@ int add_file(struct ticfile_t *ticfile) {
 	// check crc
 	fptr = fopen(src_filename, "rb");
 	if (!fptr) {
+		fprintf(stderr, "Error Opening %s\n", src_filename);
 		sqlite3_free(err_msg);
 		sqlite3_close(db);
 		return -1;
@@ -328,7 +332,7 @@ int process_tic_file(char *ticfilen) {
 	fgets(buffer, 1024, fptr);
 	while (!feof(fptr)) {
 		chomp(buffer);
-		if (strncasecmp(buffer, "area", 4) == 0) {
+		if (strncasecmp(buffer, "area ", 5) == 0) {
 			ticfile.area = strdup(&buffer[5]);
 		} else if (strncasecmp(buffer, "areadesc", 8) == 0) {
 			// nothing currently
