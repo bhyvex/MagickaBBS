@@ -765,7 +765,12 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 	int chars = 0;
 	int ansi;
 	int sem_fd;
-
+    char **msg_lines;
+    int msg_line_count;
+    int start_line;
+    int should_break;
+    int position;
+    
 	jb = open_jam_base(conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
 	if (!jb) {
 		dolog("Error opening JAM base.. %s", conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
@@ -844,92 +849,104 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 
 		lines = 0;
 		chars = 0;
-
-		for (z=0;z<z2;z++) {
-			if (body[z] == '\r' || chars == 79) {
-				chars = 0;
-				if (body[z] == '\r') {
-					s_printf("\r\n");
-				} else {
-					s_putchar(body[z]);
-				}
-				lines++;
-				if (lines >= 17) {
-					s_printf(get_string(185));
-					s_getc();
-					lines = 0;
-					s_printf("\e[7;1H\e[0J");
-				}
-			} else if (body[z] == '\e' && body[z + 1] == '[') {
-				ansi = z;
-				while (strchr("ABCDEFGHIGJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", body[z]) == NULL)
-					z++;
-				if (body[z] == 'm') {
-					strncpy(buffer, &body[ansi], (z - ansi) + 1);
-					buffer[z - ansi + 1] = '\0';
-					s_printf("%s", buffer);
-				} else if (body[z] == 'A') {
-					j = atoi(&body[ansi + 2]);
-					if (j == 0 && ansi + 2 == z) {
-						j = 1;
-					}
-					for (i=0;i<j;i++) {
-						if (lines - 1 >= 0) {
-							s_printf("\e[A");
-							lines--;
-						} else {
-							break;
-						}
-					}
-				} else if (body[z] == 'C') {
-					j = atoi(&body[ansi + 2]);
-					if (j == 0 && ansi + 2 == z) {
-						j = 1;
-					}
-					for (i=0;i<j;i++) {
-						if (chars + 1 <= 79) {
-							s_printf("\e[C");
-							chars++;
-						} else {
-							break;
-						}
-					}
-				} else if (body[z] == 'B') {
-					j = atoi(&body[ansi + 2]);
-					if (j == 0 && ansi + 2 == z) {
-						j = 1;
-					}
-					for (i=0;i<j;i++) {
-						if (lines + 1 < 17) {
-							s_printf("\e[B");
-							lines++;
-						} else {
-							break;
-						}
-					}
-				} else if (body[z] == 'D') {
-					j = atoi(&body[ansi + 2]);
-					if (j == 0 && ansi + 2 == z) {
-						j = 1;
-					}
-					for (i=0;i<j;i++) {
-						if (chars - 1 >= 0) {
-							s_printf("\e[D");
-							chars--;
-						} else {
-							break;
-						}
-					}
-				}
-			} else {
-				chars++;
-				s_putchar(body[z]);
-			}
-		}
-
-		s_printf(get_string(112));
-
-		c = s_getc();
+        
+        
+        msg_line_count = 0;
+        start_line = 0;
+        
+        // count the number of lines...
+        for (z=0;z<z2;z++) {
+            if (body[z] == '\r' || chars == 79) {
+                if (msg_line_count == 0) {
+                    msg_lines = (char **)malloc(sizeof(char *));
+                } else {
+                    msg_lines = (char **)realloc(msg_lines, sizeof(char *) * (msg_line_count + 1));
+                }
+                
+                msg_lines[msg_line_count] = (char *)malloc(sizeof(char) * (z - start_line + 1));
+                
+                if (z == start_line) {
+                    msg_lines[msg_line_count][0] = '\0';
+                } else {
+                    strncpy(msg_lines[msg_line_count], &body[start_line], z - start_line);
+                    msg_lines[msg_line_count][z-start_line] = '\0';
+                }
+                msg_line_count++;
+                if (body[z] == '\r') {
+                    start_line = z + 1;
+                } else {
+                    start_line = z;
+                }
+                chars = 0;
+            } else {
+                if (body[z] == '\e') {
+                    ansi = z;
+                    while (strchr("ABCDEFGHIGJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", body[z]) == NULL)
+                        z++;
+                    if (body[z] == 'm') {
+                        // do nothing
+                    } else if (body[z] == 'C') {
+                        chars += atoi(&body[ansi + 2]);
+                    } else {
+                        i = strlen(body);
+                        for (j=ansi;j<i;j++) {
+                            body[ansi++] = body[j];
+                        }
+                    }
+                    
+                } else {
+                    chars ++;
+                }
+            }
+        }
+        
+        lines = 0;
+        
+        position = 0;
+        should_break = 0;
+       
+        while (!should_break) {
+            s_printf("\e[7;1H\e[0J");
+            for (z=position;z<msg_line_count;z++) {
+                
+                s_printf("%s\e[K\r\n", msg_lines[z]);
+                
+                if (z - position >= 16) {
+                    break;
+                }
+            }
+            s_printf(get_string(186));
+            c = s_getc();
+            
+            if (c == 'r') {
+                should_break = 1;
+            } else if (c == 'q') {
+                should_break = 1;
+            } else if (c == '\e') {
+                c = s_getc();
+                if (c == 91) {
+                    c = s_getc();
+                    if (c == 65) {
+                        position--;
+                        if (position < 0) {
+                            position = 0;
+                        }
+                    } else if (c == 66) {
+                        position++;
+                        if (position + 16 > msg_line_count) {
+                            position--;
+                        }
+                    } else if (c == 67) {
+                        c = ' ';
+                        should_break = 1;
+                    } else if (c == 68) {
+                        c = 'b';
+                        should_break = 1;
+                    }
+                }
+            }
+            
+        }
 
 		if (tolower(c) == 'r') {
 			JAM_CloseMB(jb);
@@ -1003,6 +1020,10 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 						free(subject);
 						free(to);
 						free(from);
+                        for (i=0;i<msg_line_count;i++) {
+                            free(msg_lines[i]);
+                        }
+                        free(msg_lines);                        
 						return;
 					}
 
@@ -1172,6 +1193,10 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 							free(to);
 							free(from);
 							dolog("Failed to lock msg base!");
+                            for (i=0;i<msg_line_count;i++) {
+                                free(msg_lines[i]);
+                            }
+                            free(msg_lines);                            
 							return;
 						}
 					}
@@ -1216,6 +1241,7 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 			}
 
 		} else if (tolower(c) == 'q') {
+            free(body);
 			doquit = 1;
 		} else if (c == ' ') {
 			mailno++;
@@ -1223,11 +1249,20 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 				s_printf(get_string(118));
 				doquit = 1;
 			}
+			free(body);
 		} else if (tolower(c) == 'b') {
 			if (mailno > 0) {
 				mailno--;
 			}
-		}
+			free(body);
+		} else {
+            free(body);
+        }
+        for (i=0;i<msg_line_count;i++) {
+            free(msg_lines[i]);
+        }
+        free(msg_lines);	
+        msg_line_count = 0;
 	}
 }
 
