@@ -911,10 +911,11 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
                 
                 s_printf("%s\e[K\r\n", msg_lines[z]);
                 
-                if (z - position >= 16) {
+                if (z - position >= 15) {
                     break;
                 }
             }
+            s_printf(get_string(187));
             s_printf(get_string(186));
             c = s_getc();
             
@@ -933,7 +934,7 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
                         }
                     } else if (c == 66) {
                         position++;
-                        if (position + 16 > msg_line_count) {
+                        if (position + 15 > msg_line_count) {
                             position--;
                         }
                     } else if (c == 67) {

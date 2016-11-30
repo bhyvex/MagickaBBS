@@ -184,4 +184,5 @@ Login Name:
 \r\n-------------------------------------\r\n
 Is this Correct? (Y/N) 
 \e[1;37mPress any key to continue...\e[0m
-\e[24;1H\e[1;37;44mUp / Down to Scroll, Left / Right Change Message, R reply, Q quit\e[K\e[0m
+\e[24;1H\e[1;32mUp / Down \e[1;37mto Scroll, \e[1;32mLeft / Right \e[1;37mChange Message, \e[1;32mR \e[1;37mreply, \e[1;32mQ \e[1;37mquit\e[K\e[0m
+\e[23;1H\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n
