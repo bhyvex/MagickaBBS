@@ -65,6 +65,14 @@ void main_menu(struct user_record *user) {
 		}
 
 		switch(tolower(c)) {
+			case 27:
+				{
+					c = s_getc();
+					if (c == 91) {
+						c = s_getc();
+					}
+				}
+				break;			
 			case 'o':
 				{
 					automessage_write(user);

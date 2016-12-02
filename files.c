@@ -714,6 +714,14 @@ int file_menu(struct user_record *user) {
 			c = lRet[0];
 		}
 		switch(tolower(c)) {
+			case 27:
+				{
+					c = s_getc();
+					if (c == 91) {
+						c = s_getc();
+					}
+				}
+				break;			
 			case 'i':
 				{
 					s_printf(get_string(77));

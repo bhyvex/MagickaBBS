@@ -21,6 +21,14 @@ void settings_menu(struct user_record *user) {
 		c = s_getc();
 
 		switch(tolower(c)) {
+			case 27:
+				{
+					c = s_getc();
+					if (c == 91) {
+						c = s_getc();
+					}
+				}
+				break;			
 			case 'p':
 				{
 					s_printf(get_string(155));

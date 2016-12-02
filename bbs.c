@@ -276,6 +276,12 @@ void s_readstring(char *buffer, int max) {
 		} else if (c == '\b' || c == 127) {
 			i -= 1;
 			continue;
+		} else if (c == 27) {
+			c = s_getchar();
+			if (c == 91) {
+				c = s_getchar();
+			}
+			continue;
 		}
 
 		if (c == '\n' || c == '\r') {
