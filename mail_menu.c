@@ -919,9 +919,9 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
             s_printf(get_string(186));
             c = s_getc();
             
-            if (c == 'r') {
+            if (tolower(c) == 'r') {
                 should_break = 1;
-            } else if (c == 'q') {
+            } else if (tolower(c) == 'q') {
                 should_break = 1;
             } else if (c == '\e') {
                 c = s_getc();
