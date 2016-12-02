@@ -1302,7 +1302,9 @@ int mail_menu(struct user_record *user) {
 	int result;
 	int sem_fd;
 	int all_unread = 0;
-
+	int redraw;
+	int start;
+	
 	if (conf.script_path != NULL) {
 		sprintf(buffer, "%s/mailmenu.lua", conf.script_path);
 		if (stat(buffer, &s) == 0) {
@@ -1703,43 +1705,104 @@ int mail_menu(struct user_record *user) {
 								}
 							}
 							closed = 0;
-							s_printf(get_string(126));
+							
 
-							for (j=i-1;j<msghs->msg_count;j++) {
-								localtime_r((time_t *)&msghs->msgs[j]->msg_h->DateWritten, &msg_date);
-								if (msghs->msgs[j]->msg_h->MsgNum > jlr.HighReadMsg || all_unread) {
-									s_printf(get_string(127), j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
-								} else {
-									s_printf(get_string(128), j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
-								}
-
-								if ((j - (i - 1)) != 0 && (j - (i - 1)) % 20 == 0) {
-									s_printf(get_string(129));
-									s_readstring(buffer, 6);
-
-									if (tolower(buffer[0]) == 'q') {
-										closed = 1;
-										break;
-									} else if (strlen(buffer) > 0) {
-										z = atoi(buffer);
-										if (z > 0 && z <= msghs->msg_count) {
-											closed = 1;
-											read_message(user, msghs, z - 1);
-											break;
+							redraw = 1;
+							start = i-1;
+							while (!closed) {
+								if (redraw) {
+									s_printf(get_string(126));
+									for (j=start;j<start + 22 && j<msghs->msg_count;j++) {
+										localtime_r((time_t *)&msghs->msgs[j]->msg_h->DateWritten, &msg_date);
+										if (j == i -1) {
+											if (msghs->msgs[j]->msg_h->MsgNum > jlr.HighReadMsg || all_unread) {
+												s_printf(get_string(188), j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+											} else {
+												s_printf(get_string(189), j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+											}
+										} else {
+											if (msghs->msgs[j]->msg_h->MsgNum > jlr.HighReadMsg || all_unread) {
+												s_printf(get_string(127), j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+											} else {
+												s_printf(get_string(128), j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+											}
 										}
 									}
-									s_printf(get_string(126));
+									s_printf(get_string(190));
+									redraw = 0;
 								}
-
-							}
-							if (closed == 0) {
-								s_printf(get_string(129));
-								s_readstring(buffer, 6);
-								if (strlen(buffer) > 0) {
-									z = atoi(buffer);
-									if (z > 0 && z <= msghs->msg_count) {
-										read_message(user, msghs, z - 1);
+								c = s_getc();
+								if (tolower(c) == 'q') {
+									closed = 1;
+								} else if (c == 27) {
+									c = s_getc();
+									if (c == 91) {
+										c = s_getc();
+										if (c == 66) {
+											// down
+											i++;
+											if (i > start + 22) {
+												start += 22;
+												if (start > msghs->msg_count) {
+													start = msghs->msg_count - 22;
+												}
+												redraw = 1;
+											}
+											if (i-1 == msghs->msg_count) {
+												i--;
+											} else if (!redraw) {
+												s_printf("\e[%d;1H", i - start);
+												localtime_r((time_t *)&msghs->msgs[i-2]->msg_h->DateWritten, &msg_date);
+												if (msghs->msgs[i-2]->msg_h->MsgNum > jlr.HighReadMsg || all_unread) {
+													s_printf(get_string(127), i - 1, msghs->msgs[i-2]->subject, msghs->msgs[i-2]->from, msghs->msgs[i-2]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+												} else {
+													s_printf(get_string(128), i - 1, msghs->msgs[i-2]->subject, msghs->msgs[i-2]->from, msghs->msgs[i-2]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+												}												
+												s_printf("\e[%d;1H", i - start + 1);
+												localtime_r((time_t *)&msghs->msgs[i-1]->msg_h->DateWritten, &msg_date);
+												if (msghs->msgs[i-1]->msg_h->MsgNum > jlr.HighReadMsg || all_unread) {
+													s_printf(get_string(188), i, msghs->msgs[i-1]->subject, msghs->msgs[i-1]->from, msghs->msgs[i-1]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+												} else {
+													s_printf(get_string(189), i, msghs->msgs[i-1]->subject, msghs->msgs[i-1]->from, msghs->msgs[i-1]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+												}												
+												
+											}
+										} else if (c == 65) {
+											// up
+											i--;
+											if (i - 1 < start) {
+												start -=22;
+												if (start < 0) {
+													start = 0;
+												}
+												redraw = 1;
+											}
+											if (i <= 1) {
+												start = 0;
+												i = 1;
+												redraw = 1;
+											} else if (!redraw) {
+												s_printf("\e[%d;1H", i - start + 2);
+												localtime_r((time_t *)&msghs->msgs[i]->msg_h->DateWritten, &msg_date);
+												if (msghs->msgs[i]->msg_h->MsgNum > jlr.HighReadMsg || all_unread) {
+													s_printf(get_string(127), i + 1, msghs->msgs[i]->subject, msghs->msgs[i]->from, msghs->msgs[i]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+												} else {
+													s_printf(get_string(128), i + 1, msghs->msgs[i]->subject, msghs->msgs[i]->from, msghs->msgs[i]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+												}												
+												s_printf("\e[%d;1H", i - start + 1);
+												localtime_r((time_t *)&msghs->msgs[i-1]->msg_h->DateWritten, &msg_date);
+												if (msghs->msgs[i-1]->msg_h->MsgNum > jlr.HighReadMsg || all_unread) {
+													s_printf(get_string(188), i, msghs->msgs[i-1]->subject, msghs->msgs[i-1]->from, msghs->msgs[i-1]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+												} else {
+													s_printf(get_string(189), i, msghs->msgs[i-1]->subject, msghs->msgs[i-1]->from, msghs->msgs[i-1]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+												}												
+												
+											}											
+										}
 									}
+								} else if (c == 13) {
+									closed = 1;
+									read_message(user, msghs, i - 1);
 								}
 							}
 						}
