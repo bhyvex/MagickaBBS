@@ -14,3 +14,9 @@ logs/*
 *.a
 lua/lua
 lua/luac
+netmail.out
+echomail.out
+utils/magiedit/odoors/libs-*
+utils/magiedit/odoors/exe-*
+utils/magiedit/odoors/objs-*
+utils/magiedit/magiedit
