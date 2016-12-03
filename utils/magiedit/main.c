@@ -606,6 +606,7 @@ int main(int argc, char **argv)
         sprintf(msgtmp, "%s%cmsgtmp", msgpath, path_sep);
         fptr = fopen(msgtmp, "r");
         if (!fptr) {
+            sprintf(msgtmp, "%s%cMSGTMP", msgpath, path_sep);
             noquote = 1;
         }
     }
