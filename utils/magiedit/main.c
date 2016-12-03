@@ -330,6 +330,7 @@ char *message_editor() {
                     } else {
                         if (strlen(line) == 78) {
                             strncat(line, &ch.chKeyPress, 1);
+                            position_x++;
                         }
 
                         if (position_x < strlen(line)) {
