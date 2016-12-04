@@ -81,7 +81,7 @@ unsigned long generate_msgid() {
 	
 	snprintf(buffer, 1024, "%s/msgserial", conf.bbs_path);
 	
-	fptr = fopen(buffer, "rw");
+	fptr = fopen(buffer, "r+");
 	if (fptr) {
 		flock(fileno(fptr), LOCK_EX);
 		fread(&lastread, sizeof(time_t), 1, fptr);
