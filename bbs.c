@@ -281,6 +281,7 @@ void s_readstring(char *buffer, int max) {
 			if (c == 91) {
 				c = s_getchar();
 			}
+			i -= 1;
 			continue;
 		}
 
