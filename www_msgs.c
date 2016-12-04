@@ -672,7 +672,6 @@ int www_send_msg(struct user_record *user, char *to, char *subj, int conference,
 	int max_len;
 	int len;
 	char buffer[256];	
-	char timestr[17];
 	char *body2;
 	char *tagline;
 	struct utsname name;
@@ -744,13 +743,11 @@ int www_send_msg(struct user_record *user, char *to, char *subj, int conference,
 				jsf.Buffer = (char *)buffer;
 				JAM_PutSubfield(jsp, &jsf);
 
-				snprintf(timestr, 16, "%016lx", time(NULL));
-
-				sprintf(buffer, "%d:%d/%d.%d %s", conf.mail_conferences[conference]->fidoaddr->zone,
+				sprintf(buffer, "%d:%d/%d.%d %08lx", conf.mail_conferences[conference]->fidoaddr->zone,
 												  conf.mail_conferences[conference]->fidoaddr->net,
 												  conf.mail_conferences[conference]->fidoaddr->node,
 												  conf.mail_conferences[conference]->fidoaddr->point,
-												  &timestr[strlen(timestr) - 8]);
+												  generate_msgid());
 
 				jsf.LoID   = JAMSFLD_MSGID;
 				jsf.HiID   = 0;
