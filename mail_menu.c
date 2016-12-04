@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/utsname.h>
+#include <sys/file.h>
 #include <fcntl.h>
 #include "jamlib/jam.h"
 #include "bbs.h"
@@ -38,6 +39,86 @@ s_JamBase *open_jam_base(char *path) {
 		}
 	}
 	return jb;
+}
+
+unsigned long generate_msgid() {
+	time_t theTime;
+	
+	char buffer[1024];
+	
+	struct tm timeStruct;
+	struct tm fileStruct;
+	unsigned long m;
+	unsigned long y;
+	unsigned long ya;
+	unsigned long j;
+	unsigned long msgid;
+	unsigned long c;
+	unsigned long d;
+	time_t lastread;
+	unsigned long lastid;
+	FILE *fptr;
+	
+	theTime = time(NULL);
+	localtime_r(&theTime, &timeStruct);
+	
+	m = timeStruct.tm_mon + 1;
+	y = timeStruct.tm_year + 1900;
+	d = timeStruct.tm_mday;
+	
+	if (m > 2) {
+		m = m - 3;
+	} else {
+		m = m + 9;
+		y = y - 1;
+	}
+	
+	c = y / 100;
+	ya = y - 100 * c;
+	j = (146097 * c) / 4 + (1461 * ya) / 4 + (153 * m + 2) / 5 + d + 1721119;
+	
+	msgid = (j % 0x800) * 0x200000;
+	
+	snprintf(buffer, 1024, "%s/msgserial", conf.bbs_path);
+	
+	fptr = fopen(buffer, "rw");
+	if (fptr) {
+		flock(fileno(fptr), LOCK_EX);
+		fread(&lastread, sizeof(time_t), 1, fptr);
+		fread(&lastid, sizeof(unsigned long), 1, fptr);
+		localtime_r(&lastread, &fileStruct);
+		
+		
+		if (fileStruct.tm_mon != timeStruct.tm_mon || fileStruct.tm_mday != timeStruct.tm_mday || fileStruct.tm_year != timeStruct.tm_year) {
+			lastread = time(NULL);
+			lastid = 1;
+		} else {
+			lastid++;
+		}
+		rewind(fptr);
+		fwrite(&lastread, sizeof(time_t), 1, fptr);
+		fwrite(&lastid, sizeof(unsigned long), 1, fptr);
+		flock(fileno(fptr), LOCK_UN);
+		fclose(fptr);
+	} else {
+		fptr = fopen(buffer, "w");
+		if (fptr) {
+			lastread = time(NULL);
+			lastid = 1;
+			flock(fileno(fptr), LOCK_EX);
+			fwrite(&lastread, sizeof(time_t), 1, fptr);
+			fwrite(&lastid, sizeof(unsigned long), 1, fptr);
+			flock(fileno(fptr), LOCK_UN);
+			fclose(fptr);
+		} else {
+			dolog("Unable to open message id log");
+			return 0;
+		}
+	}
+	
+	msgid += lastid;
+	
+	return msgid;
 }
 
 void free_message_headers(struct msg_headers *msghs) {
@@ -759,7 +840,6 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 	char *replybody;
 	struct fido_addr *from_addr = NULL;
 	int i, j;
-	char timestr[17];
 	int doquit = 0;
 	int skip_line = 0;
 	int chars = 0;
@@ -1073,13 +1153,12 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 							jsf.Buffer = (char *)buffer;
 							JAM_PutSubfield(jsp, &jsf);
 
-							snprintf(timestr, 16, "%016lx", time(NULL));
 
-							sprintf(buffer, "%d:%d/%d.%d %s", conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
+							sprintf(buffer, "%d:%d/%d.%d %08lx", conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
 															conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
 															conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node,
 															conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point,
-															&timestr[strlen(timestr) - 8]);
+															generate_msgid());
 
 							jsf.LoID   = JAMSFLD_MSGID;
 							jsf.HiID   = 0;
@@ -1092,7 +1171,7 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 										conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
 										conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node,
 										conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point,
-										&msghs->msgs[mailno]->msgid[strlen(timestr) - 8]);
+										msghs->msgs[mailno]->msgid);
 							}
 
 							jsf.LoID   = JAMSFLD_REPLYID;
@@ -1143,13 +1222,12 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 								free(from_addr);
 							}
 
-							snprintf(timestr, 16, "%016lx", time(NULL));
 
-							sprintf(buffer, "%d:%d/%d.%d %s", conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
+							sprintf(buffer, "%d:%d/%d.%d %08lx", conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
 															conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
 															conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node,
 															conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point,
-															&timestr[strlen(timestr) - 8]);
+															generate_msgid());
 
 							jsf.LoID   = JAMSFLD_MSGID;
 							jsf.HiID   = 0;
@@ -1162,7 +1240,7 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 										conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
 										conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node,
 										conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point,
-										&msghs->msgs[mailno]->msgid[strlen(timestr) - 8]);
+										msghs->msgs[mailno]->msgid);
 							}
 
 							jsf.LoID   = JAMSFLD_REPLYID;
@@ -1290,7 +1368,6 @@ int mail_menu(struct user_record *user) {
 	char *subject;
 	char *from;
 	char *to;
-	char timestr[17];
 	char *msg;
 	int closed;
 	struct fido_addr *from_addr = NULL;
@@ -1547,13 +1624,11 @@ int mail_menu(struct user_record *user) {
 								jsf.Buffer = (char *)buffer;
 								JAM_PutSubfield(jsp, &jsf);
 
-								snprintf(timestr, 16, "%016lx", time(NULL));
-
-								sprintf(buffer, "%d:%d/%d.%d %s", conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
+								sprintf(buffer, "%d:%d/%d.%d %08lx", conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
 																conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
 																conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node,
 																conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point,
-																&timestr[strlen(timestr) - 8]);
+																generate_msgid());
 
 								jsf.LoID   = JAMSFLD_MSGID;
 								jsf.HiID   = 0;
@@ -1604,13 +1679,12 @@ int mail_menu(struct user_record *user) {
 									free(from_addr);
 									from_addr = NULL;
 								}
-								snprintf(timestr, 16, "%016lx", time(NULL));
 
-								sprintf(buffer, "%d:%d/%d.%d %s", conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
+								sprintf(buffer, "%d:%d/%d.%d %08lx", conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
 																conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
 																conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node,
 																conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point,
-																&timestr[strlen(timestr) - 8]);
+																generate_msgid());
 
 								jsf.LoID   = JAMSFLD_MSGID;
 								jsf.HiID   = 0;

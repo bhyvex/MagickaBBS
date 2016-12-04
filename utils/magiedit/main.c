@@ -169,19 +169,22 @@ char *message_editor() {
                                 strcat(return_body, body_lines[i]);
                                 strcat(return_body, "\r\n");
                         }
-
-                        for (i=0;i<body_line_count;i++) {
-                            free(body_lines[i]);
+                        if (body_line_count > 0) {
+                            for (i=0;i<body_line_count;i++) {
+                                free(body_lines[i]);
+                            }
+                            free(body_lines);
                         }
-                        free(body_lines);
 
                         return return_body;
                     } else if (strcasecmp(line, "/A") == 0) {
                         // abort message
-                        for (i=0;i<body_line_count;i++) {
-                            free(body_lines[i]);
+                        if (body_line_count > 0) {
+                            for (i=0;i<body_line_count;i++) {
+                                free(body_lines[i]);
+                            }
+                            free(body_lines);
                         }
-                        free(body_lines);
                         return NULL;
                     } else if (strcasecmp(line, "/Q") == 0) {
                         // quote

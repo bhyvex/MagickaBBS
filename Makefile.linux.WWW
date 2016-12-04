@@ -1,5 +1,5 @@
 CC=cc
-CFLAGS=-I/usr/local/include -DENABLE_WWW=1
+CFLAGS=-I/usr/local/include -DENABLE_WWW=1 
 DEPS = bbs.h
 JAMLIB = jamlib/jamlib.a
 ZMODEM = Xmodem/libzmodem.a

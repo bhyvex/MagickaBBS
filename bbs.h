@@ -106,11 +106,11 @@ struct bbs_config {
 	char *irc_server;
 	int irc_port;
 	char *irc_channel;
-
+	
 	char *external_editor_cmd;
 	int external_editor_stdio;
 	int fork;
-
+	
 	int nodes;
 	int newuserlvl;
 	int automsgwritelvl;
