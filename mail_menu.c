@@ -1702,7 +1702,12 @@ int mail_menu(struct user_record *user) {
 											break;
 										}
 									}
-									i+=2;
+									if (i == msghs->msg_count - 1) {
+										i = 1;
+									} else {
+										i+=2;
+									}
+									
 								} else {
 									i = 1;
 								}
