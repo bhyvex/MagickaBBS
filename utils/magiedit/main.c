@@ -215,9 +215,11 @@ char *message_editor() {
                                     if (i == q_position) {
                                        od_set_color(D_BLACK, D_GREEN);
                                        od_printf("`bright yellow`%c`black green`%s", q_marker, quote_lines[i]);
+                                       od_clr_line();
                                     } else {
                                        od_set_color(L_WHITE, D_BLACK);
                                        od_printf("`bright yellow`%c`bright white`%s", q_marker, quote_lines[i]);
+                                       od_clr_line();
                                     }
                                 }
                                 od_get_input(&ch, OD_NO_TIMEOUT, GETIN_NORMAL);
