@@ -3,7 +3,7 @@ function logout()
 	
 	cmd = bbs_read_char();
 	
-	if (cmd == 10) then
+	if (cmd == "n" or cmd == "N") then
 		return 0;
 	end
 	
