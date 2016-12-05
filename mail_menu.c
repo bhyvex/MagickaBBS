@@ -60,7 +60,7 @@ unsigned long generate_msgid() {
 	FILE *fptr;
 	
 	theTime = time(NULL);
-	localtime_r(&theTime, &timeStruct);
+	gmtime_r(&theTime, &timeStruct);
 	
 	m = timeStruct.tm_mon + 1;
 	y = timeStruct.tm_year + 1900;
@@ -86,7 +86,7 @@ unsigned long generate_msgid() {
 		flock(fileno(fptr), LOCK_EX);
 		fread(&lastread, sizeof(time_t), 1, fptr);
 		fread(&lastid, sizeof(unsigned long), 1, fptr);
-		localtime_r(&lastread, &fileStruct);
+		gmtime_r(&lastread, &fileStruct);
 		
 		
 		if (fileStruct.tm_mon != timeStruct.tm_mon || fileStruct.tm_mday != timeStruct.tm_mday || fileStruct.tm_year != timeStruct.tm_year) {
@@ -588,6 +588,12 @@ char *editor(struct user_record *user, char *quote, char *from, int email) {
 					i--;
 				}
 			} else {
+				if (quote[i] == 27) {
+					while (strchr("ABCDEFGHIGJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", quote[i]) == NULL)
+							i++;
+					continue;
+				}
+				
 				linebuffer[lineat++] = quote[i];
 				linebuffer[lineat] = '\0';
 			}
@@ -818,6 +824,507 @@ char *editor(struct user_record *user, char *quote, char *from, int email) {
 	return NULL;
 }
 
+struct character_t {
+	char c;
+	int fg;
+	int bg;
+};
+
+void unmangle_ansi(char *body, int len, char **body_out, int *body_len) {
+	// count lines
+	int line_count = 1;
+	int line_at = 1;
+	int char_at = 1;
+	int fg = 0x07;
+	int bg = 0x00;
+	int state = 0;
+	int save_char_at = 0;
+	int save_line_at = 0;
+	int params[16];
+	int param_count = 0;
+	int bold = 0;
+	char *out;
+	int out_len;
+	int out_max;
+	char buffer[1024];
+	int buf_at;
+	int i, j, k;
+	struct character_t ***fake_screen;
+	int ansi;
+	
+	for (i=0;i<len;i++) {
+		if (body[i] == '\r') {
+			line_count++;
+			line_at++;
+		}
+		
+		if (body[i] == 27) {
+			ansi = i;
+            while (strchr("ABCDEFGHIGJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", body[i]) == NULL)
+				i++;
+            if (body[i] == 'A') {
+				if (i == ansi + 1) {
+					line_at--;
+				} else {
+					line_at -= atoi(&body[ansi + 1]);
+				}
+			} else if (body[i] == 'B') {
+				if (i == ansi + 1) {
+					line_at++;
+				} else {
+					line_at += atoi(&body[ansi + 1]);
+				}
+				if (line_at > line_count) {
+					line_count = line_at;
+				}
+			}
+		}
+	}
+	
+	fake_screen = (struct character_t ***)malloc(sizeof(struct character_t **) * line_count);
+	for (i=0;i<line_count;i++) {
+		fake_screen[i] = (struct character_t **)malloc(sizeof(struct character_t*) * 80);
+		for (j=0;j<80;j++) {
+			fake_screen[i][j] = (struct character_t *)malloc(sizeof(struct character_t));
+			fake_screen[i][j]->c = ' ';
+			fake_screen[i][j]->fg = fg;
+			fake_screen[i][j]->bg = bg;
+		}
+	}
+	
+	line_at = 1;
+	char_at = 1;
+	
+	for (i=0;i<len;i++) {
+		if (state == 0) {
+			if (body[i] == 27) {
+				state = 1;
+				continue;
+			} else {
+				if (body[i] == '\r') {
+					char_at = 1;
+					line_at++;
+				} else {
+					fake_screen[line_at -1][char_at - 1]->c = body[i];
+					fake_screen[line_at -1][char_at - 1]->fg = fg;
+					fake_screen[line_at -1][char_at - 1]->bg = bg;
+					char_at++;
+					while (char_at > 80) {
+						line_at++;
+						char_at -= 80;
+					}
+				}
+			}
+		} else if (state == 1) {
+			if (body[i] == '[') {
+				state = 2;
+				continue;
+			}
+		} else if (state == 2) {
+			param_count = 0;
+			for (j=0;j<16;j++) {
+				params[j] = 0;
+			}
+			state = 3;
+		}
+		if (state == 3) {
+			if (body[i] == ';') {
+				if (param_count < 15) {
+					param_count++;
+				}
+				continue;
+			} else if (body[i] >= '0' && body[i] <= '9') {
+				if (!param_count) param_count = 1;
+				params[param_count-1] = params[param_count-1] * 10 + (body[i] - '0');
+				continue;
+			} else {
+				state = 4;
+			}
+		}
+		
+		if (state == 4) {
+			switch(body[i]) {
+				case 'H':
+				case 'f':
+					if (params[0]) params[0]--;
+					if (params[1]) params[1]--;
+					line_at = params[0] + 1;
+					char_at = params[1] + 1;
+					state = 0;
+					break;
+				case 'A':
+					if (param_count > 0) {
+						line_at = line_at - params[0];
+					} else {
+						line_at--;
+					}
+					state = 0;
+					break;
+				case 'B':
+					if (param_count > 0) {
+						line_at = line_at + params[0];
+					} else {
+						line_at++;
+					}
+					state = 0;
+					break;
+				case 'C':
+					if (param_count > 0) {
+						char_at = char_at + params[0];
+					} else {
+						char_at ++;
+					}
+					if (char_at > 80) {
+						char_at = 80;
+					}
+					state = 0;
+					break;
+				case 'D':
+					if (param_count > 0) {
+						char_at = char_at - params[0];
+					} else {
+						char_at --;
+					}
+					if (char_at < 1) {
+						char_at = 1;
+					}
+					state = 0;
+					break;
+				case 's':
+					save_char_at = char_at;
+					save_line_at = line_at;
+					state = 0;
+					break;
+				case 'u':
+					char_at = save_char_at;
+					line_at = save_line_at;
+					state = 0;
+					break;
+				case 'm':
+					for (j=0;j<param_count;j++) {
+						switch(params[j]) {
+							case 0:
+								fg = 0x07;
+								bg = 0x00;
+								bold = 0;
+								break;
+							case 1:
+								bold = 1;
+								if (fg < 0x08) {
+									fg += 0x08;
+								}
+								break;
+							case 2:
+								bold = 0;
+								if (fg > 0x07) {
+									fg -= 0x08;
+								}
+								break;
+							case 30:
+								if (bold) {
+									fg = 0x08;
+								} else {
+									fg = 0x00;
+								}
+								break;
+							case 31:
+								if (bold) {
+									fg = 0x0C;
+								} else {
+									fg = 0x04;
+								}
+								break;
+							case 32:
+								if (bold) {
+									fg = 0x0A;
+								} else {
+									fg = 0x02;
+								}
+								break;
+							case 33:
+								if (bold) {
+									fg = 0x0E;
+								} else {
+									fg = 0x06;
+								}
+								break;
+							case 34:
+								if (bold) {
+									fg = 0x09;
+								} else {
+									fg = 0x01;
+								}
+								break;
+							case 35:
+								if (bold) {
+									fg = 0x0D;
+								} else {
+									fg = 0x05;
+								}
+								break;
+							case 36:
+								if (bold) {
+									fg = 0x0B;
+								} else {
+									fg = 0x03;
+								}
+								break;
+							case 37:
+								if (bold) {
+									fg = 0x0F;
+								} else {
+									fg = 0x07;
+								}
+								break;
+							case 40:
+								bg = 0x00;
+								break;
+							case 41:
+								bg = 0x04;
+								break;
+							case 42:
+								bg = 0x02;
+								break;
+							case 43:
+								bg = 0x06;
+								break;
+							case 44:
+								bg = 0x01;
+								break;
+							case 45:
+								bg = 0x05;
+								break;
+							case 46:
+								bg = 0x03;
+								break;
+							case 47:
+								bg = 0x07;
+								break;
+							}
+								
+					}
+					state = 0;
+					break;
+				case 'K':
+					if (params[0] == 0) {
+						for (k=char_at-1;k<80;k++) {
+							fake_screen[line_at-1][k]->c = ' ';
+							fake_screen[line_at-1][k]->fg = fg;
+							fake_screen[line_at-1][k]->bg = bg;
+						}
+					} else if (params[0] == 1) {
+						for (k=0;k<char_at;k++) {
+							fake_screen[line_at-1][k]->c = ' ';
+							fake_screen[line_at-1][k]->fg = fg;
+							fake_screen[line_at-1][k]->bg = bg;
+						}
+					} else if (params[0] == 2) {
+						for (k=0;k<80;k++) {
+							fake_screen[line_at-1][k]->c = ' ';
+							fake_screen[line_at-1][k]->fg = fg;
+							fake_screen[line_at-1][k]->bg = bg;
+						}
+					}
+					state = 0;
+					break;
+				case 'J':
+					if (params[0] == 0) {
+						for (k=char_at-1;k<80;k++) {
+							fake_screen[line_at-1][k]->c = ' ';
+							fake_screen[line_at-1][k]->fg = fg;
+							fake_screen[line_at-1][k]->bg = bg;
+						}
+						
+						for (k=line_at;k<line_count;k++) {
+							for (j=0;j<80;j++) {
+								fake_screen[k][j]->c = ' ';
+								fake_screen[k][j]->fg = fg;
+								fake_screen[k][j]->bg = bg;
+							}
+						}
+					} else if (params[0] == 1) {
+						for (k=0;k<char_at;k++) {
+							fake_screen[line_at-1][k]->c = ' ';
+							fake_screen[line_at-1][k]->fg = fg;
+							fake_screen[line_at-1][k]->bg = bg;
+						}
+						
+						for (k=line_at-2;k>=0;k--) {
+							for (j=0;j<80;j++) {
+								fake_screen[k][j]->c = ' ';
+								fake_screen[k][j]->fg = fg;
+								fake_screen[k][j]->bg = bg;
+							}
+						}
+					} else if (params[0] == 2) {
+						for (k=0;k<line_count;k++) {
+							for (j=0;j<80;j++) {
+								fake_screen[k][j]->c = ' ';
+								fake_screen[k][j]->fg = fg;
+								fake_screen[k][j]->bg = bg;
+							}
+						}
+					}
+					state = 0;
+					break;
+			}
+		}
+	}
+	
+	fg = 0x07;
+	bg = 0x00;
+	
+	out_max = 256;
+	out_len = 0;
+	out = (char *)malloc(256);
+	
+	for (i=0;i<line_count;i++) {
+		buf_at = 0;
+		for (j=0;j<80;j++) {
+			if (fake_screen[i][j]->fg != fg || fake_screen[i][j]->bg != bg) {
+				buffer[buf_at++] = 27;
+				buffer[buf_at++] = '[';
+				fg = fake_screen[i][j]->fg;
+				if (fg < 0x08) {
+					buffer[buf_at++] = '0';
+					buffer[buf_at++] = ';';
+					buffer[buf_at++] = '3';
+					switch (fg) {
+						case 0x00:
+							buffer[buf_at++] = '0';
+							break;
+						case 0x04:
+							buffer[buf_at++] = '1';
+							break;
+						case 0x02:
+							buffer[buf_at++] = '2';
+							break;
+						case 0x06:
+							buffer[buf_at++] = '3';
+							break;
+						case 0x01:
+							buffer[buf_at++] = '4';
+							break;
+						case 0x05:
+							buffer[buf_at++] = '5';
+							break;
+						case 0x03:
+							buffer[buf_at++] = '6';
+							break;
+						case 0x07:
+							buffer[buf_at++] = '7';
+							break;
+							
+						
+					}
+				} else {
+					buffer[buf_at++] = '1';
+					buffer[buf_at++] = ';';
+					buffer[buf_at++] = '3';
+					switch (fg) {
+						case 0x08:
+							buffer[buf_at++] = '0';
+							break;
+						case 0x0C:
+							buffer[buf_at++] = '1';
+							break;
+						case 0x0A:
+							buffer[buf_at++] = '2';
+							break;
+						case 0x0E:
+							buffer[buf_at++] = '3';
+							break;
+						case 0x09:
+							buffer[buf_at++] = '4';
+							break;
+						case 0x0D:
+							buffer[buf_at++] = '5';
+							break;
+						case 0x0B:
+							buffer[buf_at++] = '6';
+							break;
+						case 0x0F:
+							buffer[buf_at++] = '7';
+							break;
+								
+							
+					}	
+				}
+			
+			
+				bg = fake_screen[i][j]->bg;
+				buffer[buf_at++] = ';';
+				buffer[buf_at++] = '4';
+				switch (bg) {
+					case 0x00:
+						buffer[buf_at++] = '0';
+						break;
+					case 0x04:
+						buffer[buf_at++] = '1';
+						break;
+					case 0x02:
+						buffer[buf_at++] = '2';
+						break;
+					case 0x06:
+						buffer[buf_at++] = '3';
+						break;
+					case 0x01:
+						buffer[buf_at++] = '4';
+						break;
+					case 0x05:
+						buffer[buf_at++] = '5';
+						break;
+					case 0x03:
+						buffer[buf_at++] = '6';
+						break;
+					case 0x07:
+						buffer[buf_at++] = '7';
+						break;
+							
+							
+				}					
+				buffer[buf_at++] = 'm';
+			}
+			buffer[buf_at++] = fake_screen[i][j]->c;
+		}
+	
+		
+		while (buf_at > 0 && buffer[buf_at-1] == ' ') {
+			buf_at--;
+		}
+		
+		buffer[buf_at++] = '\r';
+
+		while (buf_at + out_len > out_max) {
+			out_max += 256;
+			out = (char *)realloc(out, out_max);
+		}
+		
+		memcpy(&out[out_len], buffer, buf_at);
+		out_len += buf_at;
+
+	}
+	
+	for (i=0;i<line_count;i++) {
+		for (j=0;j<80;j++) {
+			free(fake_screen[i][j]);
+		}
+		free(fake_screen[i]);
+	}
+	free(fake_screen);
+	
+	while (out[out_len-2] == '\r') {
+		out_len--;
+	}
+	
+	
+	
+	*body_out = out;
+	*body_len = out_len;
+}
+	
+
+
 void read_message(struct user_record *user, struct msg_headers *msghs, int mailno) {
 	s_JamBase *jb;
 	s_JamMsgHeader jmh;
@@ -850,6 +1357,7 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
     int start_line;
     int should_break;
     int position;
+    int y;
     
 	jb = open_jam_base(conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
 	if (!jb) {
@@ -930,7 +1438,11 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 		lines = 0;
 		chars = 0;
         
+        body2 = body;
+        z = z2;
         
+        unmangle_ansi(body2, z, &body, &z2);
+        free(body2);
         msg_line_count = 0;
         start_line = 0;
         
@@ -959,21 +1471,21 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
                 }
                 chars = 0;
             } else {
-                if (body[z] == '\e') {
+                if (body[z] == 27) {
                     ansi = z;
                     while (strchr("ABCDEFGHIGJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", body[z]) == NULL)
                         z++;
                     if (body[z] == 'm') {
                         // do nothing
-                    } else if (body[z] == 'C') {
-                        chars += atoi(&body[ansi + 2]);
                     } else {
-                        i = strlen(body);
-                        for (j=ansi;j<i;j++) {
-                            body[ansi++] = body[j];
+						y = ansi;
+                        for (j=z+1;j<z2;j++) {
+                            body[y] = body[j];
+                            y++;
                         }
+                        z2 = z2 - (z2 - y);
+                        z = ansi - 1;
                     }
-                    
                 } else {
                     chars ++;
                 }

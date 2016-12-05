@@ -222,6 +222,8 @@ static int mail_area_handler(void* user, const char* section, const char* name,
 					} else if (strcasecmp(value, "netmail") == 0) {
 						mc->mail_areas[i]->type = TYPE_NETMAIL_AREA;
 					}
+				} else if (strcasecmp(name, "qwk name") == 0) {
+					mc->mail_areas[i]->qwkname = strdup(value);
 				}
 				return 1;
 			}
@@ -233,7 +235,9 @@ static int mail_area_handler(void* user, const char* section, const char* name,
 		}
 
 		mc->mail_areas[mc->mail_area_count] = (struct mail_area *)malloc(sizeof(struct mail_area));
-
+		
+		mc->mail_areas[mc->mail_area_count]->qwkname = NULL;
+		
 		mc->mail_areas[mc->mail_area_count]->name = strdup(section);
 		if (strcasecmp(name, "read sec level") == 0) {
 			mc->mail_areas[mc->mail_area_count]->read_sec_level = atoi(value);
@@ -249,6 +253,8 @@ static int mail_area_handler(void* user, const char* section, const char* name,
 			} else if (strcasecmp(value, "netmail") == 0) {
 				mc->mail_areas[mc->mail_area_count]->type = TYPE_NETMAIL_AREA;
 			}
+		} else if (strcasecmp(name, "qwk name") == 0) {
+			mc->mail_areas[mc->mail_area_count]->qwkname = strdup(value);
 		}
 		mc->mail_area_count++;
 	}

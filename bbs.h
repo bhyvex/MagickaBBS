@@ -48,6 +48,7 @@ struct door_config {
 struct mail_area {
 	char *name;
 	char *path;
+	char *qwkname;
 	int read_sec_level;
 	int write_sec_level;
 	int type;
