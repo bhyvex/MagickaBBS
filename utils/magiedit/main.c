@@ -333,6 +333,7 @@ char *message_editor() {
                         }
 
                         memset(line, 0, 81);
+                        od_set_cursor(position_y + 3, position_x + 1);
                     } else {
                         if (strlen(line) >= 78) {
                             if (position_x == strlen(line)) {
