@@ -856,6 +856,15 @@ void unmangle_ansi(char *body, int len, char **body_out, int *body_len) {
 		if (body[i] == '\r') {
 			line_count++;
 			line_at++;
+		} else if (body[i] != 27){
+			char_at ++;
+			if (char_at == 80) {
+				char_at = 0;
+				line_at++;
+				if (line_at > line_count) {
+					line_count = line_at;
+				}
+			}
 		}
 		
 		if (body[i] == 27) {
@@ -877,10 +886,32 @@ void unmangle_ansi(char *body, int len, char **body_out, int *body_len) {
 				if (line_at > line_count) {
 					line_count = line_at;
 				}
+			} else if (body[i] == 'C') {
+				if (i == ansi + 1) {
+					char_at++;
+				} else {
+					char_at += atoi(&body[ansi + 1]);
+				}
+				while (char_at >= 80) {
+					line_count++;
+					char_at -= 80;
+				}
+				
+			} else if (body[i] == 'D') {
+				if (i == ansi + 1) {
+					char_at--;
+				} else {
+					char_at -= atoi(&body[ansi + 1]);
+				}
+				while (char_at < 0) {
+					char_at = 0;
+				}
+				
 			}
 		}
 	}
 	
+
 	fake_screen = (struct character_t ***)malloc(sizeof(struct character_t **) * line_count);
 	for (i=0;i<line_count;i++) {
 		fake_screen[i] = (struct character_t **)malloc(sizeof(struct character_t*) * 80);
@@ -1170,7 +1201,7 @@ void unmangle_ansi(char *body, int len, char **body_out, int *body_len) {
 			}
 		}
 	}
-	
+
 	fg = 0x07;
 	bg = 0x00;
 	
@@ -1420,7 +1451,7 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 					}
 				} else {
 					if (!skip_line) {
-						if (body[z] == 3 || body[z] == 4) {
+						if (body[z] == 3 || body[z] == 4 || body[z] == 0xff) {
 							z++;
 						} else {
 							body2[z2++] = body[z];
