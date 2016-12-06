@@ -67,7 +67,9 @@ int bwave_scan_area(int confr, int area, int areano, int totmsgs, FILE *fti_file
 	jb = open_jam_base(conf.mail_conferences[confr]->mail_areas[area]->path);
 	if (!jb) {
 		dolog("Error opening JAM base.. %s", conf.mail_conferences[confr]->mail_areas[area]->path);
-		free_message_headers(msghs);
+		if (msghs != NULL) {
+			free_message_headers(msghs);
+		}
 		return totmsgs;
 	} else {
 		all_unread = 0;
@@ -188,7 +190,8 @@ void bwave_create_packet() {
 	
 	struct termios oldit;
 	struct termios oldot;
-		
+	struct stat s;
+	
 	FILE *mix_file;
 	FILE *fti_file;
 	FILE *dat_file;
@@ -218,6 +221,13 @@ void bwave_create_packet() {
 	hdr.from_to_len = 35;
 	hdr.subject_len = 71;
 	memcpy(hdr.packet_id, conf.bwave_name, strlen(conf.bwave_name));
+	
+	snprintf(buffer, 1024, "%s/node%d", conf.bbs_path, mynode);
+
+	if (stat(buffer, &s) != 0) {
+		mkdir(buffer, 0755);
+	}
+
 	
 	snprintf(buffer, 1024, "%s/node%d/%s.FTI", conf.bbs_path, mynode, conf.bwave_name);
 	
@@ -545,6 +555,12 @@ void bwave_upload_reply() {
 	FILE *upl_file;
 	FILE *msg_file;
 	int sem_fd;
+	
+	snprintf(buffer, 1024, "%s/node%d", conf.bbs_path, mynode);
+
+	if (stat(buffer, &s) != 0) {
+		mkdir(buffer, 0755);
+	}
 	
 	snprintf(buffer, 1024, "%s/node%d/", conf.bbs_path, mynode);
 	
