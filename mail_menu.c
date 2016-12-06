@@ -2542,6 +2542,16 @@ int mail_menu(struct user_record *user) {
 					}
 				}
 				break;
+			case 'b':
+				{
+					bwave_create_packet();
+				}
+				break;
+			case 'u':
+				{
+					bwave_upload_reply();
+				}
+				break;
 		}
 	}
 	if (do_internal_menu == 0) {

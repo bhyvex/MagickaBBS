@@ -70,6 +70,9 @@ void dolog(char *fmt, ...) {
 }
 
 struct fido_addr *parse_fido_addr(const char *str) {
+	if (str == NULL) {
+		return NULL;
+	}
 	struct fido_addr *ret = (struct fido_addr *)malloc(sizeof(struct fido_addr));
 	int c;
 	int state = 0;

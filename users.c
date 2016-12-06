@@ -81,7 +81,7 @@ int save_user(struct user_record *user) {
 	int rc;
 
 	char *update_sql = "UPDATE users SET password=?, salt=?, firstname=?,"
-					   "lastname=?, email=?, location=?, sec_level=?, last_on=?, time_left=?, cur_mail_conf=?, cur_mail_area=?, cur_file_dir=?, cur_file_sub=?, times_on=? where loginname LIKE ?";
+					   "lastname=?, email=?, location=?, sec_level=?, last_on=?, time_left=?, cur_mail_conf=?, cur_mail_area=?, cur_file_dir=?, cur_file_sub=?, times_on=?, bwavepktno=? where loginname LIKE ?";
 
  	sprintf(buffer, "%s/users.sq3", conf.bbs_path);
 
@@ -111,7 +111,8 @@ int save_user(struct user_record *user) {
         sqlite3_bind_int(res, 12, user->cur_file_dir);
         sqlite3_bind_int(res, 13, user->cur_file_sub);
         sqlite3_bind_int(res, 14, user->timeson);
-        sqlite3_bind_text(res, 15, user->loginname, -1, 0);
+        sqlite3_bind_int(res, 15, user->bwavepktno);
+        sqlite3_bind_text(res, 16, user->loginname, -1, 0);
     } else {
         dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
     }
@@ -151,10 +152,11 @@ int inst_user(struct user_record *user) {
 						"cur_mail_area INTEGER,"
 						"cur_file_sub INTEGER,"
 						"cur_file_dir INTEGER,"
-						"times_on INTEGER);";
+						"times_on INTEGER,"
+						"bwavepktno INTEGER);";
 
 	char *insert_sql = "INSERT INTO users (loginname, password, salt, firstname,"
-					   "lastname, email, location, sec_level, last_on, time_left, cur_mail_conf, cur_mail_area, cur_file_dir, cur_file_sub, times_on) VALUES(?,?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+					   "lastname, email, location, sec_level, last_on, time_left, cur_mail_conf, cur_mail_area, cur_file_dir, cur_file_sub, times_on, bwavepktno) VALUES(?,?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     char *err_msg = 0;
 
  	sprintf(buffer, "%s/users.sq3", conf.bbs_path);
@@ -197,7 +199,7 @@ int inst_user(struct user_record *user) {
         sqlite3_bind_int(res, 13, user->cur_file_dir);
         sqlite3_bind_int(res, 14, user->cur_file_sub);
         sqlite3_bind_int(res, 15, user->timeson);
-
+		sqlite3_bind_int(res, 16, user->bwavepktno);
     } else {
         dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
     }
@@ -225,7 +227,7 @@ struct user_record *check_user_pass(char *loginname, char *password) {
   sqlite3_stmt *res;
   int rc;
   char *sql = "SELECT Id, loginname, password, salt, firstname,"
-					   "lastname, email, location, sec_level, last_on, time_left, cur_mail_conf, cur_mail_area, cur_file_dir, cur_file_sub, times_on FROM users WHERE loginname LIKE ?";
+					   "lastname, email, location, sec_level, last_on, time_left, cur_mail_conf, cur_mail_area, cur_file_dir, cur_file_sub, times_on, bwavepktno FROM users WHERE loginname LIKE ?";
 	char *pass_hash;
 
 	sprintf(buffer, "%s/users.sq3", conf.bbs_path);
@@ -268,7 +270,8 @@ struct user_record *check_user_pass(char *loginname, char *password) {
 		user->cur_file_dir = sqlite3_column_int(res, 13);
 		user->cur_file_sub = sqlite3_column_int(res, 14);
 		user->timeson = sqlite3_column_int(res, 15);
-
+		user->bwavepktno = sqlite3_column_int(res, 16);
+		
 		pass_hash = hash_sha256(password, user->salt);
 
 		if (strcmp(pass_hash, user->password) != 0) {
@@ -523,7 +526,7 @@ struct user_record *new_user() {
 		}
 	} while (!done);
 	user->sec_level = conf.newuserlvl;
-
+	user->bwavepktno = 0;
 	user->sec_info = (struct sec_level_t *)malloc(sizeof(struct sec_level_t));
 
 	sprintf(buffer, "%s/config/s%d.ini", conf.bbs_path, user->sec_level);

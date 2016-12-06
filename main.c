@@ -224,6 +224,9 @@ static int mail_area_handler(void* user, const char* section, const char* name,
 					}
 				} else if (strcasecmp(name, "qwk name") == 0) {
 					mc->mail_areas[i]->qwkname = strdup(value);
+					if (strlen(mc->mail_areas[i]->qwkname) > 8) {
+						mc->mail_areas[i]->qwkname[8] = '\0';
+					}
 				}
 				return 1;
 			}
@@ -255,6 +258,9 @@ static int mail_area_handler(void* user, const char* section, const char* name,
 			}
 		} else if (strcasecmp(name, "qwk name") == 0) {
 			mc->mail_areas[mc->mail_area_count]->qwkname = strdup(value);
+			if (strlen(mc->mail_areas[mc->mail_area_count]->qwkname) > 8) {
+				mc->mail_areas[mc->mail_area_count]->qwkname[8] = '\0';
+			}
 		}
 		mc->mail_area_count++;
 	}
@@ -321,6 +327,19 @@ static int handler(void* user, const char* section, const char* name,
 			} else {
 				conf->fork = 0;
 			}
+		} else if (strcasecmp(name, "qwk name") == 0) {
+			conf->bwave_name = strdup(value);
+			if (strlen(conf->bwave_name) > 8) {
+				conf->bwave_name[8] = '\0';
+			}
+		} else if (strcasecmp(name, "main aka") == 0) {
+			conf->main_aka = parse_fido_addr(value);
+		} else if (strcasecmp(name, "qwk max messages") == 0) {
+			conf->bwave_max_msgs = atoi(value);
+		} else if (strcasecmp(name, "zip command") == 0) {
+			conf->zip_cmd = strdup(value);
+		} else if (strcasecmp(name, "unzip command") == 0) {
+			conf->unzip_cmd = strdup(value);
 		}
 	} else if (strcasecmp(section, "paths") == 0){
 		if (strcasecmp(name, "ansi path") == 0) {

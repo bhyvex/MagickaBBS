@@ -181,11 +181,16 @@ int doIO(ZModem *zm) {
 	return done;
 }
 
-void upload_zmodem(struct user_record *user) {
+void upload_zmodem(struct user_record *user, char *upload_p) {
 	ZModem zm;
+	struct termios oldit;
+	struct termios oldot;
+	if (sshBBS) {
+		ttySetRaw(STDIN_FILENO, &oldit);
+		ttySetRaw(STDOUT_FILENO, &oldot);
+	}
 
-
-	upload_path = conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->upload_path;
+	upload_path = upload_p;
 
 	zm.attn = NULL;
 	zm.windowsize = 0;
@@ -206,6 +211,10 @@ void upload_zmodem(struct user_record *user) {
 	ZmodemRInit(&zm);
 
 	doIO(&zm);
+	if (sshBBS) {
+		tcsetattr(STDIN_FILENO, TCSANOW, &oldit);
+		tcsetattr(STDOUT_FILENO, TCSANOW, &oldot);
+	}	
 }
 
 void upload(struct user_record *user) {
@@ -226,17 +235,9 @@ void upload(struct user_record *user) {
   int rc;
   struct stat s;
   char *err_msg = NULL;
-	struct termios oldit;
-	struct termios oldot;
-	if (sshBBS) {
-		ttySetRaw(STDIN_FILENO, &oldit);
-		ttySetRaw(STDOUT_FILENO, &oldot);
-	}
-	upload_zmodem(user);
-	if (sshBBS) {
-		tcsetattr(STDIN_FILENO, TCSANOW, &oldit);
-		tcsetattr(STDOUT_FILENO, TCSANOW, &oldot);
-	}
+
+	upload_zmodem(user, conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->upload_path);
+
 
 	s_printf("\r\nPlease enter a description:\r\n");
 	buffer[0] = '\0';

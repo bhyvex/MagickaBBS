@@ -2,6 +2,8 @@
 #define __BBS_H__
 
 #include <time.h>
+#include <termios.h>
+
 #if defined(ENABLE_WWW)
 #include <microhttpd.h>
 #endif
@@ -10,7 +12,7 @@
 #include "jamlib/jam.h"
 
 #define VERSION_MAJOR 0
-#define VERSION_MINOR 4
+#define VERSION_MINOR 5
 #define VERSION_STR "alpha"
 
 #define NETWORK_FIDO 1
@@ -86,6 +88,7 @@ struct file_directory {
 
 struct bbs_config {
 	char *bbs_name;
+	char *bwave_name;
 	char *sysop_name;
 	char *pid_file;
 	char *ansi_path;
@@ -107,6 +110,10 @@ struct bbs_config {
 	char *irc_server;
 	int irc_port;
 	char *irc_channel;
+	char *zip_cmd;
+	char *unzip_cmd;
+	int bwave_max_msgs;
+	struct fido_addr *main_aka;
 	
 	char *external_editor_cmd;
 	int external_editor_stdio;
@@ -147,6 +154,7 @@ struct user_record {
 	int cur_file_dir;
 	int cur_file_sub;
 	int timeson;
+	int bwavepktno;
 };
 
 struct jam_msg {
@@ -219,10 +227,15 @@ extern void send_email(struct user_record *user);
 extern void list_emails(struct user_record *user);
 
 extern int file_menu(struct user_record *user);
-
+extern void download_zmodem(struct user_record *user, char *filename);
 extern void settings_menu(struct user_record *user);
+extern void upload_zmodem(struct user_record *user, char *upload_p);
+extern int ttySetRaw(int fd, struct termios *prevTermios);
 
 extern void lua_push_cfunctions(lua_State *L);
+
+extern void bwave_create_packet();
+extern void bwave_upload_reply();
 
 extern void load_strings();
 extern char *get_string(int offset);
