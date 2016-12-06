@@ -43,7 +43,7 @@ tWORD converts(tWORD s) {
 }
 
 
-int bwave_scan_area(int confr, int area, int areano, int totmsgs, FILE *fti_file, FILE *mix_file, FILE *dat_file) {
+int bwave_scan_area(int confr, int area, int areano, int totmsgs, FILE *fti_file, FILE *mix_file, FILE *dat_file, int *last_ptr) {
 	struct msg_headers *msghs = read_message_headers(confr, area, gUser);
 	int all_unread = 1;
 	s_JamBase *jb;
@@ -59,7 +59,7 @@ int bwave_scan_area(int confr, int area, int areano, int totmsgs, FILE *fti_file
 	char *body;
 	struct tm timeStruct;
 	char *month_name[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
-	
+		
 	if (msghs == NULL) {
 		return totmsgs;
 	}
@@ -117,9 +117,10 @@ int bwave_scan_area(int confr, int area, int areano, int totmsgs, FILE *fti_file
 		fti.msgnum = converts((tWORD)msghs->msgs[k]->msg_h->MsgNum);
 		fti.replyto = 0;
 		fti.replyat = 0;
-		fti.msgptr = convertl(ftell(dat_file));
+		fti.msgptr = convertl(*last_ptr);
 		fti.msglength = convertl(msghs->msgs[k]->msg_h->TxtLen);
 		
+		*last_ptr += msghs->msgs[k]->msg_h->TxtLen;
 		
 		if (msghs->msgs[k]->msg_h->Attribute & MSG_LOCAL) {
 			fti.flags |= FTI_MSGLOCAL;
@@ -183,6 +184,7 @@ void bwave_create_packet() {
 	tWORD flags;
 	int lasttot;
 	int bpos;
+	int last_ptr = 0;
 	
 	struct termios oldit;
 	struct termios oldot;
@@ -219,13 +221,13 @@ void bwave_create_packet() {
 	
 	snprintf(buffer, 1024, "%s/node%d/%s.FTI", conf.bbs_path, mynode, conf.bwave_name);
 	
-	fti_file = fopen(buffer, "w");
+	fti_file = fopen(buffer, "wb");
 	
 	snprintf(buffer, 1024, "%s/node%d/%s.MIX", conf.bbs_path, mynode, conf.bwave_name);
-	mix_file = fopen(buffer, "w");
+	mix_file = fopen(buffer, "wb");
 	
 	snprintf(buffer, 1024, "%s/node%d/%s.DAT", conf.bbs_path, mynode, conf.bwave_name);
-	dat_file = fopen(buffer, "w");
+	dat_file = fopen(buffer, "wb");
 	
 	s_printf("\r\n");
 	
@@ -233,7 +235,7 @@ void bwave_create_packet() {
 		for (j=0;j<conf.mail_conferences[i]->mail_area_count;j++) {
 			if (conf.mail_conferences[i]->mail_areas[j]->read_sec_level <= gUser->sec_level && conf.mail_conferences[i]->mail_areas[j]->qwkname != NULL) {
 				lasttot = totmsgs;
-				totmsgs = bwave_scan_area(i, j, area_count+1, totmsgs, fti_file, mix_file, dat_file);
+				totmsgs = bwave_scan_area(i, j, area_count+1, totmsgs, fti_file, mix_file, dat_file, &last_ptr);
 				s_printf(get_string(195), conf.mail_conferences[i]->name, conf.mail_conferences[i]->mail_areas[j]->name, totmsgs - lasttot); 
 				if (lasttot == totmsgs) {
 					continue;
@@ -297,7 +299,7 @@ void bwave_create_packet() {
 	
 	snprintf(buffer, 1024, "%s/node%d/%s.INF", conf.bbs_path, mynode, conf.bwave_name);
 	
-	inf_file = fopen(buffer, "w");
+	inf_file = fopen(buffer, "wb");
 	fwrite(&hdr, sizeof(INF_HEADER), 1, inf_file);
 	
 	for (i=0;i<area_count;i++) {
@@ -721,7 +723,11 @@ void bwave_upload_reply() {
 	
 	fclose(upl_file);
 	unlink(buffer);
-	
+	snprintf(buffer, 1024, "%s/node%d/%s.OLC", conf.bbs_path, mynode, conf.bwave_name);
+	unlink(buffer);
+	snprintf(buffer, 1024, "%s/node%d/%s.REQ", conf.bbs_path, mynode, conf.bwave_name);
+	unlink(buffer);
+			
 	s_printf("\r\n");
 	s_printf(get_string(6));
 	s_getc();
