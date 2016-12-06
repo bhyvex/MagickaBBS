@@ -370,6 +370,9 @@ void bwave_create_packet() {
 		unlink(buffer);
 		unlink(archive);
 		gUser->bwavepktno++;
+		if (gUser->bwavepktno > 999) {
+			gUser->bwavepktno = 0;
+		}
 		save_user(gUser);
 	}
 	
