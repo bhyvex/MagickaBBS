@@ -1,5 +1,5 @@
 #include <curses.h>
-#include <cdk/cdk.h>
+#include <cdk.h>
 #include <sqlite3.h>
 #include <stdio.h>
 #include <libgen.h>
@@ -17,6 +17,57 @@ int fcount = 0;
 sqlite3 *db;
 CDKSCREEN *cdkscreen = 0;
 
+static int deleteFile(EObjectType cdktype, void *object, void *clientData, chtype input) {
+	int i;
+	CDKSCROLL *s = (CDKSCROLL *)object;
+	sqlite3_stmt *res;
+	int rc;
+	struct stat st;
+	char sql_delete[] = "DELETE FROM files WHERE filename LIKE ?";
+	int index = getCDKScrollCurrent(s);
+	if (index >= fcount) {
+		return FALSE;
+	}
+	rc = sqlite3_prepare_v2(db, sql_delete, -1, &res, 0);
+	if (rc != SQLITE_OK) {
+		fprintf(stderr, "Error deleting file! : %s\r\n", sqlite3_errmsg(db));
+		return FALSE;
+	}
+	sqlite3_bind_text(res, 1, f[index]->name, -1, 0);
+
+	sqlite3_step(res);
+	sqlite3_finalize(res);
+	
+	if (stat(f[index]->name, &st) == 0) {
+		remove(f[index]->name);
+	}	
+
+	for (i=index;i<fcount-1;i++) {
+		filenames[i] = filenames[i+1];
+		f[i] = f[i+1];
+	}
+	free(filenames[fcount-1]);
+	free(f[fcount-1]);
+
+
+	fcount--;
+	if (fcount == 0) {
+		free(filenames);
+		free(f);
+		filenames = NULL;
+		f = NULL;
+		
+		
+	} else {
+		filenames = realloc(filenames, sizeof(char *) * fcount);
+		f = realloc(f, sizeof(struct files) * fcount);
+		setCDKScrollItems(s, filenames, fcount, FALSE);
+		refreshCDKScreen(cdkscreen);
+		
+	}
+	return FALSE;
+}
+
 static void doApprove(int index) {
 		char sql_approve[] = "UPDATE files SET approved=1 WHERE filename LIKE ?";
 		sqlite3_stmt *res;
@@ -25,7 +76,7 @@ static void doApprove(int index) {
 
 		if (stat(f[index]->name, &st) == 0) {
 			f[index]->approved = 1;
-			sprintf(filenames[index], "</24>%s<!24>", basename(f[index]->name));
+			sprintf(filenames[index], "</24>%s (approved)<!24>", basename(f[index]->name));
 			rc = sqlite3_prepare_v2(db, sql_approve, -1, &res, 0);
 			if (rc != SQLITE_OK) {
 				fprintf(stderr, "Error approving file! : %s\r\n", sqlite3_errmsg(db));
@@ -43,8 +94,13 @@ static void doDisapprove(int index) {
 	char sql_approve[] = "UPDATE files SET approved=0 WHERE filename LIKE ?";
 	sqlite3_stmt *res;
 	int rc;
+	struct stat s;
 	f[index]->approved = 0;
-	sprintf(filenames[index], "</32>%s<!32>", basename(f[index]->name));
+	if (stat(f[index]->name, &s) != 0) {
+		sprintf(filenames[index], "</16>%s (missing)<!16>", basename(f[index]->name));
+	} else {
+		sprintf(filenames[index], "</32>%s (unapproved)<!32>", basename(f[index]->name));
+	}
 	rc = sqlite3_prepare_v2(db, sql_approve, -1, &res, 0);
 	if (rc != SQLITE_OK) {
 		fprintf(stderr, "Error approving file! : %s\r\n", sqlite3_errmsg(db));
@@ -62,6 +118,9 @@ static int approveFile(EObjectType cdktype, void *object, void *clientData, chty
 
 
 	int index = getCDKScrollCurrent(s);
+	if (index >= fcount) {
+		return FALSE;
+	}
 	if (f[index]->approved == 1) {
 		doDisapprove(index);
 	} else {
@@ -69,14 +128,15 @@ static int approveFile(EObjectType cdktype, void *object, void *clientData, chty
 	}
 	setCDKScrollItems(s, filenames, fcount, FALSE);
 	refreshCDKScreen(cdkscreen);
+	return FALSE;
 }
 
 int main(int argc, char **argv) {
 
 	CDKSCROLL *scrollList = 0;
-
+	CDKLABEL *instructions = 0;
 	WINDOW *cursesWin = 0;
-
+	char *message[] = {"Press A to toggle Activation", "Press D to Delete file", "Press ESC to exit"};
 	char sql_read[] = "SELECT filename, description, approved FROM files";
 	CDK_PARAMS params;
 
@@ -96,11 +156,20 @@ int main(int argc, char **argv) {
 
 	sprintf(title, "</48>%s<!48>",basename(CDKparamString (&params, 'd')));
 
+	instructions = newCDKLabel (
+                      cdkscreen,
+                      40,
+                      1,
+                      message,
+                      3,
+                      TRUE,
+                      TRUE);
+	drawCDKLabel(instructions, TRUE);
 	scrollList = newCDKScroll(cdkscreen,
 	      		2,
 						1,
 						1,
-		      	23,
+		      	36,
 			      36,
 			      title,
 						NULL,
@@ -108,7 +177,7 @@ int main(int argc, char **argv) {
 						FALSE,
 						A_REVERSE,
 			      TRUE,
-			      FALSE);
+			      TRUE);
 	if (scrollList == 0) {
 		fprintf(stderr, "Unable to make scrolllist!");
 		destroyCDKScreen(cdkscreen);
@@ -136,6 +205,9 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
+	f = NULL;
+	filenames = NULL;
+
 	while(sqlite3_step(res) == SQLITE_ROW) {
 		if (fcount == 0) {
 			f = (struct files **)malloc(sizeof(struct files *));
@@ -156,17 +228,17 @@ int main(int argc, char **argv) {
 		f[fcount]->description = strdup((char *)sqlite3_column_text(res, 1));
 		f[fcount]->approved = sqlite3_column_int(res, 2);
 
-		filenames[fcount] = (char *)malloc(strlen(basename(f[fcount]->name) + 9));
+		filenames[fcount] = (char *)malloc(strlen(basename(f[fcount]->name) + 30));
 		if (stat(f[fcount]->name, &s) != 0) {
-			sprintf(filenames[fcount], "</16>%s<!16>", basename(f[fcount]->name));
+			sprintf(filenames[fcount], "</16>%s (missing)<!16>", basename(f[fcount]->name));
 			if (f[fcount]->approved == 1) {
 				// unapprove missing file
 				doDisapprove(fcount);
 			}
 		} else if (f[fcount]->approved) {
-			sprintf(filenames[fcount], "</24>%s<!24>", basename(f[fcount]->name));
+			sprintf(filenames[fcount], "</24>%s (approved)<!24>", basename(f[fcount]->name));
 		} else {
-			sprintf(filenames[fcount], "</32>%s<!32>", basename(f[fcount]->name));
+			sprintf(filenames[fcount], "</32>%s (unapproved)<!32>", basename(f[fcount]->name));
 		}
 		fcount++;
 	}
@@ -175,6 +247,7 @@ int main(int argc, char **argv) {
 	setCDKScrollItems(scrollList, filenames, fcount, FALSE);
 
 	bindCDKObject (vSCROLL, scrollList, 'a', approveFile, NULL);
+	bindCDKObject (vSCROLL, scrollList, 'd', deleteFile, NULL);
 
 	while(1) {
 		selection = activateCDKScroll(scrollList, 0);
@@ -191,7 +264,7 @@ int main(int argc, char **argv) {
 
 	free(f);
 	free(filenames);
-
+	destroyCDKLabel(instructions);
 	destroyCDKScroll(scrollList);
 	destroyCDKScreen(cdkscreen);
 	sqlite3_close(db);
