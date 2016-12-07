@@ -396,7 +396,7 @@ struct msg_headers *read_message_headers(int msgconf, int msgarea, struct user_r
 	return msghs;
 }
 
-char *external_editor(struct user_record *user, char *to, char *from, char *quote, char *qfrom, char *subject, int email) {
+char *external_editor(struct user_record *user, char *to, char *from, char *quote, int qlen, char *qfrom, char *subject, int email) {
 	char c;
 	FILE *fptr;
 	char *body = NULL;
@@ -432,7 +432,7 @@ char *external_editor(struct user_record *user, char *to, char *from, char *quot
 			// write msgtemp
 			if (quote != NULL) {
 				fptr = fopen(buffer, "w");
-				for (i=0;i<strlen(quote);i++) {
+				for (i=0;i<qlen;i++) {
 					if (quote[i] == '\r') {
 						fprintf(fptr, "\r\n");
 					} else if (quote[i] == 0x1) {
@@ -440,7 +440,7 @@ char *external_editor(struct user_record *user, char *to, char *from, char *quot
 					} else if (quote[i] == '\e' && quote[i + 1] == '[') {
 						while (strchr("ABCDEFGHIGJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", quote[i]) == NULL)
 							i++;
-					} else {
+					} else if (quote[i] != '\n') {
 						fprintf(fptr, "%c", quote[i]);
 					}
 				}
@@ -1633,7 +1633,7 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 					to = (char *)malloc(strlen(buffer) + 1);
 					strcpy(to, buffer);
 				}
-				replybody = external_editor(user, to, from, body, msghs->msgs[mailno]->from, subject, 0);
+				replybody = external_editor(user, to, from, body, z2, msghs->msgs[mailno]->from, subject, 0);
 				if (replybody != NULL) {
 
 					jb = open_jam_base(conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
@@ -2096,7 +2096,7 @@ int mail_menu(struct user_record *user) {
 						from = (char *)malloc(strlen(user->firstname) + strlen(user->lastname) + 2);
 						sprintf(from, "%s %s", user->firstname, user->lastname);
 					}
-					msg = external_editor(user, to, from, NULL, NULL, subject, 0);
+					msg = external_editor(user, to, from, NULL, 0, NULL, subject, 0);
 
 					free(from);
 

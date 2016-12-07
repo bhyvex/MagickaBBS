@@ -206,7 +206,7 @@ char *message_editor() {
                             q_done = 0;
                             q_marker = ' ';
                             while (!q_done) {
-                                for (i=q_start;i<q_start + 20 && i < quote_line_count;i++) {
+                                for (i=q_start;i<q_start + 21 && i < quote_line_count;i++) {
                                     q_marker = ' ';
                                     for (j=0;j<q_line_count;j++) {
                                         if (q_lines[j] == i) {
@@ -233,7 +233,7 @@ char *message_editor() {
                                             q_position = 0;
                                         }
                                         if (q_position < q_start) {
-                                            q_start = q_start - 20;
+                                            q_start = q_start - 21;
                                             if (q_start < 0) {
                                                 q_start = 0;
                                             }
@@ -244,10 +244,10 @@ char *message_editor() {
                                             q_position = quote_line_count - 1;
                                         }
 
-                                        if (q_position > q_start + 20) {
-                                            q_start = q_start + 20;
-                                            if (q_start + 20 >= quote_line_count) {
-                                                q_start = quote_line_count - 20;
+                                        if (q_position >= q_start + 21) {
+                                            q_start = q_start + 21;
+                                            if (q_start + 21 >= quote_line_count) {
+                                                q_start = quote_line_count - 21;
                                             }
                                         }
                                     }
@@ -310,6 +310,7 @@ char *message_editor() {
 
                         }
                         // restore screen
+                        od_set_color(L_WHITE, D_BLACK);
                         od_clr_scr();
                         od_set_cursor(1, 1);
                         od_set_color(L_WHITE, D_BLUE);
@@ -331,7 +332,7 @@ char *message_editor() {
                             }
                             od_clr_line();
                         }
-
+                        position_x = 0;
                         memset(line, 0, 81);
                         od_set_cursor(position_y + 3, position_x + 1);
                     } else {
@@ -707,7 +708,7 @@ int main(int argc, char **argv)
     if (!noquote) {
         fgets(buffer, 73, fptr);
         while (!feof(fptr)) {
-            for (i=strlen(buffer) - 1; i > 0; i--) {
+            for (i=strlen(buffer) - 1; i >= 0; i--) {
                 if (buffer[i] != '\r' && buffer[i] != '\n') {
                     break;
                 } else {
