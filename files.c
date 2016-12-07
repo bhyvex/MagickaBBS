@@ -237,7 +237,7 @@ char *get_file_id_diz(char *filename) {
 	}
 
 	snprintf(buffer, 1024, "%s/node%d/temp", conf.bbs_path, mynode);
-	if (stat(buffer, &s) != 0) {
+	if (stat(buffer, &s) == 0) {
 		
 		if (recursive_delete(buffer) != 0) {
 			return NULL;
@@ -296,6 +296,9 @@ char *get_file_id_diz(char *filename) {
 		}
 	}
 	description[bpos] = '\0';
+	
+	snprintf(buffer, 1024, "%s/node%d/temp", conf.bbs_path, mynode);
+	recursive_delete(buffer);
 	
 	return description;
 }
