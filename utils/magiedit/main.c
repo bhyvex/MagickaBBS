@@ -153,7 +153,7 @@ char *message_editor() {
                     }
                 }
             } else if (ch.EventType == EVENT_CHARACTER) {
-                if (ch.chKeyPress == '\r' || strlen(line) >= 78) {
+                if (ch.chKeyPress == '\r' || strlen(line) >= 73) {
                     if (strcasecmp(line, "/S") == 0) {
                         // save message
                         body_len = 0;
@@ -335,7 +335,7 @@ char *message_editor() {
                         memset(line, 0, 81);
                         od_set_cursor(position_y + 3, position_x + 1);
                     } else {
-                        if (strlen(line) >= 78) {
+                        if (strlen(line) >= 73) {
                             if (position_x == strlen(line)) {
                                 strncat(line, &ch.chKeyPress, 1);
                                 z = 1;
@@ -375,7 +375,7 @@ char *message_editor() {
                                         memset(line_cpy, 0, 81);
                                         position_x = strlen(line);
                                     } else {
-                                        if (strlen(body_lines[position_y]) + strlen(line_cpy) + 1 <= 78) {
+                                        if (strlen(body_lines[position_y]) + strlen(line_cpy) + 1 <= 73) {
                                             strcat(line_cpy, " ");
                                             strcat(line_cpy, body_lines[position_y]);
                                             free(body_lines[position_y]);
