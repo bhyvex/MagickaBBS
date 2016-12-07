@@ -510,7 +510,8 @@ void runbbs_real(int socket, char *ip, int ssh) {
 	struct sigaction st;
 	lua_State *L;
 	int do_internal_login = 0;
-
+	int usernotfound;
+	int tries;
 	ipaddress = ip;
 
 	if (!ssh) {
@@ -563,7 +564,8 @@ void runbbs_real(int socket, char *ip, int ssh) {
 
 	usertimeout = 10;
 	timeoutpaused = 0;
-
+	tries = 0;
+	
 	memset (&sa, 0, sizeof (sa));
 	sa.sa_handler = &timer_handler;
 	sa.sa_flags = SA_RESTART;
@@ -579,12 +581,22 @@ void runbbs_real(int socket, char *ip, int ssh) {
 	s_displayansi("issue");
 
 	if (!ssh) {
+tryagain:
 		s_printf(get_string(19));
 		s_printf(get_string(20));
 
 		s_readstring(buffer, 25);
 
+		usernotfound = 0;
+
 		if (strcasecmp(buffer, "new") == 0) {
+			usernotfound = 1;
+		} else if (check_user(buffer)) {
+			usernotfound = 1;
+			s_printf(get_string(203));
+		}
+		
+		if (usernotfound) {
 			user = new_user();
 			gUser = user;
 		} else {
@@ -592,8 +604,14 @@ void runbbs_real(int socket, char *ip, int ssh) {
 			s_readpass(password, 16);
 			user = check_user_pass(buffer, password);
 			if (user == NULL) {
-				s_printf(get_string(22));
-				disconnect("Incorrect Login");
+				if (tries == 3) {
+					s_printf(get_string(22));
+					disconnect("Incorrect Login");
+				} else {
+					tries++;
+					s_printf(get_string(22));
+					goto tryagain;
+				}
 			}
 
 			gUser = user;
