@@ -509,7 +509,7 @@ char *message_editor() {
 
                             }
                         }
-                    } else {
+                    } else if (ch.chKeyPress != '\n') {
                         if (position_x >= strlen(line)) {
                             strncat(line, &ch.chKeyPress, 1);
                         } else {
@@ -705,7 +705,7 @@ int main(int argc, char **argv)
     }
     quote_line_count = 0;
     if (!noquote) {
-        fgets(buffer, 74, fptr);
+        fgets(buffer, 73, fptr);
         while (!feof(fptr)) {
             for (i=strlen(buffer) - 1; i > 0; i--) {
                 if (buffer[i] != '\r' && buffer[i] != '\n') {
@@ -727,7 +727,7 @@ int main(int argc, char **argv)
 
             quote_line_count++;
 
-            fgets(buffer, 74, fptr);
+            fgets(buffer, 73, fptr);
         }
         fclose(fptr);
         unlink(msgtmp);
