@@ -559,6 +559,9 @@ void bwave_upload_reply() {
 	FILE *upl_file;
 	FILE *msg_file;
 	int sem_fd;
+	int msg_count;
+	
+	msg_count = 0;
 	
 	snprintf(buffer, 1024, "%s/node%d", conf.bbs_path, mynode);
 
@@ -661,15 +664,16 @@ void bwave_upload_reply() {
 					addr.net = converts(upl_rec.destnet);
 					addr.node = converts(upl_rec.destnode);
 					addr.zone = converts(upl_rec.destpoint);
+					netmail = 1;
 				} else if (conf.mail_conferences[confr]->mail_areas[area]->type == TYPE_ECHOMAIL_AREA) {
 					if (msg_attr & UPL_PRIVATE) {
 						continue;
 					}
-
+					echomail = 1;
 				} else { // Local area
 					if (msg_attr & UPL_PRIVATE) {
 						continue;
-					}					
+					}		
 				}
 				
 				snprintf(msgbuffer, 1024, "%s/node%d/bwave/%s", conf.bbs_path, mynode, upl_rec.filename);
@@ -726,17 +730,7 @@ void bwave_upload_reply() {
 					// failed to add message
 					s_printf(get_string(197));
 				} else {
-					if (conf.mail_conferences[confr]->mail_areas[area]->type == TYPE_NETMAIL_AREA) {
-						if (conf.netmail_sem != NULL) {
-							sem_fd = open(conf.netmail_sem, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
-							close(sem_fd);
-						}
-					} else if (conf.mail_conferences[confr]->mail_areas[area]->type == TYPE_ECHOMAIL_AREA) {
-						if (conf.echomail_sem != NULL) {
-							sem_fd = open(conf.echomail_sem, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
-							close(sem_fd);
-						}						
-					}
+					msg_count++;
 				}
 				
 				free(body);
@@ -747,9 +741,25 @@ void bwave_upload_reply() {
 	snprintf(buffer, 1024, "%s/node%d/bwave/", conf.bbs_path, mynode);
 	recursive_delete(buffer);
 
-
-			
+	if (netmail == 1) {
+		if (conf.netmail_sem != NULL) {
+			sem_fd = open(conf.netmail_sem, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
+			close(sem_fd);
+		}
+	} 
+	if (echomail == 1) {
+		if (conf.echomail_sem != NULL) {
+			sem_fd = open(conf.echomail_sem, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
+			close(sem_fd);
+		}						
+	}
+		
 	s_printf("\r\n");
+	
+	if (msg_count > 0) {
+		s_printf(get_string(204), msg_count); 
+	}
+	
 	s_printf(get_string(6));
 	s_getc();
 }
