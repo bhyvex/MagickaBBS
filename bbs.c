@@ -10,6 +10,8 @@
 #include <sys/utsname.h>
 #include <sys/time.h>
 #include <stdarg.h>
+#include <fts.h>
+#include <errno.h>
 #include "bbs.h"
 #include "lua/lua.h"
 #include "lua/lualib.h"
@@ -799,4 +801,55 @@ void runbbs_ssh(char *ip) {
 		exit(1);
 	}
 	runbbs_real(-1, ip, 1);
+}
+
+int recursive_delete(const char *dir) {
+    int ret = 0;
+    FTS *ftsp = NULL;
+    FTSENT *curr;
+
+    char *files[] = { (char *) dir, NULL };
+
+    ftsp = fts_open(files, FTS_NOCHDIR | FTS_PHYSICAL | FTS_XDEV, NULL);
+    if (!ftsp) {
+        dolog("%s: fts_open failed: %s", dir, strerror(errno));
+        ret = -1;
+        goto finish;
+    }
+
+    while ((curr = fts_read(ftsp))) {
+        switch (curr->fts_info) {
+        case FTS_NS:
+        case FTS_DNR:
+        case FTS_ERR:
+            dolog("%s: fts_read error: %s", curr->fts_accpath, strerror(curr->fts_errno));
+            break;
+
+        case FTS_DC:
+        case FTS_DOT:
+        case FTS_NSOK:
+            break;
+
+        case FTS_D:
+            break;
+
+        case FTS_DP:
+        case FTS_F:
+        case FTS_SL:
+        case FTS_SLNONE:
+        case FTS_DEFAULT:
+            if (remove(curr->fts_accpath) < 0) {
+                dolog("%s: Failed to remove: %s", curr->fts_path, strerror(errno));
+                ret = -1;
+            }
+            break;
+        }
+    }
+
+finish:
+    if (ftsp) {
+        fts_close(ftsp);
+    }
+
+    return ret;
 }

@@ -174,6 +174,7 @@ struct msg_headers {
 	int msg_count;
 };
 
+extern int recursive_delete(const char *dir);
 extern void automessage_write(struct user_record *user);
 extern void automessage_display();
 extern void dolog(char *fmt, ...);

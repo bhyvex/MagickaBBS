@@ -16,6 +16,7 @@
 extern struct bbs_config conf;
 extern int gSocket;
 extern int sshBBS;
+extern int mynode;
 
 struct file_entry {
 	char *filename;
@@ -217,6 +218,88 @@ void upload_zmodem(struct user_record *user, char *upload_p) {
 	}	
 }
 
+char *get_file_id_diz(char *filename) {
+	char *description;
+	char buffer[1024];
+	struct stat s;
+	int bpos;
+	int i;
+	FILE *fptr;
+	int len;
+	
+	if (tolower(filename[strlen(filename) - 1]) != 'p' || tolower(filename[strlen(filename) - 2]) != 'i' || tolower(filename[strlen(filename) - 3]) != 'z') {
+		return NULL;
+	}
+	
+	snprintf(buffer, 1024, "%s/node%d", conf.bbs_path, mynode);
+	if (stat(buffer, &s) != 0) {
+		mkdir(buffer, 0755);
+	}
+
+	snprintf(buffer, 1024, "%s/node%d/temp", conf.bbs_path, mynode);
+	if (stat(buffer, &s) != 0) {
+		
+		if (recursive_delete(buffer) != 0) {
+			return NULL;
+		}
+	}
+	
+	mkdir(buffer, 0755);
+	
+	bpos = 0;
+	for (i=0;i<strlen(conf.unzip_cmd);i++) {
+		if (conf.unzip_cmd[i] == '*') {
+			i++;
+			if (conf.unzip_cmd[i] == 'a') {
+				sprintf(&buffer[bpos], "%s", filename);
+				bpos = strlen(buffer);
+			} else if (conf.unzip_cmd[i] == 'd') {
+				sprintf(&buffer[bpos], "%s/node%d/temp/", conf.bbs_path, mynode);
+				bpos = strlen(buffer);				
+			} else if (conf.unzip_cmd[i] == '*') {
+				buffer[bpos++] = '*';
+				buffer[bpos] = '\0';
+			}
+		} else {
+			buffer[bpos++] = conf.unzip_cmd[i];
+			buffer[bpos] = '\0';
+		}
+	}
+	system(buffer);
+	
+	snprintf(buffer, 1024, "%s/node%d/temp/FILE_ID.DIZ", conf.bbs_path, mynode);
+	if (stat(buffer, &s) != 0) {
+		snprintf(buffer, 1024, "%s/node%d/temp/file_id.diz", conf.bbs_path, mynode);
+		if (stat(buffer, &s) != 0) {
+			snprintf(buffer, 1024, "%s/node%d/temp", conf.bbs_path, mynode);
+			recursive_delete(buffer);
+			return NULL;
+		}
+	}
+	
+	description = (char *)malloc(s.st_size + 1);
+	
+	fptr = fopen(buffer, "rb");
+	
+	fread(description, 1, s.st_size, fptr);
+	description[s.st_size] = '\0';
+	fclose(fptr);
+	
+	bpos = 0;
+	len = strlen(description);
+	for (i=0;i<len;i++) {
+		if (description[i] == '\r') {
+			continue;
+		} else {
+			description[bpos++] = description[i];
+			
+		}
+	}
+	description[bpos] = '\0';
+	
+	return description;
+}
+
 void upload(struct user_record *user) {
 	char buffer[331];
 	char buffer2[66];
@@ -231,26 +314,36 @@ void upload(struct user_record *user) {
 						"approved INTEGER);";
 	char *sql = "INSERT INTO files (filename, description, size, dlcount, approved) VALUES(?, ?, ?, 0, 0)";
 	sqlite3 *db;
-  sqlite3_stmt *res;
-  int rc;
-  struct stat s;
-  char *err_msg = NULL;
-
+	sqlite3_stmt *res;
+	int rc;
+	struct stat s;
+	char *err_msg = NULL;
+	char *description;
+	
 	upload_zmodem(user, conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->upload_path);
 
-
-	s_printf("\r\nPlease enter a description:\r\n");
-	buffer[0] = '\0';
-	for (i=0;i<5;i++) {
-		s_printf("\r\n%d: ", i);
-		s_readstring(buffer2, 65);
-		if (strlen(buffer2) == 0) {
-			break;
+	description = NULL;
+	
+	s_printf(get_string(198));
+	description = get_file_id_diz(upload_filename);
+	
+	if (description == NULL) {
+		s_printf(get_string(199));
+		s_printf(get_string(200));
+		buffer[0] = '\0';
+		for (i=0;i<5;i++) {
+			s_printf("\r\n%d: ", i);
+			s_readstring(buffer2, 65);
+			if (strlen(buffer2) == 0) {
+				break;
+			}
+			strcat(buffer, buffer2);
+			strcat(buffer, "\n");
 		}
-		strcat(buffer, buffer2);
-		strcat(buffer, "\n");
-	}
 
+	} else {
+		s_printf(get_string(201));
+	}
 	sprintf(buffer3, "%s/%s.sq3", conf.bbs_path, conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->database);
 
 	rc = sqlite3_open(buffer3, &db);
@@ -266,6 +359,9 @@ void upload(struct user_record *user) {
         dolog("SQL error: %s", err_msg);
         sqlite3_free(err_msg);
         sqlite3_close(db);
+		if (description != NULL) {
+			free(description);
+		}        
         return;
     }
     rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
@@ -274,12 +370,19 @@ void upload(struct user_record *user) {
 		stat(upload_filename, &s);
 
         sqlite3_bind_text(res, 1, upload_filename, -1, 0);
-        sqlite3_bind_text(res, 2, buffer, -1, 0);
+        if (description == NULL) {
+			sqlite3_bind_text(res, 2, buffer, -1, 0);
+		} else {
+			sqlite3_bind_text(res, 2, description, -1, 0);
+		}
         sqlite3_bind_int(res, 3, s.st_size);
     } else {
       	dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
 		sqlite3_finalize(res);
 		sqlite3_close(db);
+		if (description != NULL) {
+			free(description);
+		}
 		return;
     }
 
@@ -289,10 +392,20 @@ void upload(struct user_record *user) {
 	      dolog("execution failed: %s", sqlite3_errmsg(db));
         sqlite3_finalize(res);
 		sqlite3_close(db);
+		if (description != NULL) {
+			free(description);
+		}		
 		return;
     }
     sqlite3_finalize(res);
     sqlite3_close(db);
+    if (description != NULL) {
+		free(description);
+	}
+	
+	s_printf(get_string(202));
+	s_printf(get_string(6));
+	s_getc();
 }
 
 void download_zmodem(struct user_record *user, char *filename) {

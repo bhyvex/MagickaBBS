@@ -196,3 +196,8 @@ Is this Correct? (Y/N)
 \e[1;32mScanned \e[1;37m%s\e[1;32m->\e[1;37m%s\e[1;32m got \e[1;37m%d\e[1;32m msgs...\e[0m\r\n
 \e[1;31mInvalid Reply Packet!\e[0m
 \r\n\e[1;31mFailed to add message\e[0m\r\n
+\r\n\e[1;32mChecking for file_id.diz...\r\n
+...Not Found!\r\n\r\n
+\r\nPlease enter a description:\r\n
+...Found!\r\n\r\n
+\e[1;32mUpload Successful!\e[0m\r\n

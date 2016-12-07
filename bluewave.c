@@ -228,15 +228,21 @@ void bwave_create_packet() {
 		mkdir(buffer, 0755);
 	}
 
+	snprintf(buffer, 1024, "%s/node%d/bwave/", conf.bbs_path, mynode);
 	
-	snprintf(buffer, 1024, "%s/node%d/%s.FTI", conf.bbs_path, mynode, conf.bwave_name);
+	if (stat(buffer, &s) == 0) {
+		recursive_delete(buffer);
+	}
+	mkdir(buffer, 0755);
+	
+	snprintf(buffer, 1024, "%s/node%d/bwave/%s.FTI", conf.bbs_path, mynode, conf.bwave_name);
 	
 	fti_file = fopen(buffer, "wb");
 	
-	snprintf(buffer, 1024, "%s/node%d/%s.MIX", conf.bbs_path, mynode, conf.bwave_name);
+	snprintf(buffer, 1024, "%s/node%d/bwave/%s.MIX", conf.bbs_path, mynode, conf.bwave_name);
 	mix_file = fopen(buffer, "wb");
 	
-	snprintf(buffer, 1024, "%s/node%d/%s.DAT", conf.bbs_path, mynode, conf.bwave_name);
+	snprintf(buffer, 1024, "%s/node%d/bwave/%s.DAT", conf.bbs_path, mynode, conf.bwave_name);
 	dat_file = fopen(buffer, "wb");
 	
 	s_printf("\r\n");
@@ -307,7 +313,7 @@ void bwave_create_packet() {
 	fclose(mix_file);
 	fclose(fti_file);
 	
-	snprintf(buffer, 1024, "%s/node%d/%s.INF", conf.bbs_path, mynode, conf.bwave_name);
+	snprintf(buffer, 1024, "%s/node%d/bwave/%s.INF", conf.bbs_path, mynode, conf.bwave_name);
 	
 	inf_file = fopen(buffer, "wb");
 	fwrite(&hdr, sizeof(INF_HEADER), 1, inf_file);
@@ -337,7 +343,7 @@ void bwave_create_packet() {
 					sprintf(&buffer[bpos], "%s", archive);
 					bpos = strlen(buffer);
 				} else if (conf.zip_cmd[i] == 'f') {
-					sprintf(&buffer[bpos], "%s/node%d/%s.INF %s/node%d/%s.MIX %s/node%d/%s.FTI %s/node%d/%s.DAT", conf.bbs_path, mynode, conf.bwave_name, conf.bbs_path, mynode, conf.bwave_name, conf.bbs_path, mynode, conf.bwave_name, conf.bbs_path, mynode, conf.bwave_name);
+					sprintf(&buffer[bpos], "%s/node%d/bwave/%s.INF %s/node%d/bwave/%s.MIX %s/node%d/bwave/%s.FTI %s/node%d/bwave/%s.DAT", conf.bbs_path, mynode, conf.bwave_name, conf.bbs_path, mynode, conf.bwave_name, conf.bbs_path, mynode, conf.bwave_name, conf.bbs_path, mynode, conf.bwave_name);
 					bpos = strlen(buffer);
 				} else if (conf.zip_cmd[i] == '*') {
 					buffer[bpos++] = '*';
@@ -360,14 +366,9 @@ void bwave_create_packet() {
 			tcsetattr(STDIN_FILENO, TCSANOW, &oldit);
 			tcsetattr(STDOUT_FILENO, TCSANOW, &oldot);
 		}
-		snprintf(buffer, 1024, "%s/node%d/%s.FTI", conf.bbs_path, mynode, conf.bwave_name);
-		unlink(buffer);
-		snprintf(buffer, 1024, "%s/node%d/%s.MIX", conf.bbs_path, mynode, conf.bwave_name);
-		unlink(buffer);
-		snprintf(buffer, 1024, "%s/node%d/%s.DAT", conf.bbs_path, mynode, conf.bwave_name);
-		unlink(buffer);
-		snprintf(buffer, 1024, "%s/node%d/%s.INF", conf.bbs_path, mynode, conf.bwave_name);
-		unlink(buffer);
+		snprintf(buffer, 1024, "%s/node%d/bwave", conf.bbs_path, mynode);
+		recursive_delete(buffer);
+		
 		unlink(archive);
 		gUser->bwavepktno++;
 		if (gUser->bwavepktno > 999) {
@@ -565,7 +566,12 @@ void bwave_upload_reply() {
 		mkdir(buffer, 0755);
 	}
 	
-	snprintf(buffer, 1024, "%s/node%d/", conf.bbs_path, mynode);
+	snprintf(buffer, 1024, "%s/node%d/bwave/", conf.bbs_path, mynode);
+	
+	if (stat(buffer, &s) == 0) {
+		recursive_delete(buffer);
+	}
+	mkdir(buffer, 0755);	
 	
 	upload_zmodem(gUser, buffer);
 	
@@ -577,7 +583,7 @@ void bwave_upload_reply() {
 				sprintf(&buffer[bpos], "%s", upload_filename);
 				bpos = strlen(buffer);
 			} else if (conf.unzip_cmd[i] == 'd') {
-				sprintf(&buffer[bpos], "%s/node%d/", conf.bbs_path, mynode);
+				sprintf(&buffer[bpos], "%s/node%d/bwave/", conf.bbs_path, mynode);
 				bpos = strlen(buffer);				
 			} else if (conf.unzip_cmd[i] == '*') {
 				buffer[bpos++] = '*';
@@ -592,12 +598,12 @@ void bwave_upload_reply() {
 	
 	unlink(upload_filename);
 	
-	snprintf(buffer, 1024, "%s/node%d/%s.UPL", conf.bbs_path, mynode, conf.bwave_name);
+	snprintf(buffer, 1024, "%s/node%d/bwave/%s.UPL", conf.bbs_path, mynode, conf.bwave_name);
 	
 	upl_file = fopen(buffer, "r");
 	
 	if (!upl_file) {
-		snprintf(buffer, 1024, "%s/node%d/%s.upl", conf.bbs_path, mynode, conf.bwave_name);
+		snprintf(buffer, 1024, "%s/node%d/bwave/%s.upl", conf.bbs_path, mynode, conf.bwave_name);
 		upl_file = fopen(buffer, "r");
 		if (!upl_file) {
 			s_printf(get_string(196));
@@ -666,7 +672,7 @@ void bwave_upload_reply() {
 					}					
 				}
 				
-				snprintf(msgbuffer, 1024, "%s/node%d/%s", conf.bbs_path, mynode, upl_rec.filename);
+				snprintf(msgbuffer, 1024, "%s/node%d/bwave/%s", conf.bbs_path, mynode, upl_rec.filename);
 				
 				if (conf.mail_conferences[confr]->tagline != NULL) {
 					tagline = conf.mail_conferences[confr]->tagline;
@@ -702,9 +708,7 @@ void bwave_upload_reply() {
 				
 				fread(body, 1, s.st_size, msg_file);
 				fclose(msg_file);
-				
-				unlink(msgbuffer);
-				
+							
 				body[s.st_size] = '\0';
 				
 				strcat(body, originlinebuffer);
@@ -740,12 +744,10 @@ void bwave_upload_reply() {
 		}
 	}
 	
-	fclose(upl_file);
-	unlink(buffer);
-	snprintf(buffer, 1024, "%s/node%d/%s.OLC", conf.bbs_path, mynode, conf.bwave_name);
-	unlink(buffer);
-	snprintf(buffer, 1024, "%s/node%d/%s.REQ", conf.bbs_path, mynode, conf.bwave_name);
-	unlink(buffer);
+	snprintf(buffer, 1024, "%s/node%d/bwave/", conf.bbs_path, mynode);
+	recursive_delete(buffer);
+
+
 			
 	s_printf("\r\n");
 	s_printf(get_string(6));
