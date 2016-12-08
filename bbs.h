@@ -127,6 +127,8 @@ struct bbs_config {
 	int nodes;
 	int newuserlvl;
 	int automsgwritelvl;
+	int broadcast_enable;
+	int broadcast_port;
 	int mail_conference_count;
 	struct mail_conference **mail_conferences;
 	int door_count;

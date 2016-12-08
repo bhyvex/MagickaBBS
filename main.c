@@ -379,6 +379,14 @@ static int handler(void* user, const char* section, const char* name,
 			conf->bwave_max_msgs = atoi(value);
 		} else if (strcasecmp(name, "archivers") == 0) {
 			conf->archiver_path = strdup(value);
+		} else if (strcasecmp(name, "broadcast enable") == 0) {
+			if (strcasecmp(value, "true") == 0) {
+				conf->broadcast_enable = 1;
+			} else {
+				conf->broadcast_enable = 0;
+			}
+		} else if (strcasecmp(name, "broadcast port") == 0) {
+			conf->broadcast_port = atoi(value);
 		}
 	} else if (strcasecmp(section, "paths") == 0){
 		if (strcasecmp(name, "ansi path") == 0) {
@@ -842,6 +850,7 @@ int main(int argc, char **argv) {
 	conf.www_path = NULL;
 	conf.archiver_path = NULL;
 	conf.archiver_count = 0;
+	conf.broadcast_enable = 0;
 	
 	// Load BBS data
 	if (ini_parse(argv[1], handler, &conf) <0) {

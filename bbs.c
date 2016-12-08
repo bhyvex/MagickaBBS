@@ -12,6 +12,7 @@
 #include <stdarg.h>
 #include <fts.h>
 #include <errno.h>
+#include <sys/socket.h>
 #include "bbs.h"
 #include "lua/lua.h"
 #include "lua/lualib.h"
@@ -41,6 +42,44 @@ void sigint_handler(int s)
 {
 	// do nothing...
 }
+void broadcast(char *mess, ...) {
+	char buffer[512];
+    struct sockaddr_in s;
+	int bcast_sock;
+	int broadcastEnable=1;
+	int ret;	
+	
+	
+	
+	if (conf.broadcast_enable) {
+		bcast_sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+		ret=setsockopt(bcast_sock, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable));
+		
+		if (ret) {
+			dolog("broadcast: Couldn't set socket to broadcast mode");
+			close(bcast_sock);
+			return;
+		}
+		memset(&s, 0, sizeof(struct sockaddr_in));
+		
+		s.sin_family=AF_INET;
+		s.sin_addr.s_addr = htonl(INADDR_ANY);
+		s.sin_port = htons((unsigned short)conf.broadcast_port);
+		bind(bcast_sock, (struct sockaddr *)&s, sizeof(struct sockaddr_in));
+		
+		va_list ap;
+		va_start(ap, mess);
+		vsnprintf(buffer, 512, mess, ap);
+		va_end(ap);		
+		
+		ret = sendto(bcast_sock, buffer, strlen(buffer) + 1, 0, (struct sockaddr *)&s, sizeof(struct sockaddr_in));
+		
+		if (ret < 0) {
+			dolog("broadcast: Couldn't send broadcast");
+		}
+		close(bcast_sock);
+	}
+}
 
 void dolog(char *fmt, ...) {
 	char buffer[512];
@@ -61,12 +100,12 @@ void dolog(char *fmt, ...) {
 		dolog("Error opening log file!");
 		return;
 	}
-  va_list ap;
-  va_start(ap, fmt);
-  vsnprintf(buffer, 512, fmt, ap);
-  va_end(ap);
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(buffer, 512, fmt, ap);
+	va_end(ap);
 
-  fprintf(logfptr, "%02d:%02d:%02d [%d][%s] %s\n", time_now.tm_hour, time_now.tm_min, time_now.tm_sec, mypid, ipaddress, buffer);
+	fprintf(logfptr, "%02d:%02d:%02d [%d][%s] %s\n", time_now.tm_hour, time_now.tm_min, time_now.tm_sec, mypid, ipaddress, buffer);
 
 	fclose(logfptr);
 }
@@ -680,6 +719,7 @@ tryagain:
 
 	// do post-login
 	dolog("%s logged in, on node %d", user->loginname, mynode);
+	broadcast("%s: %s logged in, on node %d", conf.bbs_name, user->loginname, mynode);
 	// check time left
 	now = time(NULL);
 	localtime_r(&now, &thetime);
@@ -749,6 +789,7 @@ tryagain:
 
 
 	dolog("%s is logging out, on node %d", user->loginname, mynode);
+	broadcast("%s: %s is logging out, on node %d", conf.bbs_name, user->loginname, mynode);
 	disconnect("Log out");
 }
 
