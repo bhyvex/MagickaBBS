@@ -4,17 +4,22 @@
 #include <ctype.h>
 #include "bbs.h"
 
+extern struct bbs_config conf;
+
 void settings_menu(struct user_record *user) {
 	char buffer[256];
 	int dosettings = 0;
 	char c;
 	char *hash;
+	int new_arc;
+	int i;
 
 	while (!dosettings) {
 		s_printf(get_string(149));
 		s_printf(get_string(150));
 		s_printf(get_string(151));
 		s_printf(get_string(152), user->location);
+		s_printf(get_string(205), conf.archivers[user->defarchiver - 1]->name);
 		s_printf(get_string(153));
 		s_printf(get_string(154));
 
@@ -62,6 +67,26 @@ void settings_menu(struct user_record *user) {
 					user->location = (char *)malloc(strlen(buffer) + 1);
 					strcpy(user->location, buffer);
 					save_user(user);
+				}
+				break;
+			case 'a':
+				{
+					s_printf(get_string(206));
+					
+					for (i=0;i<conf.archiver_count;i++) {
+						s_printf(get_string(207), i + 1, conf.archivers[i]->name);
+					}
+					
+					s_printf(get_string(208));
+					s_readstring(buffer, 5);
+					new_arc = atoi(buffer);
+					
+					if (new_arc - 1 < 0 || new_arc > conf.archiver_count) {
+						break;
+					} else {
+						user->defarchiver = new_arc;
+						save_user(user);
+					}
 				}
 				break;
 			case 'q':
