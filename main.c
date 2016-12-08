@@ -67,6 +67,47 @@ void sigchld_handler(int s)
     errno = saved_errno;
 }
 
+static int archiver_config_handler(void* user, const char* section, const char* name,
+                   const char* value)
+{
+	struct bbs_config *conf = (struct bbs_config *)user;
+	int i;
+
+	for (i=0;i<conf->archiver_count;i++) {
+		if (strcasecmp(conf->archivers[i]->name, section) == 0) {
+			// found it
+			if (strcasecmp(name, "extension") == 0) {
+				conf->archivers[i]->extension = strdup(value);
+			} else if (strcasecmp(name, "unpack") == 0) {
+				conf->archivers[i]->unpack = strdup(value);
+			} else if (strcasecmp(name, "pack") == 0) {
+				conf->archivers[i]->pack = strdup(value);
+			}
+			return 1;
+		}
+	}
+
+	if (conf->archiver_count == 0) {
+		conf->archivers = (struct archiver **)malloc(sizeof(struct archiver *));
+	} else {
+		conf->archivers = (struct archiver **)realloc(conf->archivers, sizeof(struct archiver *) * (conf->archiver_count + 1));
+	}
+
+	conf->archivers[conf->archiver_count] = (struct archiver *)malloc(sizeof(struct archiver));
+
+	conf->archivers[conf->archiver_count]->name = strdup(section);
+
+	if (strcasecmp(name, "extension") == 0) {
+		conf->archivers[conf->archiver_count]->extension = strdup(value);
+	} else if (strcasecmp(name, "unpack") == 0) {
+		conf->archivers[conf->archiver_count]->unpack = strdup(value);
+	} else if (strcasecmp(name, "pack") == 0) {
+		conf->archivers[conf->archiver_count]->pack = strdup(value);
+	}
+	conf->archiver_count++;
+
+	return 1;
+}
 
 static int door_config_handler(void* user, const char* section, const char* name,
                    const char* value)
@@ -336,10 +377,8 @@ static int handler(void* user, const char* section, const char* name,
 			conf->main_aka = parse_fido_addr(value);
 		} else if (strcasecmp(name, "qwk max messages") == 0) {
 			conf->bwave_max_msgs = atoi(value);
-		} else if (strcasecmp(name, "zip command") == 0) {
-			conf->zip_cmd = strdup(value);
-		} else if (strcasecmp(name, "unzip command") == 0) {
-			conf->unzip_cmd = strdup(value);
+		} else if (strcasecmp(name, "archivers") == 0) {
+			conf->archiver_path = strdup(value);
 		}
 	} else if (strcasecmp(section, "paths") == 0){
 		if (strcasecmp(name, "ansi path") == 0) {
@@ -801,6 +840,8 @@ int main(int argc, char **argv) {
 	conf.telnet_port = 0;
 	conf.string_file = NULL;
 	conf.www_path = NULL;
+	conf.archiver_path = NULL;
+	conf.archiver_count = 0;
 	
 	// Load BBS data
 	if (ini_parse(argv[1], handler, &conf) <0) {
@@ -825,6 +866,13 @@ int main(int argc, char **argv) {
 	if (ini_parse("config/doors.ini", door_config_handler, &conf) <0) {
 		fprintf(stderr, "Unable to load configuration ini (doors.ini)!\n");
 		exit(-1);
+	}
+
+	if (conf.archiver_path != NULL) {
+		if (ini_parse(conf.archiver_path, archiver_config_handler, &conf) <0) {
+			fprintf(stderr, "Unable to load configuration ini %s\n", conf.archiver_path);
+			exit(-1);
+		}
 	}
 
 	load_strings();

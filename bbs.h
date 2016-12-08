@@ -86,6 +86,13 @@ struct file_directory {
 	struct file_sub **file_subs;
 };
 
+struct archiver {
+	char *name;
+	char *extension;
+	char *unpack;
+	char *pack;
+};
+
 struct bbs_config {
 	char *bbs_name;
 	char *bwave_name;
@@ -110,8 +117,6 @@ struct bbs_config {
 	char *irc_server;
 	int irc_port;
 	char *irc_channel;
-	char *zip_cmd;
-	char *unzip_cmd;
 	int bwave_max_msgs;
 	struct fido_addr *main_aka;
 	
@@ -130,6 +135,10 @@ struct bbs_config {
 	struct file_directory **file_directories;
 	int text_file_count;
 	struct text_file **text_files;
+	
+	char *archiver_path;
+	int archiver_count;
+	struct archiver **archivers;
 };
 
 struct sec_level_t {
@@ -155,6 +164,8 @@ struct user_record {
 	int cur_file_sub;
 	int timeson;
 	int bwavepktno;
+	int defarchiver;
+	int defprotocol;
 };
 
 struct jam_msg {

@@ -336,21 +336,21 @@ void bwave_create_packet() {
 		bpos = 0;
 		snprintf(archive, 1024, "%s/node%d/%s.%03d", conf.bbs_path, mynode, conf.bwave_name, gUser->bwavepktno);
 		
-		for (i=0;i<strlen(conf.zip_cmd);i++) {
-			if (conf.zip_cmd[i] == '*') {
+		for (i=0;i<strlen(conf.archivers[gUser->defarchiver-1]->pack);i++) {
+			if (conf.archivers[gUser->defarchiver-1]->pack[i] == '*') {
 				i++;
-				if (conf.zip_cmd[i] == 'a') {
+				if (conf.archivers[gUser->defarchiver-1]->pack[i] == 'a') {
 					sprintf(&buffer[bpos], "%s", archive);
 					bpos = strlen(buffer);
-				} else if (conf.zip_cmd[i] == 'f') {
+				} else if (conf.archivers[gUser->defarchiver-1]->pack[i] == 'f') {
 					sprintf(&buffer[bpos], "%s/node%d/bwave/%s.INF %s/node%d/bwave/%s.MIX %s/node%d/bwave/%s.FTI %s/node%d/bwave/%s.DAT", conf.bbs_path, mynode, conf.bwave_name, conf.bbs_path, mynode, conf.bwave_name, conf.bbs_path, mynode, conf.bwave_name, conf.bbs_path, mynode, conf.bwave_name);
 					bpos = strlen(buffer);
-				} else if (conf.zip_cmd[i] == '*') {
+				} else if (conf.archivers[gUser->defarchiver-1]->pack[i] == '*') {
 					buffer[bpos++] = '*';
 					buffer[bpos] = '\0';
 				}
 			} else {
-				buffer[bpos++] = conf.zip_cmd[i];
+				buffer[bpos++] = conf.archivers[gUser->defarchiver-1]->pack[i];
 				buffer[bpos] = '\0';
 			}
 		}
@@ -579,21 +579,21 @@ void bwave_upload_reply() {
 	upload_zmodem(gUser, buffer);
 	
 	bpos = 0;
-	for (i=0;i<strlen(conf.unzip_cmd);i++) {
-		if (conf.unzip_cmd[i] == '*') {
+	for (i=0;i<strlen(conf.archivers[gUser->defarchiver-1]->unpack);i++) {
+		if (conf.archivers[gUser->defarchiver-1]->unpack[i] == '*') {
 			i++;
-			if (conf.unzip_cmd[i] == 'a') {
+			if (conf.archivers[gUser->defarchiver-1]->unpack[i] == 'a') {
 				sprintf(&buffer[bpos], "%s", upload_filename);
 				bpos = strlen(buffer);
-			} else if (conf.unzip_cmd[i] == 'd') {
+			} else if (conf.archivers[gUser->defarchiver-1]->unpack[i] == 'd') {
 				sprintf(&buffer[bpos], "%s/node%d/bwave/", conf.bbs_path, mynode);
 				bpos = strlen(buffer);				
-			} else if (conf.unzip_cmd[i] == '*') {
+			} else if (conf.archivers[gUser->defarchiver-1]->unpack[i] == '*') {
 				buffer[bpos++] = '*';
 				buffer[bpos] = '\0';
 			}
 		} else {
-			buffer[bpos++] = conf.unzip_cmd[i];
+			buffer[bpos++] = conf.archivers[gUser->defarchiver-1]->unpack[i];
 			buffer[bpos] = '\0';
 		}
 	}

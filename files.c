@@ -226,8 +226,31 @@ char *get_file_id_diz(char *filename) {
 	int i;
 	FILE *fptr;
 	int len;
+	int ext;
+	int arch;
 	
-	if (tolower(filename[strlen(filename) - 1]) != 'p' || tolower(filename[strlen(filename) - 2]) != 'i' || tolower(filename[strlen(filename) - 3]) != 'z') {
+	ext = 0;
+	arch = -1;
+	
+	for (i=strlen(filename)-1;i>=0;i--) {
+		if (filename[i] == '.') {
+			ext = i + 1;
+			break;
+		}
+	}
+	
+	if (ext == 0) {
+		return NULL;
+	}
+	
+	for (i=0;i<conf.archiver_count;i++) {
+		if (strcasecmp(&filename[ext], conf.archivers[i]->extension) == 0) {
+			arch = i;
+			break;
+		}
+	}
+	
+	if (arch == -1) {
 		return NULL;
 	}
 	
@@ -247,21 +270,21 @@ char *get_file_id_diz(char *filename) {
 	mkdir(buffer, 0755);
 	
 	bpos = 0;
-	for (i=0;i<strlen(conf.unzip_cmd);i++) {
-		if (conf.unzip_cmd[i] == '*') {
+	for (i=0;i<strlen(conf.archivers[arch]->unpack);i++) {
+		if (conf.archivers[arch]->unpack[i] == '*') {
 			i++;
-			if (conf.unzip_cmd[i] == 'a') {
+			if (conf.archivers[arch]->unpack[i] == 'a') {
 				sprintf(&buffer[bpos], "%s", filename);
 				bpos = strlen(buffer);
-			} else if (conf.unzip_cmd[i] == 'd') {
+			} else if (conf.archivers[arch]->unpack[i] == 'd') {
 				sprintf(&buffer[bpos], "%s/node%d/temp/", conf.bbs_path, mynode);
 				bpos = strlen(buffer);				
-			} else if (conf.unzip_cmd[i] == '*') {
+			} else if (conf.archivers[arch]->unpack[i] == '*') {
 				buffer[bpos++] = '*';
 				buffer[bpos] = '\0';
 			}
 		} else {
-			buffer[bpos++] = conf.unzip_cmd[i];
+			buffer[bpos++] = conf.archivers[arch]->unpack[i];
 			buffer[bpos] = '\0';
 		}
 	}
