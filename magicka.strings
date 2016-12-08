@@ -202,3 +202,4 @@ Is this Correct? (Y/N)
 ...Found!\r\n\r\n
 \e[1;32mUpload Successful!\e[0m\r\n
 \e[1;31mUser not found! Assuming new user...\e[0m\r\n\r\n
+\e[1;32mSuccesfully processed \e[1;37m%d \e[1;32mmessages!\r\n\e[0m
