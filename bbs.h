@@ -129,6 +129,8 @@ struct bbs_config {
 	int automsgwritelvl;
 	int broadcast_enable;
 	int broadcast_port;
+	char *broadcast_address;
+	
 	int mail_conference_count;
 	struct mail_conference **mail_conferences;
 	int door_count;

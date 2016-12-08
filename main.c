@@ -387,6 +387,8 @@ static int handler(void* user, const char* section, const char* name,
 			}
 		} else if (strcasecmp(name, "broadcast port") == 0) {
 			conf->broadcast_port = atoi(value);
+		} else if (strcasecmp(name, "broadcast address") == 0) {
+			conf->broadcast_address = strdup(value);
 		}
 	} else if (strcasecmp(section, "paths") == 0){
 		if (strcasecmp(name, "ansi path") == 0) {

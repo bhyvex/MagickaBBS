@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -63,7 +64,7 @@ void broadcast(char *mess, ...) {
 		memset(&s, 0, sizeof(struct sockaddr_in));
 		
 		s.sin_family=AF_INET;
-		s.sin_addr.s_addr = htonl(INADDR_ANY);
+		s.sin_addr.s_addr = inet_addr(conf.broadcast_address);
 		s.sin_port = htons((unsigned short)conf.broadcast_port);
 		bind(bcast_sock, (struct sockaddr *)&s, sizeof(struct sockaddr_in));
 		
