@@ -1529,7 +1529,7 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
         should_break = 0;
        
         while (!should_break) {
-            s_printf("\e[7;1H\e[0J");
+            s_printf("\e[7;1H\e[J");
             for (z=position;z<msg_line_count;z++) {
                 
                 s_printf("%s\e[K\r\n", msg_lines[z]);
