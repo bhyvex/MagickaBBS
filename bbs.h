@@ -221,7 +221,7 @@ extern void free_message_headers(struct msg_headers *msghs);
 extern struct msg_headers *read_message_headers(int msgconf, int msgarea, struct user_record *user);
 extern void mail_scan(struct user_record *user);
 extern int mail_menu(struct user_record *user);
-extern char *editor(struct user_record *user, char *quote, char *from, int email);
+extern char *editor(struct user_record *user, char *quote, int qlen, char *from, int email);
 extern char *external_editor(struct user_record *user, char *to, char *from, char *quote, int qlen, char *qfrom, char *subject, int email);
 extern int msg_is_to(struct user_record *user, char *addressed_to, char *address, int type, int rn, int msgconf);
 extern int msg_is_from(struct user_record *user, char *addressed_from, char *address, int type, int rn, int msgconf);

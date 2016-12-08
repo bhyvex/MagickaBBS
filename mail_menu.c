@@ -547,10 +547,10 @@ char *external_editor(struct user_record *user, char *to, char *from, char *quot
 			return body2;
 		}
 	}
-	return editor(user, quote, qfrom, email);
+	return editor(user, quote, qlen, qfrom, email);
 }
 
-char *editor(struct user_record *user, char *quote, char *from, int email) {
+char *editor(struct user_record *user, char *quote, int quotelen, char *from, int email) {
 	int lines = 0;
 	char buffer[256];
 	char linebuffer[80];
@@ -571,7 +571,7 @@ char *editor(struct user_record *user, char *quote, char *from, int email) {
 	memset(next_line_buffer, 0, 80);
 
 	if (quote != NULL) {
-		for (i=0;i<strlen(quote);i++) {
+		for (i=0;i<quotelen;i++) {
 			if (quote[i] == '\r' || lineat == 67) {
 				if (quotelines == 0) {
 					quotecontent = (char **)malloc(sizeof(char *));
