@@ -52,7 +52,7 @@ void broadcast(char *mess, ...) {
 	
 	
 	
-	if (conf.broadcast_enable) {
+	if (conf.broadcast_enable && conf.broadcast_port > 1024 && conf.broadcast_port < 65536 && conf.broadcast_address != NULL) {
 		bcast_sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 		ret=setsockopt(bcast_sock, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable));
 		

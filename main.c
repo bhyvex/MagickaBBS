@@ -853,6 +853,8 @@ int main(int argc, char **argv) {
 	conf.archiver_path = NULL;
 	conf.archiver_count = 0;
 	conf.broadcast_enable = 0;
+	conf.broadcast_port = 0;
+	conf.broadcast_address = NULL;
 	
 	// Load BBS data
 	if (ini_parse(argv[1], handler, &conf) <0) {
