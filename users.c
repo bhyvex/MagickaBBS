@@ -190,7 +190,7 @@ int inst_user(struct user_record *user) {
     if (rc == SQLITE_OK) {
         sqlite3_bind_text(res, 1, user->loginname, -1, 0);
         sqlite3_bind_text(res, 2, user->password, -1, 0);
-				sqlite3_bind_text(res, 3, user->salt, -1, 0);
+		sqlite3_bind_text(res, 3, user->salt, -1, 0);
         sqlite3_bind_text(res, 4, user->firstname, -1, 0);
         sqlite3_bind_text(res, 5, user->lastname, -1, 0);
         sqlite3_bind_text(res, 6, user->email, -1, 0);
