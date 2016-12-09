@@ -262,6 +262,8 @@ static int mail_area_handler(void* user, const char* section, const char* name,
 						mc->mail_areas[i]->type = TYPE_ECHOMAIL_AREA;
 					} else if (strcasecmp(value, "netmail") == 0) {
 						mc->mail_areas[i]->type = TYPE_NETMAIL_AREA;
+					} else if (strcasecmp(value, "newsgroup") == 0) {
+						mc->mail_areas[i]->type = TYPE_NEWSGROUP_AREA;
 					}
 				} else if (strcasecmp(name, "qwk name") == 0) {
 					mc->mail_areas[i]->qwkname = strdup(value);
@@ -296,6 +298,8 @@ static int mail_area_handler(void* user, const char* section, const char* name,
 				mc->mail_areas[mc->mail_area_count]->type = TYPE_ECHOMAIL_AREA;
 			} else if (strcasecmp(value, "netmail") == 0) {
 				mc->mail_areas[mc->mail_area_count]->type = TYPE_NETMAIL_AREA;
+			} else if (strcasecmp(value, "newsgroup") == 0) {
+				mc->mail_areas[mc->mail_area_count]->type = TYPE_NEWSGROUP_AREA;
 			}
 		} else if (strcasecmp(name, "qwk name") == 0) {
 			mc->mail_areas[mc->mail_area_count]->qwkname = strdup(value);

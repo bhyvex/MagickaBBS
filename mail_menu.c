@@ -1626,7 +1626,7 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 						sprintf(from, "%s %s", user->firstname, user->lastname);
 					}
 				}
-				if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_WWIV && conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_ECHOMAIL_AREA) {
+				if ((conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_WWIV && conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_ECHOMAIL_AREA) || conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NEWSGROUP_AREA) {
 					to = (char *)malloc(4);
 					strcpy(to, "ALL");
 				} else {
@@ -1676,7 +1676,7 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 
 
 
-					if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_ECHOMAIL_AREA) {
+					if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_ECHOMAIL_AREA || conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NEWSGROUP_AREA) {
 						jmh.Attribute |= MSG_TYPEECHO;
 
 						if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_FIDO) {
@@ -1830,7 +1830,7 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 								sem_fd = open(conf.netmail_sem, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
 								close(sem_fd);
 							}
-						} else if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_ECHOMAIL_AREA) {
+						} else if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_ECHOMAIL_AREA || conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NEWSGROUP_AREA) {
 							if (conf.echomail_sem != NULL) {
 								sem_fd = open(conf.echomail_sem, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
 								close(sem_fd);
@@ -2034,7 +2034,7 @@ int mail_menu(struct user_record *user) {
 						s_printf(get_string(113));
 						break;
 					}
-					if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_WWIV && conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type  == TYPE_ECHOMAIL_AREA) {
+					if ((conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_WWIV && conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type  == TYPE_ECHOMAIL_AREA) || conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NEWSGROUP_AREA) {
 						sprintf(buffer, "ALL");
 					} else {
 						s_printf(get_string(54));
@@ -2147,7 +2147,7 @@ int mail_menu(struct user_record *user) {
 						jsf.Buffer = (char *)subject;
 						JAM_PutSubfield(jsp, &jsf);
 
-						if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_ECHOMAIL_AREA) {
+						if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_ECHOMAIL_AREA || conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NEWSGROUP_AREA) {
 							jmh.Attribute |= MSG_TYPEECHO;
 
 							if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_FIDO) {
@@ -2272,7 +2272,7 @@ int mail_menu(struct user_record *user) {
 									sem_fd = open(conf.netmail_sem, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
 									close(sem_fd);
 								}
-							} else if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_ECHOMAIL_AREA) {
+							} else if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_ECHOMAIL_AREA || conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NEWSGROUP_AREA) {
 								if (conf.echomail_sem != NULL) {
 									sem_fd = open(conf.echomail_sem, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
 									close(sem_fd);

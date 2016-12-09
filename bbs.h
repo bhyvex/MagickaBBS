@@ -21,6 +21,7 @@
 #define TYPE_LOCAL_AREA    0
 #define TYPE_NETMAIL_AREA  1
 #define TYPE_ECHOMAIL_AREA 2
+#define TYPE_NEWSGROUP_AREA 3
 
 struct fido_addr {
 	unsigned short zone;

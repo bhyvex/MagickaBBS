@@ -283,7 +283,7 @@ void bwave_create_packet() {
 					flags |= INF_ECHO;
 				}
 				
-				if (conf.mail_conferences[i]->mail_areas[j]->type == TYPE_ECHOMAIL_AREA) {
+				if (conf.mail_conferences[i]->mail_areas[j]->type == TYPE_ECHOMAIL_AREA || conf.mail_conferences[i]->mail_areas[j]->type == TYPE_NEWSGROUP_AREA) {
 					flags |= INF_NO_PRIVATE;
 					flags |= INF_ECHO;
 				}
@@ -414,11 +414,21 @@ int bwave_add_message(int confr, int area, unsigned int dwritten, char *to, char
 	jsf.Buffer = (char *)buffer;
 	JAM_PutSubfield(jsp, &jsf);
 
-	jsf.LoID   = JAMSFLD_RECVRNAME;
-	jsf.HiID   = 0;
-	jsf.DatLen = strlen(to);
-	jsf.Buffer = (char *)to;
-	JAM_PutSubfield(jsp, &jsf);
+	if (conf.mail_conferences[confr]->mail_areas[area]->type == TYPE_NEWSGROUP_AREA) {
+		sprintf(buffer, "ALL");
+		jsf.LoID   = JAMSFLD_RECVRNAME;
+		jsf.HiID   = 0;
+		jsf.DatLen = strlen(buffer);
+		jsf.Buffer = (char *)buffer;
+		JAM_PutSubfield(jsp, &jsf);
+
+	} else {
+		jsf.LoID   = JAMSFLD_RECVRNAME;
+		jsf.HiID   = 0;
+		jsf.DatLen = strlen(to);
+		jsf.Buffer = (char *)to;
+		JAM_PutSubfield(jsp, &jsf);
+	}
 
 	jsf.LoID   = JAMSFLD_SUBJECT;
 	jsf.HiID   = 0;
@@ -426,7 +436,7 @@ int bwave_add_message(int confr, int area, unsigned int dwritten, char *to, char
 	jsf.Buffer = (char *)subject;
 	JAM_PutSubfield(jsp, &jsf);
 
-	if (conf.mail_conferences[confr]->mail_areas[area]->type == TYPE_ECHOMAIL_AREA) {
+	if (conf.mail_conferences[confr]->mail_areas[area]->type == TYPE_ECHOMAIL_AREA || conf.mail_conferences[confr]->mail_areas[area]->type == TYPE_NEWSGROUP_AREA) {
 		jmh.Attribute |= MSG_TYPEECHO;
 
 		if (conf.mail_conferences[confr]->fidoaddr->point) {
@@ -665,7 +675,7 @@ void bwave_upload_reply() {
 					addr.node = converts(upl_rec.destnode);
 					addr.zone = converts(upl_rec.destpoint);
 					netmail = 1;
-				} else if (conf.mail_conferences[confr]->mail_areas[area]->type == TYPE_ECHOMAIL_AREA) {
+				} else if (conf.mail_conferences[confr]->mail_areas[area]->type == TYPE_ECHOMAIL_AREA || conf.mail_conferences[confr]->mail_areas[area]->type == TYPE_NEWSGROUP_AREA) {
 					if (msg_attr & UPL_PRIVATE) {
 						continue;
 					}
