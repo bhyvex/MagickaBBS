@@ -104,7 +104,7 @@ char *message_editor() {
 
 
 
-                        od_set_cursor(position_y + 3, position_x + 1);
+                        od_set_cursor(position_y - top_of_screen + 3, position_x + 1);
                     }
                 } else if (ch.chKeyPress == OD_KEY_DOWN) {
                     if (position_y < body_line_count) {
@@ -118,7 +118,7 @@ char *message_editor() {
                             position_x = strlen(line);
                         }
 
-                        if (position_y > top_of_screen +20) {
+                        if (position_y > top_of_screen + 20) {
                             top_of_screen++;
 
                         }
@@ -334,7 +334,7 @@ char *message_editor() {
                         }
                         position_x = 0;
                         memset(line, 0, 81);
-                        od_set_cursor(position_y + 3, position_x + 1);
+                        od_set_cursor(position_y - top_of_screen + 3, position_x + 1);
                     } else {
                         if (strlen(line) >= 73) {
                             if (position_x == strlen(line)) {
@@ -480,7 +480,7 @@ char *message_editor() {
                         od_set_cursor(i - top_of_screen + 3, 1);
                         od_printf("%s", line);
                         od_clr_line();
-                        for (i=position_y;i<body_line_count;i++) {
+                        for (i=position_y;i<body_line_count && i - top_of_screen < 20;i++) {
                             od_set_cursor(i - top_of_screen + 4, 1);
                             od_printf("%s", body_lines[i]);
                             od_clr_line();
@@ -544,10 +544,10 @@ char *message_editor() {
                         }
                     }
 
-					if (position_y > 22) {
+					if (position_y > 20) {
                         od_set_cursor(23, position_x + 1);
 					} else {
-					    od_set_cursor(position_y + 3, position_x + 1);
+					    od_set_cursor(position_y - top_of_screen + 3, position_x + 1);
                     }
                 }
             }
