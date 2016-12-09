@@ -292,7 +292,7 @@ char s_getchar() {
 				}
 			}
 		}
-	} while (c == '\n');
+	} while (c == '\n' || c == '\0');
 	usertimeout = 10;
 
 	return (char)c;
@@ -313,6 +313,7 @@ void s_readstring(char *buffer, int max) {
 
 	for (i=0;i<max;i++) {
 		c = s_getchar();
+
 		if ((c == '\b' || c == 127) && i > 0) {
 			buffer[i-1] = '\0';
 			i -= 2;
