@@ -26,7 +26,7 @@ MYOBJS=
 
 # == END OF USER SETTINGS -- NO NEED TO CHANGE ANYTHING BELOW THIS LINE =======
 
-PLATS= aix bsd c89 freebsd generic linux macosx mingw posix solaris minix
+PLATS= aix bsd c89 freebsd generic linux macosx mingw posix solaris
 
 LUA_A=	liblua.a
 CORE_O=	lapi.o lcode.o lctype.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o \
@@ -101,11 +101,8 @@ c89:
 	@echo ''
 
 
-minix:
-	$(MAKE) $(ALL) CC="clang" SYSCFLAGS="-DLUA_USE_LINUX" SYSLIBS="-L/usr/pkg/lib -Wl,-E -lreadline"
-
 freebsd:
-	$(MAKE) $(ALL) CC="cc" SYSCFLAGS="-DLUA_USE_LINUX -I/usr/local/include" SYSLIBS="-Wl,-E -L/usr/local/lib -lreadline"
+	$(MAKE) $(ALL) SYSCFLAGS="-DLUA_USE_LINUX" SYSLIBS="-Wl,-E -lreadline"
 
 generic: $(ALL)
 
