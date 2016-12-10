@@ -336,6 +336,8 @@ int do_download(struct user_record *user, char *file) {
 	int last_char_space;
 	char **arguments;
 	int bpos;
+	int len;
+	
 	if (conf.protocols[user->defprotocol - 1]->internal_zmodem) {
 		if (sshBBS) {
 			ttySetRaw(STDIN_FILENO, &oldit);
@@ -379,9 +381,10 @@ int do_download(struct user_record *user, char *file) {
 		
 		bpos = 1;
 		arguments = (char **)malloc(sizeof(char *) * (argc + 1));
-		 
-		for (i=0;i<strlen(download_command);i++) {
+		len = strlen(download_command);
+		for (i=0;i<len;) {
 			if (download_command[i] != ' ') {
+				i++;
 				continue;
 			}
 			
@@ -416,6 +419,7 @@ int do_upload(struct user_record *user, char *final_path) {
 	DIR *inb;
 	struct dirent *dent;
 	struct stat s;
+	int len;
 	
 	if (conf.protocols[user->defprotocol - 1]->internal_zmodem) {
 		upload_zmodem(user, final_path);
@@ -470,9 +474,10 @@ int do_upload(struct user_record *user, char *final_path) {
 		}
 		bpos = 1;
 		arguments = (char **)malloc(sizeof(char *) * (argc + 1));
-		 
-		for (i=0;i<strlen(upload_command);i++) {
+		len = strlen(upload_command);
+		for (i=0;i<len;) {
 			if (upload_command[i] != ' ') {
+				i++;
 				continue;
 			}
 			
@@ -485,6 +490,10 @@ int do_upload(struct user_record *user, char *final_path) {
 			arguments[bpos++] = &upload_command[i];
 		}
 		arguments[bpos] = NULL;
+		
+		for (i=0;i<bpos;i++) {
+			printf("\"%s\"\n", arguments[i]);
+		}
 		
 		arguments[0] = upload_command;
 		
@@ -502,7 +511,7 @@ int do_upload(struct user_record *user, char *final_path) {
 		
 		if (conf.protocols[user->defprotocol - 1]->upload_prompt) {
 			snprintf(upload_command, 1024, "%s%s", upload_path, buffer3);
-			if (stat(buffer3, &s) != 0) {
+			if (stat(upload_command, &s) != 0) {
 				recursive_delete(upload_path);
 				return 0;
 			}
