@@ -378,7 +378,18 @@ int do_download(struct user_record *user, char *file) {
 				download_command[bpos] = '\0';
 			}
 		}
-		
+		argc = 1;
+		last_char_space = 0;
+		for (i=0;i<strlen(download_command);i++) {
+			if (download_command[i] == ' ') {
+				if (!last_char_space) {
+					argc++;
+					last_char_space = 1;
+				}
+			} else {
+				last_char_space = 0;
+			}
+		}
 		bpos = 1;
 		arguments = (char **)malloc(sizeof(char *) * (argc + 1));
 		len = strlen(download_command);
