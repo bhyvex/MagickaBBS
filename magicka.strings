@@ -103,8 +103,8 @@ Quoting Cancelled\r\n
 \r\nWhich line do you want to edit?
 \r\n\e[1;30m[\e[1;34m%3d\e[1;30m]: \e[0m
 \r\nInsert before which line? 
-\e[2J\e[1;32mFrom    : \e[1;37m%s (%d:%d/%d.%d)\r\n
-\e[2J\e[1;32mFrom    : \e[1;37m%s\r\n
+\e[2J\e[1;1H\e[1;32mFrom    : \e[1;37m%s (%d:%d/%d.%d)\r\n
+\e[2J\e[1;1H\e[1;32mFrom    : \e[1;37m%s\r\n
 \e[1;32mTo      : \e[1;37m%-27.27s \e[1;32mConf     : \e[1;37m%-27.27s\r\n
 \e[1;32mSubject : \e[1;37m%-27.27s \e[1;32mArea     : \e[1;37m%-27.27s\r\n
 \e[1;32mDate    : \e[1;37m%s    \e[1;32mMsgNo    : \e[1;37m%4d of %4d\r\n
