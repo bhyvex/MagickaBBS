@@ -207,3 +207,9 @@ Is this Correct? (Y/N)
 \r\n\e[1;32mSelect an archiver...\e[0m\r\n\r\n
 \e[1;31m%d. \e[1;37m%s\e[0m\r\n
 > 
+Sorry, this %s is unavailable over SSH\r\n
+Please enter the filename of the file you want to upload\r\n> 
+\r\nUpload Failed\r\n
+\r\n\e[1;32mSelect a protocol...\e[0m\r\n\r\n
+\e[0;36mO. \e[1;37mDefault Protocol (\e[1;33m%s\e[1;37m)\r\n
+File exists!\r\n

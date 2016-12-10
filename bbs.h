@@ -94,6 +94,15 @@ struct archiver {
 	char *pack;
 };
 
+struct protocol {
+	char *name;
+	char *upload;
+	char *download;
+	int internal_zmodem;
+	int stdio;
+	int upload_prompt;
+};
+
 struct bbs_config {
 	char *bbs_name;
 	char *bwave_name;
@@ -141,9 +150,12 @@ struct bbs_config {
 	int text_file_count;
 	struct text_file **text_files;
 	
-	char *archiver_path;
+	char *config_path;
 	int archiver_count;
 	struct archiver **archivers;
+	
+	int protocol_count;
+	struct protocol **protocols;
 };
 
 struct sec_level_t {
@@ -189,7 +201,7 @@ struct msg_headers {
 	struct jam_msg **msgs;
 	int msg_count;
 };
-
+extern int copy_file(char *src, char *dest);
 extern int recursive_delete(const char *dir);
 extern void automessage_write(struct user_record *user);
 extern void automessage_display();
@@ -234,6 +246,7 @@ extern unsigned long generate_msgid();
 
 extern int door_menu(struct user_record *user);
 extern void rundoor(struct user_record *user, char *cmd, int stdio);
+extern void runexternal(struct user_record *user, char *cmd, int stdio, char **argv, char *cwd, int raw);
 
 extern void bbs_list(struct user_record *user);
 
@@ -248,6 +261,8 @@ extern void download_zmodem(struct user_record *user, char *filename);
 extern void settings_menu(struct user_record *user);
 extern void upload_zmodem(struct user_record *user, char *upload_p);
 extern int ttySetRaw(int fd, struct termios *prevTermios);
+extern int do_upload(struct user_record *user, char *final_path);
+extern int do_download(struct user_record *user, char *file);
 
 extern void lua_push_cfunctions(lua_State *L);
 

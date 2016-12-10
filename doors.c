@@ -128,12 +128,38 @@ int write_door32sys(struct user_record *user) {
 	return 0;
 }
 
+
+
 void rundoor(struct user_record *user, char *cmd, int stdio) {
-	char buffer[256];
-	int pid;
 	char *arguments[4];
+	int door_out;
+	char buffer[10];
+	
+	if (sshBBS) {
+		door_out = STDOUT_FILENO;
+	} else {
+		door_out = gSocket;
+	}
+	arguments[0] = strdup(cmd);
+	sprintf(buffer, "%d", mynode);
+	arguments[1] = strdup(buffer);
+	sprintf(buffer, "%d", door_out);
+	arguments[2] = strdup(buffer);
+	arguments[3] = NULL;	
+	
+	runexternal(user, cmd, stdio, arguments, NULL, 0);
+	
+	free(arguments[0]);
+	free(arguments[1]);
+	free(arguments[2]);
+}
+
+void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], char *cwd, int raw) {
+	
+	char buffer[1024];
+	int pid;
 	int ret;
-	char c;
+	unsigned char c;
 	int len;
 	int master;
 	int slave;
@@ -143,8 +169,14 @@ void rundoor(struct user_record *user, char *cmd, int stdio) {
 	struct sigaction sa;
 	int door_in;
 	int door_out;
-
+	int i;
+	int gotiac;
+	int flush;
+	struct timeval thetimeout;
+	struct termios oldit;
 	timeoutpaused = 1;
+
+	printf("\"%s\"\n", cmd);
 
 	if (write_door32sys(user) != 0) {
 		return;
@@ -159,13 +191,6 @@ void rundoor(struct user_record *user, char *cmd, int stdio) {
 			door_out = gSocket;
 		}
 
-		arguments[0] = strdup(cmd);
-		sprintf(buffer, "%d", mynode);
-		arguments[1] = strdup(buffer);
-		sprintf(buffer, "%d", door_out);
-		arguments[2] = strdup(buffer);
-		arguments[3] = NULL;
-
 		ws.ws_row = 24;
 		ws.ws_col = 80;
 
@@ -179,12 +204,17 @@ void rundoor(struct user_record *user, char *cmd, int stdio) {
 				perror("sigaction");
 				exit(1);
 			}
-
+			if (raw) {
+				ttySetRaw(master, &oldit);
+				ttySetRaw(slave, &oldit);
+			}
 			pid = fork();
 			if (pid < 0) {
 				return;
 			} else if (pid == 0) {
-
+				if (cwd != NULL) {
+					chdir(cwd);
+				}
 				close(master);
 				dup2(slave, 0);
 				dup2(slave, 1);
@@ -195,11 +225,13 @@ void rundoor(struct user_record *user, char *cmd, int stdio) {
 
 				ioctl(0, TIOCSCTTY, 1);
 
-				execvp(cmd, arguments);
+				execvp(cmd, argv);
 			} else {
 				running_door_pid = pid;
-
-				while(running_door != 0) {
+				gotiac = 0;
+				flush = 0;
+				
+				while(running_door || !flush) {
 					FD_ZERO(&fdset);
 					FD_SET(master, &fdset);
 					FD_SET(door_in, &fdset);
@@ -208,7 +240,10 @@ void rundoor(struct user_record *user, char *cmd, int stdio) {
 					} else {
 						t = door_in + 1;
 					}
-					ret = select(t, &fdset, NULL, NULL, NULL);
+					
+					thetimeout.tv_sec = 5;
+					thetimeout.tv_usec = 0;
+					ret = select(t, &fdset, NULL, NULL, &thetimeout);
 					if (ret > 0) {
 						if (FD_ISSET(door_in, &fdset)) {
 							len = read(door_in, &c, 1);
@@ -217,29 +252,62 @@ void rundoor(struct user_record *user, char *cmd, int stdio) {
 								disconnect("Socket Closed");
 								return;
 							}
-							if (c == '\n' || c == '\0') {
+							if (!raw) {
+								if (c == '\n' || c == '\0') {
+									continue;
+								}
+							}
+							if (!running_door) {
 								continue;
 							}
-							write(master, &c, 1);
+							if (c == 255) {
+								if (gotiac == 1) {
+									write(master, &c, 1);
+									gotiac = 0;
+								} else {
+									gotiac = 1;
+								}
+							} else {
+								if (gotiac < 2 && gotiac != 0) {
+									gotiac++;
+								} else {						
+									write(master, &c, 1);
+									gotiac = 0;
+								}
+							}
 						} else if (FD_ISSET(master, &fdset)) {
 							len = read(master, &c, 1);
 							if (len == 0) {
 								close(master);
 								break;
 							}
+							if (c == 255) {
+								write(door_out, &c, 1);
+							}							
 							write(door_out, &c, 1);
+						}
+					} else {
+						if (!running_door) {
+							flush = 1;
 						}
 					}
 				}
 			}
 		}
-		free(arguments[0]);
-		free(arguments[1]);
-		free(arguments[2]);
+
 	} else {
 		if (!sshBBS) {
-			sprintf(buffer, "%s %d %d", cmd, mynode, gSocket);
+			snprintf(buffer, 1024, "%s", cmd);
+			for (i=0;argv[i] != NULL; i++) {
+				snprintf(&buffer[strlen(buffer) - 1], 1024 - strlen(buffer), " %s", argv[i]);
+			}
+			if (cwd != NULL) {
+				chdir(cwd);
+			}
 			system(buffer);
+			if (cwd != NULL) {
+				chdir(conf.bbs_path);
+			}
 		} else {
 			s_printf(get_string(51));
 		}

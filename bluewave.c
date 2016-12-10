@@ -357,15 +357,8 @@ void bwave_create_packet() {
 		system(buffer);
 
 
-		if (sshBBS) {
-			ttySetRaw(STDIN_FILENO, &oldit);
-			ttySetRaw(STDOUT_FILENO, &oldot);
-		}
-		download_zmodem(gUser, archive);
-		if (sshBBS) {
-			tcsetattr(STDIN_FILENO, TCSANOW, &oldit);
-			tcsetattr(STDOUT_FILENO, TCSANOW, &oldot);
-		}
+		do_download(gUser, archive);
+
 		snprintf(buffer, 1024, "%s/node%d/bwave", conf.bbs_path, mynode);
 		recursive_delete(buffer);
 		
@@ -586,7 +579,11 @@ void bwave_upload_reply() {
 	}
 	mkdir(buffer, 0755);	
 	
-	upload_zmodem(gUser, buffer);
+	if (!do_upload(gUser, buffer)) {
+		s_printf(get_string(211));
+		recursive_delete(buffer);
+		return;
+	}
 	
 	bpos = 0;
 	for (i=0;i<strlen(conf.archivers[gUser->defarchiver-1]->unpack);i++) {

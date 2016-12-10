@@ -67,6 +67,83 @@ void sigchld_handler(int s)
     errno = saved_errno;
 }
 
+static int protocol_config_handler(void* user, const char* section, const char* name,
+                   const char* value)
+{
+	struct bbs_config *conf = (struct bbs_config *)user;
+	int i;
+
+	for (i=0;i<conf->protocol_count;i++) {
+		if (strcasecmp(conf->protocols[i]->name, section) == 0) {
+			// found it
+			if (strcasecmp(name, "upload command") == 0) {
+				conf->protocols[i]->upload = strdup(value);
+			} else if (strcasecmp(name, "download command") == 0) {
+				conf->protocols[i]->download = strdup(value);
+			} else if (strcasecmp(name, "internal zmodem") == 0) {
+				if (strcasecmp(value, "true") == 0) {
+					conf->protocols[i]->internal_zmodem = 1;
+				} else {
+					conf->protocols[i]->internal_zmodem = 0;
+				}
+			} else if (strcasecmp(name, "stdio") == 0) {
+				if (strcasecmp(value, "true") == 0) {
+					conf->protocols[i]->stdio = 1;
+				} else {
+					conf->protocols[i]->stdio = 0;
+				}
+			} else if (strcasecmp(name, "upload prompt") == 0) {
+				if (strcasecmp(value, "true") == 0) {
+					conf->protocols[i]->upload_prompt = 1;
+				} else {
+					conf->protocols[i]->upload_prompt = 0;
+				}
+			}
+			return 1;
+		}
+	}
+
+	if (conf->protocol_count == 0) {
+		conf->protocols = (struct protocol **)malloc(sizeof(struct protocol *));
+	} else {
+		conf->protocols = (struct protocol **)realloc(conf->protocols, sizeof(struct protocol *) * (conf->protocol_count + 1));
+	}
+
+	conf->protocols[conf->protocol_count] = (struct protocol *)malloc(sizeof(struct archiver));
+
+	conf->protocols[conf->protocol_count]->name = strdup(section);
+	conf->protocols[conf->protocol_count]->internal_zmodem = 0;
+	conf->protocols[conf->protocol_count]->upload_prompt = 0;
+	conf->protocols[conf->protocol_count]->stdio = 0;
+	
+	if (strcasecmp(name, "upload command") == 0) {
+		conf->protocols[conf->protocol_count]->upload = strdup(value);
+	} else if (strcasecmp(name, "download command") == 0) {
+		conf->protocols[conf->protocol_count]->download = strdup(value);
+	} else if (strcasecmp(name, "internal zmodem") == 0) {
+		if (strcasecmp(value, "true") == 0) {
+			conf->protocols[conf->protocol_count]->internal_zmodem = 1;
+		} else {
+			conf->protocols[conf->protocol_count]->internal_zmodem = 0;
+		}
+	} else if (strcasecmp(name, "stdio") == 0) {
+		if (strcasecmp(value, "true") == 0) {
+			conf->protocols[conf->protocol_count]->stdio = 1;
+		} else {
+			conf->protocols[conf->protocol_count]->stdio = 0;
+		}
+	} else if (strcasecmp(name, "upload prompt") == 0) {
+		if (strcasecmp(value, "true") == 0) {
+			conf->protocols[conf->protocol_count]->upload_prompt = 1;
+		} else {
+			conf->protocols[conf->protocol_count]->upload_prompt = 0;
+		}
+	}
+	conf->protocol_count++;
+
+	return 1;
+}
+
 static int archiver_config_handler(void* user, const char* section, const char* name,
                    const char* value)
 {
@@ -381,8 +458,6 @@ static int handler(void* user, const char* section, const char* name,
 			conf->main_aka = parse_fido_addr(value);
 		} else if (strcasecmp(name, "qwk max messages") == 0) {
 			conf->bwave_max_msgs = atoi(value);
-		} else if (strcasecmp(name, "archivers") == 0) {
-			conf->archiver_path = strdup(value);
 		} else if (strcasecmp(name, "broadcast enable") == 0) {
 			if (strcasecmp(value, "true") == 0) {
 				conf->broadcast_enable = 1;
@@ -413,6 +488,8 @@ static int handler(void* user, const char* section, const char* name,
 			conf->string_file = strdup(value);
 		} else if (strcasecmp(name, "www path") == 0) {
 			conf->www_path = strdup(value);
+		} else if (strcasecmp(name, "config path") == 0) {
+			conf->config_path = strdup(value);
 		}
 	} else if (strcasecmp(section, "mail conferences") == 0) {
 		if (conf->mail_conference_count == 0) {
@@ -833,7 +910,8 @@ int main(int argc, char **argv) {
 	int main_pid;
 	FILE *fptr;
 	struct stat s;
-
+	char buffer[1024];
+	
 	if (argc < 2) {
 		fprintf(stderr, "Usage ./magicka config/bbs.ini\n");
 		exit(1);
@@ -854,17 +932,23 @@ int main(int argc, char **argv) {
 	conf.telnet_port = 0;
 	conf.string_file = NULL;
 	conf.www_path = NULL;
-	conf.archiver_path = NULL;
 	conf.archiver_count = 0;
 	conf.broadcast_enable = 0;
 	conf.broadcast_port = 0;
 	conf.broadcast_address = NULL;
+	conf.config_path = NULL;
 	
 	// Load BBS data
 	if (ini_parse(argv[1], handler, &conf) <0) {
 		fprintf(stderr, "Unable to load configuration ini (%s)!\n", argv[1]);
 		exit(-1);
 	}
+	
+	if (conf.config_path == NULL) {
+		fprintf(stderr, "Config Path must be set in your bbs ini!\n");
+		exit(-1);
+	}
+	
 	// Load mail Areas
 	for (i=0;i<conf.mail_conference_count;i++) {
 		if (ini_parse(conf.mail_conferences[i]->path, mail_area_handler, conf.mail_conferences[i]) <0) {
@@ -880,17 +964,25 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	if (ini_parse("config/doors.ini", door_config_handler, &conf) <0) {
+	snprintf(buffer, 1024, "%s/doors.ini", conf.config_path);
+
+	if (ini_parse(buffer, door_config_handler, &conf) <0) {
 		fprintf(stderr, "Unable to load configuration ini (doors.ini)!\n");
 		exit(-1);
 	}
 
-	if (conf.archiver_path != NULL) {
-		if (ini_parse(conf.archiver_path, archiver_config_handler, &conf) <0) {
-			fprintf(stderr, "Unable to load configuration ini %s\n", conf.archiver_path);
-			exit(-1);
-		}
+	snprintf(buffer, 1024, "%s/archivers.ini", conf.config_path);
+	if (ini_parse(buffer, archiver_config_handler, &conf) <0) {
+		fprintf(stderr, "Unable to load configuration ini %s\n", buffer);
+		exit(-1);
 	}
+
+	snprintf(buffer, 1024, "%s/protocols.ini", conf.config_path);
+	if (ini_parse(buffer, protocol_config_handler, &conf) <0) {
+		fprintf(stderr, "Unable to load configuration ini %s\n", buffer);
+		exit(-1);
+	}
+
 
 	load_strings();
 

@@ -228,7 +228,7 @@ int inst_user(struct user_record *user) {
 
 struct user_record *check_user_pass(char *loginname, char *password) {
 	struct user_record *user;
-	char buffer[256];
+	char buffer[1024];
 	sqlite3 *db;
   sqlite3_stmt *res;
   int rc;
@@ -306,7 +306,7 @@ struct user_record *check_user_pass(char *loginname, char *password) {
 
     user->sec_info = (struct sec_level_t *)malloc(sizeof(struct sec_level_t));
 
-    sprintf(buffer, "%s/config/s%d.ini", conf.bbs_path, user->sec_level);
+    snprintf(buffer, 1024, "%s/s%d.ini", conf.config_path, user->sec_level);
     if (ini_parse(buffer, secLevel, user->sec_info) <0) {
 		dolog("Unable to load sec Level ini (%s)!", buffer);
 		exit(-1);

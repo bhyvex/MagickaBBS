@@ -20,6 +20,7 @@ void settings_menu(struct user_record *user) {
 		s_printf(get_string(151));
 		s_printf(get_string(152), user->location);
 		s_printf(get_string(205), conf.archivers[user->defarchiver - 1]->name);
+		s_printf(get_string(213), conf.protocols[user->defprotocol - 1]->name);
 		s_printf(get_string(153));
 		s_printf(get_string(154));
 
@@ -85,6 +86,27 @@ void settings_menu(struct user_record *user) {
 						break;
 					} else {
 						user->defarchiver = new_arc;
+						save_user(user);
+					}
+				}
+				break;
+				
+			case 'o':
+				{
+					s_printf(get_string(212));
+					
+					for (i=0;i<conf.protocol_count;i++) {
+						s_printf(get_string(207), i + 1, conf.protocols[i]->name);
+					}
+					
+					s_printf(get_string(208));
+					s_readstring(buffer, 5);
+					new_arc = atoi(buffer);
+					
+					if (new_arc - 1 < 0 || new_arc > conf.protocol_count) {
+						break;
+					} else {
+						user->defprotocol = new_arc;
 						save_user(user);
 					}
 				}

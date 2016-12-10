@@ -914,3 +914,33 @@ finish:
 
     return ret;
 }
+
+int copy_file(char *src, char *dest) {
+	FILE *src_file;
+	FILE *dest_file;
+
+	char c;
+
+	src_file = fopen(src, "rb");
+	if (!src_file) {
+		return -1;
+	}
+	dest_file = fopen(dest, "wb");
+	if (!dest_file) {
+		fclose(src_file);
+		return -1;
+	}
+
+	while(1) {
+		c = fgetc(src_file);
+		if (!feof(src_file)) {
+			fputc(c, dest_file);
+		} else {
+			break;
+		}
+	}
+
+	fclose(src_file);
+	fclose(dest_file);
+	return 0;
+}

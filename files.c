@@ -8,6 +8,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <termios.h>
+#include <dirent.h>
 #include "Xmodem/zmodem.h"
 #include "bbs.h"
 #include "lua/lua.h"
@@ -326,10 +327,238 @@ char *get_file_id_diz(char *filename) {
 	return description;
 }
 
+int do_download(struct user_record *user, char *file) {
+	struct termios oldit;
+	struct termios oldot;
+	char download_command[1024];
+	int i;
+	int argc;
+	int last_char_space;
+	char **arguments;
+	int bpos;
+	if (conf.protocols[user->defprotocol - 1]->internal_zmodem) {
+		if (sshBBS) {
+			ttySetRaw(STDIN_FILENO, &oldit);
+			ttySetRaw(STDOUT_FILENO, &oldot);
+		}		
+		download_zmodem(user, file);
+		if (sshBBS) {
+			tcsetattr(STDIN_FILENO, TCSANOW, &oldit);
+			tcsetattr(STDOUT_FILENO, TCSANOW, &oldot);
+		}
+		return 1;
+	} else {
+		bpos = 0;
+		for (i=0;i<strlen(conf.protocols[user->defprotocol - 1]->download);i++) {
+			if (conf.protocols[user->defprotocol - 1]->download[i] == '*') {
+				i++;
+				if (conf.protocols[user->defprotocol - 1]->download[i] == '*') {
+					download_command[bpos++] = conf.protocols[user->defprotocol - 1]->download[i];
+					download_command[bpos] = '\0';
+					continue;
+				} else if (conf.protocols[user->defprotocol - 1]->download[i] == 'f') {
+					sprintf(&download_command[bpos], "%s", file);
+					bpos = strlen(download_command);
+	
+					continue;
+				} else if (conf.protocols[user->defprotocol - 1]->download[i] == 's') {
+					if (!sshBBS) {
+						sprintf(&download_command[bpos], "%d", gSocket);
+						bpos = strlen(download_command);
+					} else {
+						s_printf(get_string(209), conf.protocols[user->defprotocol - 1]->name);
+						return 0;
+					}
+				}
+				
+			} else {
+				download_command[bpos++] = conf.protocols[user->defprotocol - 1]->download[i];
+				download_command[bpos] = '\0';
+			}
+		}
+		
+		bpos = 1;
+		arguments = (char **)malloc(sizeof(char *) * (argc + 1));
+		 
+		for (i=0;i<strlen(download_command);i++) {
+			if (download_command[i] != ' ') {
+				continue;
+			}
+			
+			download_command[i] = '\0';
+			i++;
+			
+			while (download_command[i] == ' ')
+				i++;
+				
+			arguments[bpos++] = &download_command[i];
+		}
+		arguments[bpos] = NULL;
+		
+		arguments[0] = download_command;
+
+		runexternal(user, download_command, conf.protocols[user->defprotocol - 1]->stdio, arguments, conf.bbs_path, 1);
+		
+		free(arguments);		
+	}
+	
+}
+
+int do_upload(struct user_record *user, char *final_path) {
+	char upload_path[1024];
+	char upload_command[1024];
+	char buffer3[256];
+	int bpos;
+	int i;
+	int argc;
+	int last_char_space;
+	char **arguments;
+	DIR *inb;
+	struct dirent *dent;
+	struct stat s;
+	
+	if (conf.protocols[user->defprotocol - 1]->internal_zmodem) {
+		upload_zmodem(user, final_path);
+		return 1;
+	} else {
+		
+		if (conf.protocols[user->defprotocol - 1]->upload_prompt) {
+			s_printf(get_string(210));
+			s_readstring(buffer3, 256);
+			s_printf("\r\n");
+		}
+		bpos = 0;
+		for (i=0;i<strlen(conf.protocols[user->defprotocol - 1]->upload);i++) {
+			if (conf.protocols[user->defprotocol - 1]->upload[i] == '*') {
+				i++;
+				if (conf.protocols[user->defprotocol - 1]->upload[i] == '*') {
+					upload_command[bpos++] = conf.protocols[user->defprotocol - 1]->upload[i];
+					upload_command[bpos] = '\0';
+					continue;
+				} else if (conf.protocols[user->defprotocol - 1]->upload[i] == 'f') {
+					if (conf.protocols[user->defprotocol - 1]->upload_prompt) {
+						sprintf(&upload_command[bpos], "%s", buffer3);
+						bpos = strlen(upload_command);
+					}
+					continue;
+				} else if (conf.protocols[user->defprotocol - 1]->upload[i] == 's') {
+					if (!sshBBS) {
+						sprintf(&upload_command[bpos], "%d", gSocket);
+						bpos = strlen(upload_command);
+					} else {
+						s_printf(get_string(209), conf.protocols[user->defprotocol - 1]->name);
+						return 0;
+					}
+				}
+				
+			} else {
+				upload_command[bpos++] = conf.protocols[user->defprotocol - 1]->upload[i];
+				upload_command[bpos] = '\0';
+			}
+		}
+		argc = 1;
+		last_char_space = 0;
+		for (i=0;i<strlen(upload_command);i++) {
+			if (upload_command[i] == ' ') {
+				if (!last_char_space) {
+					argc++;
+					last_char_space = 1;
+				}
+			} else {
+				last_char_space = 0;
+			}
+		}
+		bpos = 1;
+		arguments = (char **)malloc(sizeof(char *) * (argc + 1));
+		 
+		for (i=0;i<strlen(upload_command);i++) {
+			if (upload_command[i] != ' ') {
+				continue;
+			}
+			
+			upload_command[i] = '\0';
+			i++;
+			
+			while (upload_command[i] == ' ')
+				i++;
+				
+			arguments[bpos++] = &upload_command[i];
+		}
+		arguments[bpos] = NULL;
+		
+		arguments[0] = upload_command;
+		
+		snprintf(upload_path, 1024, "%s/node%d/upload/", conf.bbs_path, mynode);
+		
+		if (stat(upload_path, &s) == 0) {
+			recursive_delete(upload_path);
+		}
+		
+		mkdir(upload_path, 0755);
+		
+		runexternal(user, upload_command, conf.protocols[user->defprotocol - 1]->stdio, arguments, upload_path, 1);
+		
+		free(arguments);
+		
+		if (conf.protocols[user->defprotocol - 1]->upload_prompt) {
+			snprintf(upload_command, 1024, "%s%s", upload_path, buffer3);
+			if (stat(buffer3, &s) != 0) {
+				recursive_delete(upload_path);
+				return 0;
+			}
+			
+			snprintf(upload_filename, 1024, "%s/%s", final_path, buffer3);
+			if (stat(upload_filename, &s) == 0) {
+				recursive_delete(upload_path);
+				s_printf(get_string(214));
+				return 0;
+			}
+			if (copy_file(upload_command, upload_filename) != 0) {
+				recursive_delete(upload_path);
+				return 0;				
+			}
+			
+			recursive_delete(upload_path);
+			return 1;
+		} else {
+			inb = opendir(upload_path);
+			if (!inb) {
+				return 0;
+			}
+			while ((dent = readdir(inb)) != NULL) {
+				if (dent->d_type == DT_REG) {
+					snprintf(upload_command, 1-24, "%s%s", upload_path, dent->d_name);
+					snprintf(upload_filename, 1024, "%s/%s", final_path, dent->d_name);
+					
+					if (stat(upload_filename, &s) == 0) {
+						recursive_delete(upload_path);
+						s_printf(get_string(214));
+						closedir(inb);
+						return 0;
+					}
+					
+					if (copy_file(upload_command, upload_filename) != 0) {
+						recursive_delete(upload_path);
+						closedir(inb);
+						return 0;				
+					}
+					closedir(inb);
+					recursive_delete(upload_path);
+					return 1;
+				}
+				
+			}
+
+			closedir(inb);
+			return 0;
+		}
+	}
+}
 void upload(struct user_record *user) {
 	char buffer[331];
 	char buffer2[66];
 	char buffer3[256];
+
 	int i;
 	char *create_sql = "CREATE TABLE IF NOT EXISTS files ("
 						"Id INTEGER PRIMARY KEY,"
@@ -345,9 +574,13 @@ void upload(struct user_record *user) {
 	struct stat s;
 	char *err_msg = NULL;
 	char *description;
-	
-	upload_zmodem(user, conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->upload_path);
 
+	
+	if (!do_upload(user, conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->upload_path)) {
+		s_printf(get_string(211));
+		return;
+	}
+	
 	description = NULL;
 	
 	s_printf(get_string(198));
@@ -506,17 +739,13 @@ void download(struct user_record *user) {
 	char buffer[256];
 	int dloads;
 	sqlite3 *db;
-  sqlite3_stmt *res;
-  int rc;
-	struct termios oldit;
-	struct termios oldot;
-	if (sshBBS) {
-		ttySetRaw(STDIN_FILENO, &oldit);
-		ttySetRaw(STDOUT_FILENO, &oldot);
-	}
+	sqlite3_stmt *res;
+	int rc;
+
+
 	for (i=0;i<tagged_count;i++) {
 
-		download_zmodem(user, tagged_files[i]);
+		do_download(user, tagged_files[i]);
 
 		sprintf(buffer, "%s/%s.sq3", conf.bbs_path, conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->database);
 
@@ -563,10 +792,7 @@ void download(struct user_record *user) {
 		sqlite3_close(db);
 	}
 
-	if (sshBBS) {
-		tcsetattr(STDIN_FILENO, TCSANOW, &oldit);
-		tcsetattr(STDOUT_FILENO, TCSANOW, &oldot);
-	}
+
 
 	for (i=0;i<tagged_count;i++) {
 		free(tagged_files[i]);
