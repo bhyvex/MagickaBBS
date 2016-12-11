@@ -13,6 +13,9 @@ extern struct user_record *gUser;
 extern int mynode;
 extern char upload_filename[1024];
 extern int sshBBS;
+extern int bbs_stdin;
+extern int bbs_stdout;
+extern int bbs_stderr;
 
 tLONG convertl(tLONG l) {
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
@@ -103,15 +106,30 @@ int bwave_scan_area(int confr, int area, int areano, int totmsgs, FILE *fti_file
 			break;
 		}
 		
-		if (strcasecmp(msghs->msgs[k]->to, gUser->loginname) == 0) {
-			personal_msgs++;
+		if (msghs->msgs[k]->to != NULL) {
+			if (strcasecmp(msghs->msgs[k]->to, gUser->loginname) == 0) {
+				personal_msgs++;
+			}
 		}
 		
 		memset(&fti, 0, sizeof(FTI_REC));
 		
-		strncpy(fti.from, msghs->msgs[k]->from, 35);
-		strncpy(fti.to, msghs->msgs[k]->to, 35);
-		strncpy(fti.subject, msghs->msgs[k]->subject, 71);
+		if (msghs->msgs[k]->from != NULL) {
+			strncpy(fti.from, msghs->msgs[k]->from, 35);
+		} else {
+			sprintf(fti.from, "(Missing From)");
+		}
+		if (msghs->msgs[k]->to != NULL) {
+			strncpy(fti.to, msghs->msgs[k]->to, 35);
+		} else {
+			sprintf(fti.to, "(Missing To)");
+		}
+		
+		if (msghs->msgs[k]->subject != NULL) {
+			strncpy(fti.subject, msghs->msgs[k]->subject, 71);
+		} else {
+			sprintf(fti.subject, "(Missing Subject)");
+		}
 		
 		localtime_r((time_t *)&msghs->msgs[k]->msg_h->DateWritten, &timeStruct);
 		
@@ -187,6 +205,9 @@ void bwave_create_packet() {
 	int lasttot;
 	int bpos;
 	int last_ptr = 0;
+	int stout;
+	int stin;
+	int sterr;	
 	
 	struct termios oldit;
 	struct termios oldot;
@@ -251,7 +272,9 @@ void bwave_create_packet() {
 		for (j=0;j<conf.mail_conferences[i]->mail_area_count;j++) {
 			if (conf.mail_conferences[i]->mail_areas[j]->read_sec_level <= gUser->sec_level && conf.mail_conferences[i]->mail_areas[j]->qwkname != NULL) {
 				lasttot = totmsgs;
+				printf("Scan Started\n");
 				totmsgs = bwave_scan_area(i, j, area_count+1, totmsgs, fti_file, mix_file, dat_file, &last_ptr);
+				printf("Scan complete\n");
 				s_printf(get_string(195), conf.mail_conferences[i]->name, conf.mail_conferences[i]->mail_areas[j]->name, totmsgs - lasttot); 
 				if (lasttot == totmsgs) {
 					continue;
@@ -354,7 +377,27 @@ void bwave_create_packet() {
 				buffer[bpos] = '\0';
 			}
 		}
+		if (sshBBS) {
+			stout = dup(STDOUT_FILENO);
+			stin = dup(STDIN_FILENO);
+			sterr = dup(STDERR_FILENO);
+				
+			dup2(bbs_stdout, STDOUT_FILENO);
+			dup2(bbs_stderr, STDERR_FILENO);
+			dup2(bbs_stdin, STDIN_FILENO);
+		}
 		system(buffer);
+		
+		if (sshBBS) {
+		
+			dup2(stout, STDOUT_FILENO);
+			dup2(sterr, STDERR_FILENO);	
+			dup2(stin, STDIN_FILENO);
+			
+			close(stin);
+			close(stout);
+			close(sterr);
+		}
 
 
 		do_download(gUser, archive);
@@ -563,6 +606,9 @@ void bwave_upload_reply() {
 	FILE *msg_file;
 	int sem_fd;
 	int msg_count;
+	int stout;
+	int stin;
+	int sterr;
 	
 	msg_count = 0;
 	
@@ -604,7 +650,27 @@ void bwave_upload_reply() {
 			buffer[bpos] = '\0';
 		}
 	}
+	if (sshBBS) {
+		stout = dup(STDOUT_FILENO);
+		stin = dup(STDIN_FILENO);
+		sterr = dup(STDERR_FILENO);
+			
+		dup2(bbs_stdout, STDOUT_FILENO);
+		dup2(bbs_stderr, STDERR_FILENO);
+		dup2(bbs_stdin, STDIN_FILENO);
+	}
 	system(buffer);
+	
+	if (sshBBS) {
+	
+		dup2(stout, STDOUT_FILENO);
+		dup2(sterr, STDERR_FILENO);	
+		dup2(stin, STDIN_FILENO);
+		
+		close(stin);
+		close(stout);
+		close(sterr);
+	}
 	
 	unlink(upload_filename);
 	

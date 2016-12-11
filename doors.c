@@ -8,6 +8,7 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <sys/ioctl.h>
+#include <fcntl.h>
 #if defined(linux)
 #  include <pty.h>
 #elif defined(__OpenBSD__) || defined(__NetBSD__) || defined(__APPLE__)
@@ -24,7 +25,7 @@ extern struct bbs_config conf;
 extern int mynode;
 extern int gSocket;
 extern int sshBBS;
-
+extern int bbs_stderr;
 int running_door_pid = 0;
 int running_door = 0;
 
@@ -172,8 +173,12 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 	int i;
 	int gotiac;
 	int flush;
+	
 	struct timeval thetimeout;
 	struct termios oldit;
+	struct termios oldot;
+	struct termios oldit2;
+
 	timeoutpaused = 1;
 
 	if (write_door32sys(user) != 0) {
@@ -187,6 +192,11 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 		} else {
 			door_in = gSocket;
 			door_out = gSocket;
+		}
+
+		if (sshBBS && raw) {
+			ttySetRaw(STDIN_FILENO, &oldit);
+			ttySetRaw(STDOUT_FILENO, &oldot);
 		}
 
 		ws.ws_row = 24;
@@ -203,8 +213,8 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 				exit(1);
 			}
 			if (raw) {
-				ttySetRaw(master, &oldit);
-				ttySetRaw(slave, &oldit);
+				ttySetRaw(master, &oldit2);
+				ttySetRaw(slave, &oldit2);
 			}
 			pid = fork();
 			if (pid < 0) {
@@ -214,9 +224,13 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 					chdir(cwd);
 				}
 				close(master);
-				dup2(slave, 0);
-				dup2(slave, 1);
 
+				dup2(slave, 0);
+				dup2(slave, 1);		
+				if (sshBBS) {
+					dup2(bbs_stderr, 2);
+				}
+				
 				close(slave);
 
 				setsid();
@@ -241,6 +255,7 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 					
 					thetimeout.tv_sec = 5;
 					thetimeout.tv_usec = 0;
+					
 					ret = select(t, &fdset, NULL, NULL, &thetimeout);
 					if (ret > 0) {
 						if (FD_ISSET(door_in, &fdset)) {
@@ -258,20 +273,24 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 							if (!running_door) {
 								continue;
 							}
-							if (c == 255) {
-								if (gotiac == 1) {
-									write(master, &c, 1);
-									gotiac = 0;
+							if (!sshBBS) {
+								if (c == 255) {
+									if (gotiac == 1) {
+										write(master, &c, 1);
+										gotiac = 0;
+									} else {
+										gotiac = 1;
+									}
 								} else {
-									gotiac = 1;
+									if (gotiac < 2 && gotiac != 0) {
+										gotiac++;
+									} else {						
+										write(master, &c, 1);
+										gotiac = 0;
+									}
 								}
 							} else {
-								if (gotiac < 2 && gotiac != 0) {
-									gotiac++;
-								} else {						
-									write(master, &c, 1);
-									gotiac = 0;
-								}
+								write(master, &c, 1);
 							}
 						} else if (FD_ISSET(master, &fdset)) {
 							len = read(master, &c, 1);
@@ -279,7 +298,7 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 								close(master);
 								break;
 							}
-							if (c == 255) {
+							if (c == 255 && !sshBBS) {
 								write(door_out, &c, 1);
 							}							
 							write(door_out, &c, 1);
@@ -292,6 +311,10 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 				}
 			}
 		}
+		if (sshBBS && raw) {
+			tcsetattr(STDIN_FILENO, TCSANOW, &oldit);
+			tcsetattr(STDOUT_FILENO, TCSANOW, &oldot);
+		}			
 
 	} else {
 		if (!sshBBS) {

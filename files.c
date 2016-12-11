@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <termios.h>
 #include <dirent.h>
+#include <fcntl.h>
 #include "Xmodem/zmodem.h"
 #include "bbs.h"
 #include "lua/lua.h"
@@ -18,6 +19,9 @@ extern struct bbs_config conf;
 extern int gSocket;
 extern int sshBBS;
 extern int mynode;
+extern int bbs_stdin;
+extern int bbs_stdout;
+extern int bbs_stderr;
 
 struct file_entry {
 	char *filename;
@@ -229,7 +233,10 @@ char *get_file_id_diz(char *filename) {
 	int len;
 	int ext;
 	int arch;
-	
+	int stout;
+	int stin;
+	int sterr;
+
 	ext = 0;
 	arch = -1;
 	
@@ -289,7 +296,28 @@ char *get_file_id_diz(char *filename) {
 			buffer[bpos] = '\0';
 		}
 	}
+	
+	if (sshBBS) {
+		stout = dup(STDOUT_FILENO);
+		stin = dup(STDIN_FILENO);
+		sterr = dup(STDERR_FILENO);
+			
+		dup2(bbs_stdout, STDOUT_FILENO);
+		dup2(bbs_stderr, STDERR_FILENO);
+		dup2(bbs_stdin, STDIN_FILENO);
+	}
 	system(buffer);
+	
+	if (sshBBS) {
+	
+		dup2(stout, STDOUT_FILENO);
+		dup2(sterr, STDERR_FILENO);	
+		dup2(stin, STDIN_FILENO);
+		
+		close(stin);
+		close(stout);
+		close(sterr);
+	}
 	
 	snprintf(buffer, 1024, "%s/node%d/temp/FILE_ID.DIZ", conf.bbs_path, mynode);
 	if (stat(buffer, &s) != 0) {
@@ -501,10 +529,6 @@ int do_upload(struct user_record *user, char *final_path) {
 			arguments[bpos++] = &upload_command[i];
 		}
 		arguments[bpos] = NULL;
-		
-		for (i=0;i<bpos;i++) {
-			printf("\"%s\"\n", arguments[i]);
-		}
 		
 		arguments[0] = upload_command;
 		

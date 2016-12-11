@@ -39,6 +39,10 @@ int ssh_pid = -1;
 int bbs_pid = 0;
 int server_socket = -1;
 
+int bbs_stdin;
+int bbs_stdout;
+int bbs_stderr;
+
 #if defined(ENABLE_WWW)
 struct MHD_Daemon *www_daemon;
 #endif
@@ -672,8 +676,15 @@ void serverssh(int port) {
 	short events;
 	ssh_message message;
 	struct termios tios;
-
-
+	struct ip_address_guard *ip_guard;
+	int i;
+	char buffer[1024];
+	FILE *fptr;
+	
+	bbs_stdin = dup(STDIN_FILENO);
+	bbs_stdout = dup(STDOUT_FILENO);
+	bbs_stderr = dup(STDERR_FILENO);
+	
 	err = ssh_init();
 	if (err == -1) {
 		fprintf(stderr, "Error starting SSH server.\n");
@@ -699,6 +710,45 @@ void serverssh(int port) {
 
 	while (1) {
 		if (ssh_bind_accept(p_ssh_bind, p_ssh_session) == SSH_OK) {
+			ip = ssh_getip(p_ssh_session);
+			
+			if (conf.ipguard_enable) {
+				i = hashmap_get(ip_guard_map, ip, (void **)(&ip_guard));
+					
+				if (i == MAP_MISSING) {
+					ip_guard = (struct ip_address_guard *)malloc(sizeof(struct ip_address_guard));
+					ip_guard->status = IP_STATUS_UNKNOWN;
+					ip_guard->last_connection = time(NULL);
+					ip_guard->connection_count = 1;
+					hashmap_put(ip_guard_map, strdup(ip), ip_guard);
+				} else if (i == MAP_OK) {
+					
+					if (ip_guard->status == IP_STATUS_BLACKLISTED) {
+						free(ip);
+						ssh_disconnect(p_ssh_session);
+						continue;
+					} else if (ip_guard->status == IP_STATUS_UNKNOWN) {
+						if (ip_guard->last_connection + conf.ipguard_timeout > time(NULL)) {
+							ip_guard->connection_count++;
+							if (ip_guard->connection_count == conf.ipguard_tries) {
+								ip_guard->status = IP_STATUS_BLACKLISTED;
+								snprintf(buffer, 1024, "%s/blacklist.ip", conf.bbs_path);
+								fptr = fopen(buffer, "a");
+								fprintf(fptr, "%s\n", ip);
+								fclose(fptr);
+								free(ip);
+								ssh_disconnect(p_ssh_session);
+								continue;
+								
+							}
+						} else {
+							ip_guard->connection_count = 0;
+							ip_guard->last_connection = time(NULL);
+						}
+					}
+				}		
+			}			
+			
 			pid = fork();
 			if (pid == 0) {
 				if (ssh_handle_key_exchange(p_ssh_session)) {
@@ -753,7 +803,7 @@ void serverssh(int port) {
 						exit(-1);
 					}
 
-					ip = ssh_getip(p_ssh_session);
+					
 
 
 
