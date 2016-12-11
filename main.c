@@ -28,6 +28,9 @@
 #include <termios.h>
 #include "bbs.h"
 #include "inih/ini.h"
+#include "hashmap/hashmap.h"
+
+map_t ip_guard_map;
 
 extern struct bbs_config conf;
 extern struct user_record *gUser;
@@ -468,6 +471,16 @@ static int handler(void* user, const char* section, const char* name,
 			conf->broadcast_port = atoi(value);
 		} else if (strcasecmp(name, "broadcast address") == 0) {
 			conf->broadcast_address = strdup(value);
+		} else if (strcasecmp(name, "ip guard enable") == 0) {
+			if (strcasecmp(value, "true") == 0) {
+				conf->ipguard_enable = 1;
+			} else {
+				conf->ipguard_enable = 0;
+			}
+		} else if (strcasecmp(name, "ip guard timeout") == 0) {
+			conf->ipguard_timeout = atoi(value);
+		} else if (strcasecmp(name, "ip guard tries") == 0) {
+			conf->ipguard_tries = atoi(value);
 		}
 	} else if (strcasecmp(section, "paths") == 0){
 		if (strcasecmp(name, "ansi path") == 0) {
@@ -641,8 +654,8 @@ static void ssh_chan_close(ssh_session session, ssh_channel channel, void *userd
 
 struct ssh_channel_callbacks_struct ssh_cb = {
 	.channel_data_function = ssh_copy_chan_to_fd,
-  .channel_eof_function = ssh_chan_close,
-  .channel_close_function = ssh_chan_close,
+	.channel_eof_function = ssh_chan_close,
+	.channel_close_function = ssh_chan_close,
 	.userdata = NULL
 };
 
@@ -803,11 +816,68 @@ void server(int port) {
 	struct sigaction sq;
 	int client_sock, c;
 	int pid;
+	char *ip;
 	struct sockaddr_in server, client;
+	FILE *fptr;
+	char buffer[1024];
+	struct ip_address_guard *ip_guard;
+	int i;
+	
 #if defined(ENABLE_WWW)
 	www_daemon = NULL;
 #endif
 
+	if (conf.ipguard_enable) {
+
+		ip_guard_map = hashmap_new();
+		
+		snprintf(buffer, 1024, "%s/whitelist.ip", conf.bbs_path);
+		
+		fptr = fopen(buffer, "r");
+		if (fptr) {
+			fgets(buffer, 1024, fptr);
+			while (!feof(fptr)) {
+				for (i=strlen(buffer)-1;i> 0; i--) {
+					if (buffer[i] == '\r' || buffer[i] == '\n') {
+						buffer[i] = '\0';
+					} else {
+						break;
+					}
+				}
+				
+				ip_guard = (struct ip_address_guard *)malloc(sizeof(struct ip_address_guard));
+				ip_guard->status = IP_STATUS_WHITELISTED;
+				
+				hashmap_put(ip_guard_map, strdup(buffer), ip_guard);
+				
+				fgets(buffer, 1024, fptr);
+			}
+			fclose(fptr);
+		}
+		snprintf(buffer, 1024, "%s/blacklist.ip", conf.bbs_path);
+		
+		fptr = fopen(buffer, "r");
+		if (fptr) {
+			fgets(buffer, 1024, fptr);
+			while (!feof(fptr)) {
+				for (i=strlen(buffer)-1;i> 0; i--) {
+					if (buffer[i] == '\r' || buffer[i] == '\n') {
+						buffer[i] = '\0';
+					} else {
+						break;
+					}
+				}
+				
+				ip_guard = (struct ip_address_guard *)malloc(sizeof(struct ip_address_guard));
+				ip_guard->status = IP_STATUS_BLACKLISTED;
+				
+				hashmap_put(ip_guard_map, strdup(buffer), ip_guard);
+				
+				fgets(buffer, 1024, fptr);
+			}
+			fclose(fptr);
+		}
+	}
 	sa.sa_handler = sigchld_handler; // reap all dead processes
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = SA_RESTART | SA_SIGINFO;
@@ -879,12 +949,52 @@ void server(int port) {
 	c = sizeof(struct sockaddr_in);
 
 	while ((client_sock = accept(server_socket, (struct sockaddr *)&client, (socklen_t *)&c))) {
+		ip = strdup(inet_ntoa(client.sin_addr));
 		if (client_sock == -1) {
 			if (errno == EINTR) {
 				continue;
 			} else {
 				exit(-1);
 			}
+		}
+		
+		if (conf.ipguard_enable) {
+			i = hashmap_get(ip_guard_map, ip, (void **)(&ip_guard));
+				
+			if (i == MAP_MISSING) {
+				ip_guard = (struct ip_address_guard *)malloc(sizeof(struct ip_address_guard));
+				ip_guard->status = IP_STATUS_UNKNOWN;
+				ip_guard->last_connection = time(NULL);
+				ip_guard->connection_count = 1;
+				hashmap_put(ip_guard_map, ip, ip_guard);
+			} else if (i == MAP_OK) {
+				
+				if (ip_guard->status == IP_STATUS_BLACKLISTED) {
+					write(client_sock, "BLOCKED\r\n", 9);
+					free(ip);
+					close(client_sock);
+					continue;
+				} else if (ip_guard->status == IP_STATUS_UNKNOWN) {
+					if (ip_guard->last_connection < time(NULL) + conf.ipguard_timeout) {
+						ip_guard->connection_count++;
+						if (ip_guard->connection_count == conf.ipguard_tries) {
+							ip_guard->status = IP_STATUS_BLACKLISTED;
+							snprintf(buffer, 1024, "%s/blacklist.ip", conf.bbs_path);
+							fptr = fopen(buffer, "a");
+							fprintf(fptr, "%s\n", ip);
+							fclose(fptr);
+							write(client_sock, "BLOCKED\r\n", 9);
+							free(ip);
+							close(client_sock);
+							continue;
+							
+						}
+					} else {
+						ip_guard->connection_count = 0;
+						ip_guard->last_connection = time(NULL);
+					}
+				}
+			}		
 		}
 		pid = fork();
 
@@ -896,10 +1006,11 @@ void server(int port) {
 		if (pid == 0) {
 			close(server_socket);
 			server_socket = -1;
-			runbbs(client_sock, strdup(inet_ntoa(client.sin_addr)));
+			runbbs(client_sock, ip);
 
 			exit(0);
 		} else {
+			free(ip);
 			close(client_sock);
 		}
 	}
@@ -937,6 +1048,9 @@ int main(int argc, char **argv) {
 	conf.broadcast_port = 0;
 	conf.broadcast_address = NULL;
 	conf.config_path = NULL;
+	conf.ipguard_enable = 0;
+	conf.ipguard_tries = 4;
+	conf.ipguard_timeout = 120;
 	
 	// Load BBS data
 	if (ini_parse(argv[1], handler, &conf) <0) {

@@ -103,6 +103,16 @@ struct protocol {
 	int upload_prompt;
 };
 
+#define IP_STATUS_UNKNOWN 		0
+#define IP_STATUS_WHITELISTED 	1
+#define IP_STATUS_BLACKLISTED 	2
+
+struct ip_address_guard {
+	int status;
+	time_t last_connection;
+	int connection_count;
+};
+
 struct bbs_config {
 	char *bbs_name;
 	char *bwave_name;
@@ -140,6 +150,10 @@ struct bbs_config {
 	int broadcast_enable;
 	int broadcast_port;
 	char *broadcast_address;
+	
+	int ipguard_enable;
+	int ipguard_timeout;
+	int ipguard_tries;
 	
 	int mail_conference_count;
 	struct mail_conference **mail_conferences;

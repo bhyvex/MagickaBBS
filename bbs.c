@@ -19,8 +19,10 @@
 #include "lua/lualib.h"
 #include "lua/lauxlib.h"
 
+
 int mynode = 0;
 struct bbs_config conf;
+
 
 struct user_record *gUser;
 int gSocket;
@@ -553,6 +555,8 @@ void runbbs_real(int socket, char *ip, int ssh) {
 	int do_internal_login = 0;
 	int usernotfound;
 	int tries;
+	
+	
 	ipaddress = ip;
 
 	if (!ssh) {

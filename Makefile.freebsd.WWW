@@ -6,7 +6,7 @@ ZMODEM = Xmodem/libzmodem.a
 LUA = lua/liblua.a
 MICROHTTPD=-lmicrohttpd -lb64
 
-OBJ = inih/ini.o bbs.o main.o users.o main_menu.o mail_menu.o doors.o bbs_list.o chat_system.o email.o files.o settings.o lua_glue.o strings.o bluewave.o www.o www_email.o www_msgs.o www_last10.o
+OBJ = inih/ini.o bbs.o main.o users.o main_menu.o mail_menu.o doors.o bbs_list.o chat_system.o email.o files.o settings.o lua_glue.o strings.o bluewave.o www.o www_email.o www_msgs.o www_last10.o hashmap/hashmap.o
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 

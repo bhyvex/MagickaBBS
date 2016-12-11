@@ -21,3 +21,5 @@ utils/magiedit/odoors/exe-*
 utils/magiedit/odoors/objs-*
 utils/magiedit/magiedit
 msgserial
+whitelist.ip
+blacklist.ip

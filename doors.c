@@ -176,8 +176,6 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 	struct termios oldit;
 	timeoutpaused = 1;
 
-	printf("\"%s\"\n", cmd);
-
 	if (write_door32sys(user) != 0) {
 		return;
 	}
