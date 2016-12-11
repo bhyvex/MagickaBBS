@@ -238,8 +238,6 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 					gotiac = 0;
 					flush = 0;
 					
-					close(slave);
-					
 					while(running_door || !flush) {
 						FD_ZERO(&fdset);
 						FD_SET(master, &fdset);
