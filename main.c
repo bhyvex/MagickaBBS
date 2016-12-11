@@ -975,7 +975,7 @@ void server(int port) {
 					close(client_sock);
 					continue;
 				} else if (ip_guard->status == IP_STATUS_UNKNOWN) {
-					if (ip_guard->last_connection < time(NULL) + conf.ipguard_timeout) {
+					if (ip_guard->last_connection + conf.ipguard_timeout > time(NULL)) {
 						ip_guard->connection_count++;
 						if (ip_guard->connection_count == conf.ipguard_tries) {
 							ip_guard->status = IP_STATUS_BLACKLISTED;
