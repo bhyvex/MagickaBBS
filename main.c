@@ -966,7 +966,7 @@ void server(int port) {
 				ip_guard->status = IP_STATUS_UNKNOWN;
 				ip_guard->last_connection = time(NULL);
 				ip_guard->connection_count = 1;
-				hashmap_put(ip_guard_map, ip, ip_guard);
+				hashmap_put(ip_guard_map, strdup(ip), ip_guard);
 			} else if (i == MAP_OK) {
 				
 				if (ip_guard->status == IP_STATUS_BLACKLISTED) {
