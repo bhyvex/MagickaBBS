@@ -357,6 +357,13 @@ void s_readpass(char *buffer, int max) {
 		} else if (c == '\b' || c == 127) {
 			i -= 1;
 			continue;
+		} else if (c == 27) {
+			c = s_getchar();
+			if (c == 91) {
+				c = s_getchar();
+			}
+			i -= 1;
+			continue;
 		}
 
 		if (c == '\n' || c == '\r') {
@@ -536,7 +543,7 @@ void automessage_display() {
 }
 
 void runbbs_real(int socket, char *ip, int ssh) {
-	char buffer[256];
+	char buffer[1024];
 	char password[17];
 
 	struct stat s;
@@ -607,6 +614,8 @@ void runbbs_real(int socket, char *ip, int ssh) {
 		exit(1);
 	}
 
+	dolog("Incoming connection on node %d", mynode);
+
 	usertimeout = 10;
 	timeoutpaused = 0;
 	tries = 0;
@@ -642,6 +651,7 @@ tryagain:
 		}
 		
 		if (usernotfound) {
+			dolog("New user on node %d", mynode);
 			user = new_user();
 			gUser = user;
 		} else {
