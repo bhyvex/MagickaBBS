@@ -194,86 +194,83 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 			door_out = gSocket;
 		}
 
-		if (sshBBS && raw) {
-			ttySetRaw(STDIN_FILENO, &oldit);
-			ttySetRaw(STDOUT_FILENO, &oldot);
-		}
+
 
 		ws.ws_row = 24;
 		ws.ws_col = 80;
 
 		running_door = 1;
 
-		if (openpty(&master, &slave, NULL, NULL, &ws) == 0) {
-			sa.sa_handler = doorchld_handler;
-			sigemptyset(&sa.sa_mask);
-			sa.sa_flags = SA_RESTART | SA_SIGINFO;
-			if (sigaction(SIGCHLD, &sa, NULL) == -1) {
-				perror("sigaction");
-				exit(1);
-			}
-			if (raw) {
-				ttySetRaw(master, &oldit2);
-				ttySetRaw(slave, &oldit2);
-			}
-			pid = fork();
-			if (pid < 0) {
-				return;
-			} else if (pid == 0) {
-				if (cwd != NULL) {
-					chdir(cwd);
+		if (!sshBBS) {
+			if (openpty(&master, &slave, NULL, NULL, &ws) == 0) {
+				sa.sa_handler = doorchld_handler;
+				sigemptyset(&sa.sa_mask);
+				sa.sa_flags = SA_RESTART | SA_SIGINFO;
+				if (sigaction(SIGCHLD, &sa, NULL) == -1) {
+					perror("sigaction");
+					exit(1);
 				}
-				close(master);
-
-				dup2(slave, 0);
-				dup2(slave, 1);		
-				if (sshBBS) {
-					dup2(bbs_stderr, 2);
+				if (raw) {
+					ttySetRaw(master, &oldit2);
+					ttySetRaw(slave, &oldit2);
 				}
-				
-				close(slave);
-
-				setsid();
-
-				ioctl(0, TIOCSCTTY, 1);
-
-				execvp(cmd, argv);
-			} else {
-				running_door_pid = pid;
-				gotiac = 0;
-				flush = 0;
-				
-				while(running_door || !flush) {
-					FD_ZERO(&fdset);
-					FD_SET(master, &fdset);
-					FD_SET(door_in, &fdset);
-					if (master > door_in) {
-						t = master + 1;
-					} else {
-						t = door_in + 1;
+				pid = fork();
+				if (pid < 0) {
+					return;
+				} else if (pid == 0) {
+					if (cwd != NULL) {
+						chdir(cwd);
 					}
+					close(master);
+
+					dup2(slave, 0);
+					dup2(slave, 1);		
 					
-					thetimeout.tv_sec = 5;
-					thetimeout.tv_usec = 0;
+					close(slave);
+
+					setsid();
+
+					ioctl(0, TIOCSCTTY, 1);
+
+					execvp(cmd, argv);
+				} else {
+					running_door_pid = pid;
+					gotiac = 0;
+					flush = 0;
 					
-					ret = select(t, &fdset, NULL, NULL, &thetimeout);
-					if (ret > 0) {
-						if (FD_ISSET(door_in, &fdset)) {
-							len = read(door_in, &c, 1);
-							if (len == 0) {
-								close(master);
-								disconnect("Socket Closed");
-								return;
-							}
-							if (!raw) {
-								if (c == '\n' || c == '\0') {
+					close(slave);
+					
+					while(running_door || !flush) {
+						FD_ZERO(&fdset);
+						FD_SET(master, &fdset);
+						FD_SET(door_in, &fdset);
+						if (master > door_in) {
+							t = master + 1;
+						} else {
+							t = door_in + 1;
+						}
+						
+						thetimeout.tv_sec = 5;
+						thetimeout.tv_usec = 0;
+						
+						ret = select(t, &fdset, NULL, NULL, &thetimeout);
+						if (ret > 0) {
+							if (FD_ISSET(door_in, &fdset)) {
+								len = read(door_in, &c, 1);
+								if (len == 0) {
+									close(master);
+									disconnect("Socket Closed");
+									return;
+								}
+								if (!raw) {
+									if (c == '\n' || c == '\0') {
+										continue;
+									}
+								}
+								if (!running_door) {
 									continue;
 								}
-							}
-							if (!running_door) {
-								continue;
-							}
-							if (!sshBBS) {
+
 								if (c == 255) {
 									if (gotiac == 1) {
 										write(master, &c, 1);
@@ -289,33 +286,62 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 										gotiac = 0;
 									}
 								}
-							} else {
-								write(master, &c, 1);
-							}
-						} else if (FD_ISSET(master, &fdset)) {
-							len = read(master, &c, 1);
-							if (len == 0) {
-								close(master);
-								break;
-							}
-							if (c == 255 && !sshBBS) {
+							} else if (FD_ISSET(master, &fdset)) {
+								len = read(master, &c, 1);
+								if (len == 0) {
+									close(master);
+									break;
+								}
+								if (c == 255) {
+									write(door_out, &c, 1);
+								}							
 								write(door_out, &c, 1);
-							}							
-							write(door_out, &c, 1);
-						}
-					} else {
-						if (!running_door) {
-							flush = 1;
+							}
+						} else {
+							if (!running_door) {
+								flush = 1;
+							}
 						}
 					}
+					close(master);
+				}	
+			}
+		
+		} else {
+
+			if (raw) {
+				ttySetRaw(STDIN_FILENO, &oldit);
+				ttySetRaw(STDOUT_FILENO, &oldot);
+			}	
+			
+			sa.sa_handler = doorchld_handler;
+			sigemptyset(&sa.sa_mask);
+			sa.sa_flags = SA_RESTART | SA_SIGINFO;
+			if (sigaction(SIGCHLD, &sa, NULL) == -1) {
+				perror("sigaction");
+				exit(1);
+			}
+			pid = fork();
+			if (pid < 0) {
+				return;
+			} else if (pid == 0) {
+				if (cwd != NULL) {
+					chdir(cwd);
+				}
+
+				dup2(bbs_stderr, 2);
+				execvp(cmd, argv);
+			} else {
+				while(running_door) {
+					sleep(1);
 				}
 			}
+			
+			if (raw) {
+				tcsetattr(STDIN_FILENO, TCSANOW, &oldit);
+				tcsetattr(STDOUT_FILENO, TCSANOW, &oldot);
+			}
 		}
-		if (sshBBS && raw) {
-			tcsetattr(STDIN_FILENO, TCSANOW, &oldit);
-			tcsetattr(STDOUT_FILENO, TCSANOW, &oldot);
-		}			
-
 	} else {
 		if (!sshBBS) {
 			snprintf(buffer, 1024, "%s", cmd);
