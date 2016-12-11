@@ -303,7 +303,6 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 							}
 						}
 					}
-					close(master);
 				}	
 			}
 		
