@@ -272,9 +272,7 @@ void bwave_create_packet() {
 		for (j=0;j<conf.mail_conferences[i]->mail_area_count;j++) {
 			if (conf.mail_conferences[i]->mail_areas[j]->read_sec_level <= gUser->sec_level && conf.mail_conferences[i]->mail_areas[j]->qwkname != NULL) {
 				lasttot = totmsgs;
-				printf("Scan Started\n");
 				totmsgs = bwave_scan_area(i, j, area_count+1, totmsgs, fti_file, mix_file, dat_file, &last_ptr);
-				printf("Scan complete\n");
 				s_printf(get_string(195), conf.mail_conferences[i]->name, conf.mail_conferences[i]->mail_areas[j]->name, totmsgs - lasttot); 
 				if (lasttot == totmsgs) {
 					continue;
