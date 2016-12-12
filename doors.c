@@ -277,11 +277,22 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 										gotiac = 1;
 									}
 								} else {
-									if (gotiac < 2 && gotiac != 0) {
-										gotiac++;
-									} else {						
-										write(master, &c, 1);
+									if (gotiac == 1) {
+										if (c == 254 || c == 253 || c == 252 || c == 251) {
+											gotiac = 2;
+										} else if (c == 250) {
+											gotiac = 3;
+										} else {
+											gotiac = 0;
+										}
+									} else if (gotiac == 2) {
 										gotiac = 0;
+									} else if (gotiac == 3) {
+										if (c == 240) {
+											gotiac = 0;
+										}
+									} else {
+										write(master, &c, 1);
 									}
 								}
 							} else if (FD_ISSET(master, &fdset)) {

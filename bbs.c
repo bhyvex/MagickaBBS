@@ -284,10 +284,20 @@ char s_getchar() {
 					usertimeout = 10;
 					return c;
 				}
-				len = read(gSocket, &c, 1);
-				if (len == 0) {
-					disconnect("Socket Closed");
-				}
+				if (c == 254 || c == 253 || c == 252 || c == 251) {
+					len = read(gSocket, &c, 1);
+					if (len == 0) {
+						disconnect("Socket Closed");
+					}
+				} else if (c == 250) {
+					do {
+						len = read(gSocket, &c, 1);
+						if (len == 0) {
+							disconnect("Socket Closed");
+						}
+					} while(c != 240);
+				} 
+				
 				len = read(gSocket, &c, 1);
 				if (len == 0) {
 					disconnect("Socket Closed");
@@ -376,7 +386,7 @@ void s_readpass(char *buffer, int max) {
 }
 
 void disconnect(char *calledby) {
-	char buffer[256];
+	char buffer[1024];
 	if (gUser != NULL) {
 		save_user(gUser);
 	}
@@ -567,10 +577,16 @@ void runbbs_real(int socket, char *ip, int ssh) {
 	ipaddress = ip;
 
 	if (!ssh) {
-		write(socket, iac_echo, 3);
-		write(socket, iac_sga, 3);
 		gUser = NULL;
 		sshBBS = 0;
+		if (write(socket, iac_echo, 3) != 3) {
+			dolog("Failed to send iac_echo");
+			exit(0);			
+		}
+		if (write(socket, iac_sga, 3) != 3) {
+			dolog("Failed to send iac_sga");
+			exit(0);
+		}
 	} else {
 		sshBBS = 1;
 	}
