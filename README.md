@@ -14,7 +14,7 @@ If you want to install Magicka BBS, follow these steps.
    `sudo apt-get install build-essential libsqlite3-dev libreadline-dev git libssl-dev libssh-dev`
 
    should work on debian and debian derivatives.
-2. Clone the repo `git clone https://github.com/apamment/MagickaBBS`
+2. Clone the repo `git clone https://github.com/MagickaBBS/MagickaBBS`
 3. Build JamLib
 
   `cd MagickaBBS/jamlib`
@@ -69,7 +69,7 @@ If you want to install Magicka BBS, follow these steps.
 12. Your BBS is now running on the port you specified in the config.ini, log in and create yourself an account! (By default there is only one security level, you can add more,
 but you will need to use an SQLite Manager to modify users.sq3 and set security levels, as there is no user editor yet.
 
-For information on how to configure your BBS, check the wiki https://github.com/apamment/MagickaBBS/wiki
+For information on how to configure your BBS, check the wiki https://github.com/MagickaBBS/MagickaBBS/wiki
 
 # About the webserver
 
@@ -80,15 +80,3 @@ You will also need libb64-dev. Once you have these prerequisites, you can build 
 
 The webserver will use templates in the www/ folder to create internal webpages on the fly, anything in www/static/ is served up as is.
 
-# README!!
-
-If you are upgrading from a version prior to https://github.com/apamment/MagickaBBS/commit/73aa146b8470727f036f732d2c9c267048ee455b You will need to make and run the update_pass utility on your
-user database. This will convert all plain text passwords to sha256 hashed and salted passwords.
-
-eg.
-
-		cd utils/update_pass
-		make
-		./update_pass ../../users.sq3
-
-Although you probably should make a backup of your database first in case things go wrong...
