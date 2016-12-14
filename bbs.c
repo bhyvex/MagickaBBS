@@ -100,7 +100,6 @@ void dolog(char *fmt, ...) {
 	snprintf(buffer, 512, "%s/%04d%02d%02d.log", conf.log_path, time_now.tm_year + 1900, time_now.tm_mon + 1, time_now.tm_mday);
 	logfptr = fopen(buffer, "a");
     if (!logfptr) {
-		dolog("Error opening log file!");
 		return;
 	}
 	va_list ap;
