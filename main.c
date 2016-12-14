@@ -116,7 +116,7 @@ static int protocol_config_handler(void* user, const char* section, const char* 
 		conf->protocols = (struct protocol **)realloc(conf->protocols, sizeof(struct protocol *) * (conf->protocol_count + 1));
 	}
 
-	conf->protocols[conf->protocol_count] = (struct protocol *)malloc(sizeof(struct archiver));
+	conf->protocols[conf->protocol_count] = (struct protocol *)malloc(sizeof(struct protocol));
 
 	conf->protocols[conf->protocol_count]->name = strdup(section);
 	conf->protocols[conf->protocol_count]->internal_zmodem = 0;
@@ -1102,6 +1102,7 @@ int main(int argc, char **argv) {
 	conf.ipguard_tries = 4;
 	conf.ipguard_timeout = 120;
 	conf.protocol_count = 0;	
+	
 	// Load BBS data
 	if (ini_parse(argv[1], handler, &conf) <0) {
 		fprintf(stderr, "Unable to load configuration ini (%s)!\n", argv[1]);
