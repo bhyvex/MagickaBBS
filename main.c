@@ -1101,7 +1101,7 @@ int main(int argc, char **argv) {
 	conf.ipguard_enable = 0;
 	conf.ipguard_tries = 4;
 	conf.ipguard_timeout = 120;
-	
+	conf.protocol_count = 0;	
 	// Load BBS data
 	if (ini_parse(argv[1], handler, &conf) <0) {
 		fprintf(stderr, "Unable to load configuration ini (%s)!\n", argv[1]);
