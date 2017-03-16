@@ -89,35 +89,35 @@ typedef struct {
 /*
 **  Message status bits
 */
-#define MSG_LOCAL       0x00000001L /* Msg created locally */
-#define MSG_INTRANSIT   0x00000002L /* Msg is in-transit */
-#define MSG_PRIVATE     0x00000004L /* Private */
-#define MSG_READ        0x00000008L /* Read by addressee */
-#define MSG_SENT        0x00000010L /* Sent to remote */
-#define MSG_KILLSENT    0x00000020L /* Kill when sent */
-#define MSG_ARCHIVESENT 0x00000040L /* Archive when sent */
-#define MSG_HOLD        0x00000080L /* Hold for pick-up */
-#define MSG_CRASH       0x00000100L /* Crash */
-#define MSG_IMMEDIATE   0x00000200L /* Send Msg now, ignore restrictions */
-#define MSG_DIRECT      0x00000400L /* Send directly to destination */
-#define MSG_GATE        0x00000800L /* Send via gateway */
-#define MSG_FILEREQUEST 0x00001000L /* File request */
-#define MSG_FILEATTACH  0x00002000L /* File(s) attached to Msg */
-#define MSG_TRUNCFILE   0x00004000L /* Truncate file(s) when sent */
-#define MSG_KILLFILE    0x00008000L /* Delete file(s) when sent */
-#define MSG_RECEIPTREQ  0x00010000L /* Return receipt requested */
-#define MSG_CONFIRMREQ  0x00020000L /* Confirmation receipt requested */
-#define MSG_ORPHAN      0x00040000L /* Unknown destination */
-#define MSG_ENCRYPT     0x00080000L /* Msg text is encrypted */
-#define MSG_COMPRESS    0x00100000L /* Msg text is compressed */
-#define MSG_ESCAPED     0x00200000L /* Msg text is seven bit ASCII */
-#define MSG_FPU         0x00400000L /* Force pickup */
-#define MSG_TYPELOCAL   0x00800000L /* Msg is for local use only (no export) */
-#define MSG_TYPEECHO    0x01000000L /* Msg is for conference distribution */
-#define MSG_TYPENET     0x02000000L /* Msg is direct network mail */
-#define MSG_NODISP      0x20000000L /* Msg may not be displayed to user */
-#define MSG_LOCKED      0x40000000L /* Msg is locked, no editing possible */
-#define MSG_DELETED     0x80000000L /* Msg is deleted */
+#define JAM_MSG_LOCAL       0x00000001L /* Msg created locally */
+#define JAM_MSG_INTRANSIT   0x00000002L /* Msg is in-transit */
+#define JAM_MSG_PRIVATE     0x00000004L /* Private */
+#define JAM_MSG_READ        0x00000008L /* Read by addressee */
+#define JAM_MSG_SENT        0x00000010L /* Sent to remote */
+#define JAM_MSG_KILLSENT    0x00000020L /* Kill when sent */
+#define JAM_MSG_ARCHIVESENT 0x00000040L /* Archive when sent */
+#define JAM_MSG_HOLD        0x00000080L /* Hold for pick-up */
+#define JAM_MSG_CRASH       0x00000100L /* Crash */
+#define JAM_MSG_IMMEDIATE   0x00000200L /* Send Msg now, ignore restrictions */
+#define JAM_MSG_DIRECT      0x00000400L /* Send directly to destination */
+#define JAM_MSG_GATE        0x00000800L /* Send via gateway */
+#define JAM_MSG_FILEREQUEST 0x00001000L /* File request */
+#define JAM_MSG_FILEATTACH  0x00002000L /* File(s) attached to Msg */
+#define JAM_MSG_TRUNCFILE   0x00004000L /* Truncate file(s) when sent */
+#define JAM_MSG_KILLFILE    0x00008000L /* Delete file(s) when sent */
+#define JAM_MSG_RECEIPTREQ  0x00010000L /* Return receipt requested */
+#define JAM_MSG_CONFIRMREQ  0x00020000L /* Confirmation receipt requested */
+#define JAM_MSG_ORPHAN      0x00040000L /* Unknown destination */
+#define JAM_MSG_ENCRYPT     0x00080000L /* Msg text is encrypted */
+#define JAM_MSG_COMPRESS    0x00100000L /* Msg text is compressed */
+#define JAM_MSG_ESCAPED     0x00200000L /* Msg text is seven bit ASCII */
+#define JAM_MSG_FPU         0x00400000L /* Force pickup */
+#define JAM_MSG_TYPELOCAL   0x00800000L /* Msg is for local use only (no export) */
+#define JAM_MSG_TYPEECHO    0x01000000L /* Msg is for conference distribution */
+#define JAM_MSG_TYPENET     0x02000000L /* Msg is direct network mail */
+#define JAM_MSG_NODISP      0x20000000L /* Msg may not be displayed to user */
+#define JAM_MSG_LOCKED      0x40000000L /* Msg is locked, no editing possible */
+#define JAM_MSG_DELETED     0x80000000L /* Msg is deleted */
 
 /*
 **  Message header

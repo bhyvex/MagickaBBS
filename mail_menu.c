@@ -284,7 +284,7 @@ struct msg_headers *read_message_headers(int msgconf, int msgarea, struct user_r
 				continue;
 			}
 
-			if (jmh.Attribute & MSG_DELETED) {
+			if (jmh.Attribute & JAM_MSG_DELETED) {
 				JAM_DelSubPacket(jsp);
 				continue;
 			}
@@ -345,7 +345,7 @@ struct msg_headers *read_message_headers(int msgconf, int msgarea, struct user_r
 				jamm->subject = strdup("(No Subject)");
 			}
 
-			if (jmh.Attribute & MSG_PRIVATE) {
+			if (jmh.Attribute & JAM_MSG_PRIVATE) {
 				if (!msg_is_to(user, jamm->to, jamm->daddress, conf.mail_conferences[msgconf]->nettype, conf.mail_conferences[msgconf]->realnames, msgconf) &&
 				    !msg_is_from(user, jamm->from, jamm->oaddress, conf.mail_conferences[msgconf]->nettype, conf.mail_conferences[msgconf]->realnames, msgconf)) {
 
@@ -1422,7 +1422,7 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 		sprintf(buffer, "%s", asctime(&msg_date));
 		buffer[strlen(buffer) - 1] = '\0';
 		s_printf(get_string(109), buffer, mailno + 1, msghs->msg_count);
-		s_printf(get_string(110), (msghs->msgs[mailno]->msg_h->Attribute & MSG_SENT ? "SENT" : ""));
+		s_printf(get_string(110), (msghs->msgs[mailno]->msg_h->Attribute & JAM_MSG_SENT ? "SENT" : ""));
 		s_printf(get_string(111));
 
 		body = (char *)malloc(msghs->msgs[mailno]->msg_h->TxtLen);
@@ -1653,7 +1653,7 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 
 					JAM_ClearMsgHeader( &jmh );
 					jmh.DateWritten = time(NULL);
-					jmh.Attribute |= MSG_LOCAL;
+					jmh.Attribute |= JAM_MSG_LOCAL;
 
 					jsp = JAM_NewSubPacket();
 					jsf.LoID   = JAMSFLD_SENDERNAME;
@@ -1677,7 +1677,7 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 
 
 					if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_ECHOMAIL_AREA || conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NEWSGROUP_AREA) {
-						jmh.Attribute |= MSG_TYPEECHO;
+						jmh.Attribute |= JAM_MSG_TYPEECHO;
 
 						if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_FIDO) {
 							if (conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point) {
@@ -1725,8 +1725,8 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 							jmh.ReplyCRC = JAM_Crc32(buffer, strlen(buffer));
 						}
 					} else if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NETMAIL_AREA) {
-						jmh.Attribute |= MSG_TYPENET;
-						jmh.Attribute |= MSG_PRIVATE;
+						jmh.Attribute |= JAM_MSG_TYPENET;
+						jmh.Attribute |= JAM_MSG_PRIVATE;
 
 						if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_FIDO) {
 							if (conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point) {
@@ -2112,7 +2112,7 @@ int mail_menu(struct user_record *user) {
 
 						JAM_ClearMsgHeader( &jmh );
 						jmh.DateWritten = (uint32_t)time(NULL);
-						jmh.Attribute |= MSG_LOCAL;
+						jmh.Attribute |= JAM_MSG_LOCAL;
 						if (conf.mail_conferences[user->cur_mail_conf]->realnames == 0) {
 							if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_WWIV) {
 								sprintf(buffer, "%s #%d @%d", user->loginname, user->id, conf.mail_conferences[user->cur_mail_conf]->wwivnode);
@@ -2148,7 +2148,7 @@ int mail_menu(struct user_record *user) {
 						JAM_PutSubfield(jsp, &jsf);
 
 						if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_ECHOMAIL_AREA || conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NEWSGROUP_AREA) {
-							jmh.Attribute |= MSG_TYPEECHO;
+							jmh.Attribute |= JAM_MSG_TYPEECHO;
 
 							if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_FIDO) {
 								if (conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point) {
@@ -2183,8 +2183,8 @@ int mail_menu(struct user_record *user) {
 							}
 						} else
 						if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NETMAIL_AREA) {
-							jmh.Attribute |= MSG_TYPENET;
-							jmh.Attribute |= MSG_PRIVATE;
+							jmh.Attribute |= JAM_MSG_TYPENET;
+							jmh.Attribute |= JAM_MSG_PRIVATE;
 							if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_FIDO) {
 								if (conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point) {
 									sprintf(buffer, "%d:%d/%d.%d", conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,

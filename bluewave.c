@@ -142,7 +142,7 @@ int bwave_scan_area(int confr, int area, int areano, int totmsgs, FILE *fti_file
 		
 		*last_ptr += msghs->msgs[k]->msg_h->TxtLen;
 		
-		if (msghs->msgs[k]->msg_h->Attribute & MSG_LOCAL) {
+		if (msghs->msgs[k]->msg_h->Attribute & JAM_MSG_LOCAL) {
 			fti.flags |= FTI_MSGLOCAL;
 		}
 		
@@ -432,7 +432,7 @@ int bwave_add_message(int confr, int area, unsigned int dwritten, char *to, char
 
 	JAM_ClearMsgHeader( &jmh );
 	jmh.DateWritten = dwritten;
-	jmh.Attribute |= MSG_LOCAL;
+	jmh.Attribute |= JAM_MSG_LOCAL;
 	if (conf.mail_conferences[confr]->realnames == 0) {
 		strcpy(buffer, gUser->loginname);
 	} else {
@@ -471,7 +471,7 @@ int bwave_add_message(int confr, int area, unsigned int dwritten, char *to, char
 	JAM_PutSubfield(jsp, &jsf);
 
 	if (conf.mail_conferences[confr]->mail_areas[area]->type == TYPE_ECHOMAIL_AREA || conf.mail_conferences[confr]->mail_areas[area]->type == TYPE_NEWSGROUP_AREA) {
-		jmh.Attribute |= MSG_TYPEECHO;
+		jmh.Attribute |= JAM_MSG_TYPEECHO;
 
 		if (conf.mail_conferences[confr]->fidoaddr->point) {
 			sprintf(buffer, "%d:%d/%d.%d", conf.mail_conferences[confr]->fidoaddr->zone,
@@ -503,8 +503,8 @@ int bwave_add_message(int confr, int area, unsigned int dwritten, char *to, char
 		jmh.MsgIdCRC = JAM_Crc32(buffer, strlen(buffer));
 
 	} else if (conf.mail_conferences[confr]->mail_areas[confr]->type == TYPE_NETMAIL_AREA) {
-		jmh.Attribute |= MSG_TYPENET;
-		jmh.Attribute |= MSG_PRIVATE;
+		jmh.Attribute |= JAM_MSG_TYPENET;
+		jmh.Attribute |= JAM_MSG_PRIVATE;
 	
 		if (conf.mail_conferences[confr]->fidoaddr->point) {
 			sprintf(buffer, "%d:%d/%d.%d", conf.mail_conferences[confr]->fidoaddr->zone,

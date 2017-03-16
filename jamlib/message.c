@@ -37,8 +37,8 @@
     - Fixed comparison between signed and unsigned variable in JAM_AddMessage()
 
     - Improved handling of ActiveMsgs counter. JAM_AddMessage() now only
-      increases ActiveMsgs if the added message does not have MSG_DELETED set.
-      JAM_ChangeMsgHeader() decreases ActiveMsgs if MSG_DELETED is set and the
+      increases ActiveMsgs if the added message does not have JAM_MSG_DELETED set.
+      JAM_ChangeMsgHeader() decreases ActiveMsgs if JAM_MSG_DELETED is set and the
       message wasn't already deleted. JAM_DeleteMessage() now only decreases
       ActiveMsgs if the message wasn't already deleted.
 
@@ -263,7 +263,7 @@ int JAM_ChangeMsgHeader( s_JamBase* 	 Base_PS,
 	return JAM_IO_ERROR;
     }
 
-    if( ( Header_PS->Attribute & MSG_DELETED ) && !(OldHeader_S.Attribute & MSG_DELETED) ) {
+    if( ( Header_PS->Attribute & JAM_MSG_DELETED ) && !(OldHeader_S.Attribute & JAM_MSG_DELETED) ) {
         /* message is deleted now but wasn't before */
         BaseHeader_S.ActiveMsgs--;
     }
@@ -449,8 +449,8 @@ int JAM_AddMessage( s_JamBase* 		Base_PS,
 		return JAM_IO_ERROR;
    }
 
-   if(!(Header_PS->Attribute & MSG_DELETED))
-        BaseHeader_S.ActiveMsgs++; /* Only increase ActiveMsgs if MSG_DELETED not set */
+   if(!(Header_PS->Attribute & JAM_MSG_DELETED))
+        BaseHeader_S.ActiveMsgs++; /* Only increase ActiveMsgs if JAM_MSG_DELETED not set */
 
    /* write message base header */
 
@@ -553,7 +553,7 @@ int JAM_DeleteMessage( s_JamBase*	 Base_PS,
     }
 
     OldAttribute_I = Header_S.Attribute;
-    Header_S.Attribute |= MSG_DELETED;
+    Header_S.Attribute |= JAM_MSG_DELETED;
 
     /* find header */
     if ( fseek( Base_PS->HdrFile_PS, Index_S.HdrOffset, SEEK_SET ) ) {
@@ -582,7 +582,7 @@ int JAM_DeleteMessage( s_JamBase*	 Base_PS,
 	return JAM_IO_ERROR;
     }
 
-    if(!(OldAttribute_I & MSG_DELETED))
+    if(!(OldAttribute_I & JAM_MSG_DELETED))
         BaseHeader_S.ActiveMsgs--; /* decrease ActiveMsgs if the message wasn't already deleted */
 
     /* write message base header */
