@@ -284,7 +284,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 			JAM_CloseMB(jb);
 			return NULL;
 		}
-		if (jmh.Attribute & MSG_DELETED) {
+		if (jmh.Attribute & JAM_MSG_DELETED) {
 			JAM_DelSubPacket(jsp);
 			JAM_CloseMB(jb);
 			return NULL;
@@ -333,7 +333,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 			subject = strdup("(No Subject)");
 		}
 		
-		if (jmh.Attribute & MSG_PRIVATE) {
+		if (jmh.Attribute & JAM_MSG_PRIVATE) {
 			if (!msg_is_to(user, to, daddress, conf.mail_conferences[conference]->nettype, conf.mail_conferences[conference]->realnames, conference) &&
 				    !msg_is_from(user, from, oaddress, conf.mail_conferences[conference]->nettype, conf.mail_conferences[conference]->realnames, conference)) {
 
@@ -688,7 +688,7 @@ int www_send_msg(struct user_record *user, char *to, char *subj, int conference,
 		
 		JAM_ClearMsgHeader( &jmh );
 		jmh.DateWritten = (uint32_t)time(NULL);
-		jmh.Attribute |= MSG_LOCAL;	
+		jmh.Attribute |= JAM_MSG_LOCAL;	
 		
 		if (conf.mail_conferences[conference]->realnames == 0) {
 			if (conf.mail_conferences[conference]->nettype == NETWORK_WWIV) {
@@ -724,7 +724,7 @@ int www_send_msg(struct user_record *user, char *to, char *subj, int conference,
 		JAM_PutSubfield(jsp, &jsf);
 		
 		if (conf.mail_conferences[conference]->mail_areas[area]->type == TYPE_ECHOMAIL_AREA) {
-			jmh.Attribute |= MSG_TYPEECHO;
+			jmh.Attribute |= JAM_MSG_TYPEECHO;
 
 			if (conf.mail_conferences[conference]->nettype == NETWORK_FIDO) {
 				if (conf.mail_conferences[conference]->fidoaddr->point) {
