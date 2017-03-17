@@ -102,7 +102,7 @@ c89:
 
 
 freebsd:
-	$(MAKE) $(ALL) SYSCFLAGS="-DLUA_USE_LINUX" SYSLIBS="-Wl,-E -lreadline"
+	$(MAKE) $(ALL) SYSCFLAGS="-DLUA_USE_LINUX -I/usr/local/include" SYSLIBS="-L/usr/local/lib -Wl,-E -lreadline" CC=cc
 
 generic: $(ALL)
 
