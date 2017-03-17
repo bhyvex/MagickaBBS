@@ -199,7 +199,7 @@ void show_email(struct user_record *user, int msgno, int email_count, struct ema
             }
             s_printf(get_string(187));
             s_printf(get_string(191));
-            c = s_getc();
+            c = s_getchar();
             
             if (tolower(c) == 'r') {
                 should_break = 1;
@@ -209,9 +209,9 @@ void show_email(struct user_record *user, int msgno, int email_count, struct ema
 			} else if (tolower(c) == 'd') {
 				should_break = 1;
             } else if (c == '\e') {
-                c = s_getc();
+                c = s_getchar();
                 if (c == 91) {
-                    c = s_getc();
+                    c = s_getchar();
                     if (c == 65) {
                         position--;
                         if (position < 0) {
@@ -439,15 +439,16 @@ void list_emails(struct user_record *user) {
 				}
 			}
 			s_printf(get_string(190));
+			s_printf("\e[%d;5H", position - start + 2);
 			redraw = 0;
 		}
-		c = s_getc();
+		c = s_getchar();
 		if (tolower(c) == 'q') {
 			closed = 1;
 		} else if (c == 27) {
-			c = s_getc();
+			c = s_getchar();
 			if (c == 91) {
-				c = s_getc();
+				c = s_getchar();
 				if (c == 66) {
 					// down
 					position++;
@@ -460,6 +461,7 @@ void list_emails(struct user_record *user) {
 					}
 					if (position == email_count) {
 						position--;
+						s_printf("\e[%d;5H", position - start + 2);
 					} else if (!redraw) {
 						s_printf("\e[%d;1H", position - start + 1);
 						localtime_r((time_t *)&emails[position-1]->date, &msg_date);
@@ -474,7 +476,8 @@ void list_emails(struct user_record *user) {
 							s_printf(get_string(192), position + 1, emails[position]->subject, emails[position]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 						} else {
 							s_printf(get_string(193), position + 1, emails[position]->subject, emails[position]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
-						}												
+						}	
+						s_printf("\e[%d;5H", position - start + 2);
 					}
 				} else if (c == 65) {
 					// up
@@ -505,7 +508,7 @@ void list_emails(struct user_record *user) {
 						} else {
 							s_printf(get_string(193), position + 1, emails[position]->subject, emails[position]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 						}												
-												
+						s_printf("\e[%d;5H", position - start + 3);
 					}											
 				}
 			}

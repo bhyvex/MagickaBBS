@@ -2315,15 +2315,16 @@ int mail_menu(struct user_record *user) {
 										}
 									}
 									s_printf(get_string(190));
+									s_printf("\e[%d;5H", i - start + 1);
 									redraw = 0;
 								}
-								c = s_getc();
+								c = s_getchar();
 								if (tolower(c) == 'q') {
 									closed = 1;
 								} else if (c == 27) {
-									c = s_getc();
+									c = s_getchar();
 									if (c == 91) {
-										c = s_getc();
+										c = s_getchar();
 										if (c == 66) {
 											// down
 											i++;
@@ -2336,6 +2337,7 @@ int mail_menu(struct user_record *user) {
 											}
 											if (i-1 == msghs->msg_count) {
 												i--;
+												s_printf("\e[%d;5H", i - start + 1);
 											} else if (!redraw) {
 												s_printf("\e[%d;1H", i - start);
 												localtime_r((time_t *)&msghs->msgs[i-2]->msg_h->DateWritten, &msg_date);
@@ -2351,7 +2353,7 @@ int mail_menu(struct user_record *user) {
 												} else {
 													s_printf(get_string(189), i, msghs->msgs[i-1]->subject, msghs->msgs[i-1]->from, msghs->msgs[i-1]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 												}												
-												
+												s_printf("\e[%d;5H", i - start + 1);
 											}
 										} else if (c == 65) {
 											// up
@@ -2381,7 +2383,8 @@ int mail_menu(struct user_record *user) {
 													s_printf(get_string(188), i, msghs->msgs[i-1]->subject, msghs->msgs[i-1]->from, msghs->msgs[i-1]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 												} else {
 													s_printf(get_string(189), i, msghs->msgs[i-1]->subject, msghs->msgs[i-1]->from, msghs->msgs[i-1]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
-												}												
+												}									
+												s_printf("\e[%d;5H", i - start + 1);			
 												
 											}											
 										}
