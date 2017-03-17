@@ -8,6 +8,9 @@
 #include <b64/cdecode.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#ifdef __FreeBSD__
+#include <netinet/in.h>
+#endif
 #include "bbs.h"
 
 #define GET 1
