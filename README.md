@@ -1,4 +1,7 @@
 # MagickaBBS
+
+[![Build Status](http://magickabbs.com:8080/buildStatus/icon?job=MagickaBBS-Linux)](http://magickabbs.com:8080/job/MagickaBBS-Linux)
+
 Linux/FreeBSD bulletin board system (Should also work on NetBSD and OpenBSD, if it doesn't it's a bug)
 
 As I lost the code to my initial BBS flea, I've decided to start over from scratch and this time I'm using git hub so I dont
