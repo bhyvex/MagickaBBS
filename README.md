@@ -1,6 +1,6 @@
 # MagickaBBS
 
-[![Build Status](http://magickabbs.com:8080/buildStatus/icon?job=MagickaBBS-Linux)](http://magickabbs.com:8080/job/MagickaBBS-Linux)
+[![Build Status](https://build.magickabbs.com/buildStatus/icon?job=MagickaBBS-Linux)](https://build.magickabbs.com/job/MagickaBBS-Linux)
 
 Linux/FreeBSD bulletin board system (Should also work on NetBSD and OpenBSD, if it doesn't it's a bug)
 
