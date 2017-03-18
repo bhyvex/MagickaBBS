@@ -6,8 +6,9 @@ ZMODEM = deps/Xmodem/libzmodem.a
 LUA = deps/lua/liblua.a
 B64 = deps/libb64-1.2/src/libb64.a
 MICROHTTPD=-lmicrohttpd
+ODOORS = deps/odoors/libs-`uname -s`/libODoors.a
 
-all: magicka magimail
+all: magicka magimail magiedit
 
 ${LUA}: 
 	cd deps/lua && $(MAKE) -f Makefile linux MAKEFLAGS=
@@ -21,6 +22,8 @@ ${ZMODEM}:
 ${B64}: 
 	cd deps/libb64-1.2 && $(MAKE) MAKEFLAGS=
 
+${ODOORS}:
+	cd deps/odoors/ && $(MAKE)
 
 OBJ = inih/ini.o bbs.o main.o users.o main_menu.o mail_menu.o doors.o bbs_list.o chat_system.o email.o files.o settings.o lua_glue.o strings.o www.o www_email.o www_msgs.o www_last10.o bluewave.o hashmap/hashmap.o
 %.o: %.c $(DEPS)
@@ -32,6 +35,9 @@ magicka: $(OBJ) ${LUA} ${JAMLIB} ${ZMODEM} ${B64}
 magimail: $(JAMLIB)
 	cd utils/magimail && $(MAKE) linux
 
+magiedit: $(ODOORS)
+	cd utils/magiedit && $(MAKE)
+
 .PHONY: clean
 
 clean:
@@ -41,3 +47,5 @@ clean:
 	cd deps/Xmodem && $(MAKE) clean
 	cd deps/libb64-1.2 && $(MAKE) clean
 	cd utils/magimail && $(MAKE) cleanlinux
+	cd utils/magiedit && $(MAKE) clean
+	cd deps/odoors/ && rm -rf libs-`uname -s` objs-`uname -s` exe-`uname -s`
