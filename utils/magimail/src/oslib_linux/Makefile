@@ -3,9 +3,9 @@ INCDIR = ../
 OS := $(shell uname -s)
 
 ifeq ($(OS), FreeBSD)
-	CC = gcc $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -Wall -I $(INCDIR) -DPLATFORM_LINUX -g
-else
 	CC = cc $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -Wall -I $(INCDIR) -DPLATFORM_LINUX -g
+else
+	CC = gcc $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -Wall -I $(INCDIR) -DPLATFORM_LINUX -g
 endif
 AR = ar -ru
 RM = rm -f
