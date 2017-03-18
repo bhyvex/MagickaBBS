@@ -38,8 +38,11 @@ MBOBJS = $(MBOBJS_MSG) $(MBOBJS_JAM) $(MBOBJS_SQ3)
 DEFS = $(PLATFORMDEF) $(MBDEFS) $(NLDEFS)
 
 # Commands
-
-CC = gcc $(CPPFLAGS) $(CFLAGS) $(DEFS) $(LDFLAGS) -I $(INCDIR) -I ../../../deps/ -Wall 
+ifeq (`uname -s`, FreeBSD)
+  CC = cc $(CPPFLAGS) $(CFLAGS) $(DEFS) $(LDFLAGS) -I $(INCDIR) -I ../../../deps/ -Wall
+else
+  CC = gcc $(CPPFLAGS) $(CFLAGS) $(DEFS) $(LDFLAGS) -I $(INCDIR) -I ../../../deps/ -Wall 
+endif
 RM = rm -f
 STRIP = strip
 
