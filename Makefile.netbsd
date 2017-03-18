@@ -1,5 +1,5 @@
 CC=cc
-CFLAGS=-I/usr/local/include -I./deps/
+CFLAGS=-I/usr/pkg/include -I./deps/
 DEPS = bbs.h
 JAMLIB = deps/jamlib/jamlib.a
 ZMODEM = deps/Xmodem/libzmodem.a
@@ -8,7 +8,7 @@ LUA = deps/lua/liblua.a
 all: magicka
 
 ${LUA}:
-	cd deps/lua && $(MAKE) -f Makefile freebsd MAKEFLAGS=
+	cd deps/lua && $(MAKE) -f Makefile bsd MAKEFLAGS=
  
 ${JAMLIB}:
 	cd deps/jamlib && $(MAKE) -f Makefile.linux MAKEFLAGS=
@@ -20,8 +20,8 @@ OBJ = inih/ini.o bbs.o main.o users.o main_menu.o mail_menu.o doors.o bbs_list.o
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-magicka: $(OBJ) ${LUA} ${JAMLIB} ${ZMODEM}
-	$(CC) -o magicka -o $@ $^ $(CFLAGS) -L/usr/local/lib -lsqlite3 $(JAMLIB) $(ZMODEM) $(LUA) -lutil -lm -lssl -lcrypto -lssh
+magicka: $(OBJ) ${LUA} ${ZMODEM} ${JAMLIB}
+	$(CC) -o magicka -o $@ $^ $(CFLAGS) -L/usr/pkg/lib -lsqlite3 $(JAMLIB) $(ZMODEM) $(LUA) -lutil -lm -lssl -lcrypto -lssh
 
 .PHONY: clean
 
