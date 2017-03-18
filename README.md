@@ -18,46 +18,27 @@ If you want to install Magicka BBS, follow these steps.
 
    should work on debian and debian derivatives.
 2. Clone the repo `git clone https://github.com/MagickaBBS/MagickaBBS`
-3. Build JamLib
 
-  `cd MagickaBBS/jamlib`
+3. Build the BBS (You may have to adjust the Makefile for your system)
 
+  `make -f Makefile.linux` (Linux) `gmake -f Makefile.freebsd` (FreeBSD) `make -f Makefile.osx` (macOS)
 
-  `make -f Makefile.linux` (Linux) `gmake -f Makefile.linux` (*BSD)
-
-3. Build libzmodem
-
-  `cd MagickaBBS/Xmodem`
-
-
-  `make` (Linux) `gmake` (*BSD)
-
-4. Build LUA
-
-	`cd MagickaBBS/lua`
-
-	`make linux` (Linux) `gmake freebsd` (FreeBSD)
-
-5. Build the BBS (You may have to adjust the Makefile for your system)
-
-  `make -f Makefile.linux` (Linux) `gmake -f Makefile.freebsd` (FreeBSD)
-
-6. Make a directory for logs.
+4. Make a directory for logs.
 
 	`mkdir logs`
 
-7. Copy the config-default directory to a config directory.
+5. Copy the config-default directory to a config directory.
 
   `cp -r config_default config`
 
-8. Edit the config files and update essential information, like system paths and BBS name etc
-9. Copy the ansi-default directory to the one specified in your system path
+6. Edit the config files and update essential information, like system paths and BBS name etc
+7. Copy the ansi-default directory to the one specified in your system path
 
   eg.
 
   `cp -r ansi_default ansis`
 
-10. If you are going to run SSH, you will need to create keys. To do this
+8. If you are going to run SSH, you will need to create keys. To do this
 
   `mkdir keys`
 
@@ -65,11 +46,11 @@ If you want to install Magicka BBS, follow these steps.
 	
 	`ssh-keygen -f keys/ssh_host_dsa_key -N '' -t dsa`
 
-11. Run Magicka BBS on a port over 1024 (Below require root, and we're not ready for that).
+9. Run Magicka BBS on a port over 1024 (Below require root, and we're not ready for that).
 
   `./magicka config/bbs.ini`
 
-12. Your BBS is now running on the port you specified in the config.ini, log in and create yourself an account! (By default there is only one security level, you can add more,
+10. Your BBS is now running on the port you specified in the config.ini, log in and create yourself an account! (By default there is only one security level, you can add more,
 but you will need to use an SQLite Manager to modify users.sq3 and set security levels, as there is no user editor yet.
 
 For information on how to configure your BBS, check the wiki https://github.com/MagickaBBS/MagickaBBS/wiki
