@@ -36,7 +36,7 @@ magiedit: $(ODOORS)
 	cd utils/magiedit && $(MAKE)
 
 magimail: $(JAMLIB)
-	cd utils/magimail && $(MAKE) linux
+	cd utils/magimail && $(MAKE) freebsd
 
 .PHONY: clean
 
@@ -46,6 +46,6 @@ clean:
 	cd deps/jamlib && $(MAKE) -f Makefile.linux clean
 	cd deps/Xmodem && $(MAKE) clean
 	cd deps/libb64-1.2 && $(MAKE) clean
-	cd utils/magimail && $(MAKE) cleanlinux
+	cd utils/magimail && $(MAKE) cleanfreebsd
 	cd utils/magiedit && $(MAKE) clean
 	cd deps/odoors/ && rm -rf libs-`uname -s` objs-`uname -s` exe-`uname -s`
