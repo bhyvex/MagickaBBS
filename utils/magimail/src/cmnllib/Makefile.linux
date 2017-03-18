@@ -1,6 +1,10 @@
 INCDIR = ../
 
-CC = gcc $(CPPFLAGS) $(CFLAGS) -DPLATFORM_LINUX $(LDFLAGS) -I $(INCDIR) -Wall
+ifeq (`uname -s`, FreeBSD)
+  CC = cc $(CPPFLAGS) $(CFLAGS) -DPLATFORM_LINUX $(LDFLAGS) -I $(INCDIR) -Wall
+else
+  CC = gcc $(CPPFLAGS) $(CFLAGS) -DPLATFORM_LINUX $(LDFLAGS) -I $(INCDIR) -Wall
+endif
 AR = ar -ru
 RM = rm -f
 
