@@ -5,6 +5,8 @@
 PLATFORMDEF = -DPLATFORM_LINUX
 EXESUFFIX =
 
+OS = `uname -s`
+
 BINDIR = ../bin
 OBJDIR = obj
 INCDIR = ./
@@ -38,7 +40,7 @@ MBOBJS = $(MBOBJS_MSG) $(MBOBJS_JAM) $(MBOBJS_SQ3)
 DEFS = $(PLATFORMDEF) $(MBDEFS) $(NLDEFS)
 
 # Commands
-ifeq (`uname -s`, FreeBSD)
+ifeq ($(OS), FreeBSD)
   CC = cc $(CPPFLAGS) $(CFLAGS) $(DEFS) $(LDFLAGS) -I $(INCDIR) -I ../../../deps/ -Wall
 else
   CC = gcc $(CPPFLAGS) $(CFLAGS) $(DEFS) $(LDFLAGS) -I $(INCDIR) -I ../../../deps/ -Wall 
