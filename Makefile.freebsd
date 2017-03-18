@@ -1,9 +1,20 @@
 CC=cc
-CFLAGS=-I/usr/local/include 
+CFLAGS=-I/usr/local/include -I./deps/
 DEPS = bbs.h
-JAMLIB = jamlib/jamlib.a
-ZMODEM = Xmodem/libzmodem.a
-LUA = lua/liblua.a
+JAMLIB = deps/jamlib/jamlib.a
+ZMODEM = deps/Xmodem/libzmodem.a
+LUA = deps/lua/liblua.a
+
+all: magicka
+
+${LUA}:
+	cd deps/lua && $(MAKE) -f Makefile freebsd MAKEFLAGS=
+ 
+${JAMLIB}:
+	cd deps/jamlib && $(MAKE) -f Makefile.linux MAKEFLAGS=
+ 
+${ZMODEM}:
+	cd deps/Xmodem && $(MAKE) MAKEFLAGS=
 
 OBJ = inih/ini.o bbs.o main.o users.o main_menu.o mail_menu.o doors.o bbs_list.o chat_system.o email.o files.o settings.o lua_glue.o strings.o bluewave.o hashmap/hashmap.o
 %.o: %.c $(DEPS)
@@ -16,3 +27,6 @@ magicka: $(OBJ)
 
 clean:
 	rm -f $(OBJ) magicka
+	cd deps/lua && $(MAKE) clean
+	cd deps/jamlib && $(MAKE) -f Makefile.linux clean
+	cd deps/Xmodem && $(MAKE) clean

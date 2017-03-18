@@ -1,19 +1,38 @@
 CC=cc
-CFLAGS=-I/opt/local/include -DENABLE_WWW=1
+CFLAGS=-I/opt/local/include -I./deps/ -DENABLE_WWW=1
 DEPS = bbs.h
-JAMLIB = jamlib/jamlib.a
-ZMODEM = Xmodem/libzmodem.a
-LUA = lua/liblua.a
-MICROHTTPD=-lmicrohttpd -lb64
+JAMLIB = deps/jamlib/jamlib.a
+ZMODEM = deps/Xmodem/libzmodem.a
+LUA = deps/lua/liblua.a
+B64 = deps/libb64-1.2/src/libb64.a
+MICROHTTPD=-lmicrohttpd 
+
+
+all: magicka
+
+${LUA}: 
+	cd deps/lua && $(MAKE) -f Makefile macosx MAKEFLAGS=
+
+${JAMLIB}:
+	cd deps/jamlib && $(MAKE) -f Makefile.linux MAKEFLAGS=
+
+${ZMODEM}:
+	cd deps/Xmodem && $(MAKE) MAKEFLAGS=
+
+${B64}:
+	cd deps/libb64-1.2 && $(MAKE) MAKEFLAGS=
 
 OBJ = inih/ini.o bbs.o main.o users.o main_menu.o mail_menu.o doors.o bbs_list.o chat_system.o email.o files.o settings.o lua_glue.o strings.o www.o www_email.o www_msgs.o www_last10.o bluewave.o hashmap/hashmap.o
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-magicka: $(OBJ)
-	$(CC) -o magicka -o $@ $^ $(CFLAGS) -L/opt/local/lib -lsqlite3 $(JAMLIB) $(ZMODEM) $(LUA) -lutil -lm -ldl -lssl -lcrypto -lssh $(MICROHTTPD)
+magicka: $(OBJ) ${LUA} ${ZMODEM} ${JAMLIB} ${B64}
+	$(CC) -o magicka -o $@ $^ $(CFLAGS) -L/opt/local/lib -lsqlite3 $(JAMLIB) $(ZMODEM) $(LUA) $(B64) -lutil -lm -ldl -lssl -lcrypto -lssh $(MICROHTTPD)
 
 .PHONY: clean
 
 clean:
 	rm -f $(OBJ) magicka
+	cd deps/lua && $(MAKE) clean
+	cd deps/jamlib && $(MAKE) -f Makefile.linux clean
+	cd deps/Xmodem && $(MAKE) clean

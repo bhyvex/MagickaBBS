@@ -12,8 +12,8 @@ illusion/*
 scripts/*
 logs/*
 *.a
-lua/lua
-lua/luac
+deps/lua/lua
+deps/lua/luac
 netmail.out
 echomail.out
 utils/magiedit/odoors/libs-*
@@ -23,3 +23,4 @@ utils/magiedit/magiedit
 msgserial
 whitelist.ip
 blacklist.ip
+.DS_Store

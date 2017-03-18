@@ -1,18 +1,33 @@
 CC=cc
-CFLAGS=-I/opt/local/include
+CFLAGS=-I/opt/local/include -I./deps/
 DEPS = bbs.h
-JAMLIB = jamlib/jamlib.a
-ZMODEM = Xmodem/libzmodem.a
-LUA = lua/liblua.a
+JAMLIB = deps/jamlib/jamlib.a
+ZMODEM = deps/Xmodem/libzmodem.a
+LUA = deps/lua/liblua.a
 
 OBJ = inih/ini.o bbs.o main.o users.o main_menu.o mail_menu.o doors.o bbs_list.o chat_system.o email.o files.o settings.o lua_glue.o strings.o bluewave.o hashmap/hashmap.o
+
+all: magicka
+
+${LUA}:
+	cd deps/lua && $(MAKE) -f Makefile macosx MAKEFLAGS=
+
+${JAMLIB}:
+	cd deps/jamlib && $(MAKE) -f Makefile.linux MAKEFLAGS=
+
+${ZMODEM}:
+	cd deps/Xmodem && $(MAKE) MAKEFLAGS=
+
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-magicka: $(OBJ)
+magicka: $(OBJ) ${LUA} ${ZMODEM} ${JAMLIB}
 	$(CC) -o magicka -o $@ $^ $(CFLAGS) -L/opt/local/lib -lsqlite3 $(JAMLIB) $(ZMODEM) $(LUA) -lutil -lm -ldl -lssl -lcrypto -lssh
 
 .PHONY: clean
 
 clean:
 	rm -f $(OBJ) magicka
+	cd deps/lua && $(MAKE) clean
+	cd deps/jamlib && $(MAKE) -f Makefile.linux clean
+	cd deps/Xmodem && $(MAKE) clean
