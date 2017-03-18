@@ -10,7 +10,7 @@ typedef uint16_t UINT16; /* Unsigned 16-bit integer */
 #define OS_PATH_CHARS "/"
 #define OS_CURRENT_DIR "."
 
-#define OS_CONFIG_NAME "crashmail.prefs"
+#define OS_CONFIG_NAME "magimail.prefs"
 #define OS_CONFIG_VAR "CMCONFIGFILE"
 
 #define OS_HAS_SYSLOG
