@@ -4,7 +4,7 @@ DEPS = bbs.h
 JAMLIB = deps/jamlib/jamlib.a
 ZMODEM = deps/Xmodem/libzmodem.a
 LUA = deps/lua/liblua.a
-LUA = deps/libb64-1.2/src/libb64.a
+B64 = deps/libb64-1.2/src/libb64.a
 MICROHTTPD=-lmicrohttpd
 
 all: magicka
