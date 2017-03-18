@@ -1,7 +1,7 @@
 INCDIR = ../
 
 
-OS = `uname -s`
+OS := $(shell uname -s)
 
 ifeq ($(OS), FreeBSD)
   CC = cc $(CPPFLAGS) $(CFLAGS) -DPLATFORM_LINUX $(LDFLAGS) -I $(INCDIR) -Wall

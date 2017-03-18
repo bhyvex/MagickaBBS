@@ -5,7 +5,7 @@
 PLATFORMDEF = -DPLATFORM_LINUX
 EXESUFFIX =
 
-OS = `uname -s`
+OS := $(shell uname -s)
 
 BINDIR = ../bin
 OBJDIR = obj
