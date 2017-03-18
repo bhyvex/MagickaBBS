@@ -5,7 +5,7 @@ JAMLIB = deps/jamlib/jamlib.a
 ZMODEM = deps/Xmodem/libzmodem.a
 LUA = deps/lua/liblua.a
 
-all: magicka
+all: magicka magimail
 
 ${LUA}:
 	cd deps/lua && $(MAKE) -f Makefile freebsd MAKEFLAGS=
@@ -23,6 +23,9 @@ OBJ = inih/ini.o bbs.o main.o users.o main_menu.o mail_menu.o doors.o bbs_list.o
 magicka: $(OBJ) ${LUA} ${JAMLIB} ${ZMODEM}
 	$(CC) -o magicka -o $@ $^ $(CFLAGS) -L/usr/local/lib -lsqlite3 $(JAMLIB) $(ZMODEM) $(LUA) -lutil -lm -lssl -lcrypto -lssh
 
+magimail: $(JAMLIB)
+	cd utils/magimail && $(MAKE) freebsd
+
 .PHONY: clean
 
 clean:
@@ -30,3 +33,4 @@ clean:
 	cd deps/lua && $(MAKE) clean
 	cd deps/jamlib && $(MAKE) -f Makefile.linux clean
 	cd deps/Xmodem && $(MAKE) clean
+	cd utils/magimail && $(MAKE) cleanfreebsd

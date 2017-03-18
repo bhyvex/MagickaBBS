@@ -7,7 +7,7 @@ LUA = deps/lua/liblua.a
 B64 = deps/libb64-1.2/src/libb64.a
 MICROHTTPD=-lmicrohttpd
 
-all: magicka
+all: magicka magimail
 
 ${LUA}: 
 	cd deps/lua && $(MAKE) -f Makefile linux MAKEFLAGS=
@@ -29,6 +29,9 @@ OBJ = inih/ini.o bbs.o main.o users.o main_menu.o mail_menu.o doors.o bbs_list.o
 magicka: $(OBJ) ${LUA} ${JAMLIB} ${ZMODEM} ${B64}
 	$(CC) -o magicka -o $@ $^ $(CFLAGS) -L/usr/local/lib -lsqlite3 $(JAMLIB) $(ZMODEM) $(LUA) $(B64) -lutil -lm -ldl -lssl -lcrypto -lssh  $(MICROHTTPD)
 
+magimail: $(JAMLIB)
+	cd utils/magimail && $(MAKE) linux
+
 .PHONY: clean
 
 clean:
@@ -37,4 +40,4 @@ clean:
 	cd deps/jamlib && $(MAKE) -f Makefile.linux clean
 	cd deps/Xmodem && $(MAKE) clean
 	cd deps/libb64-1.2 && $(MAKE) clean
-
+	cd utils/magimail && $(MAKE) cleanlinux
