@@ -24,7 +24,7 @@ endif
 
 DEPS = ticproc.c
 
-OBJ = ticproc.o ../../deps/inih/ini.o crc32.o
+OBJ = ticproc.o ../../inih/ini.o crc32.o
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
