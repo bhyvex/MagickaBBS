@@ -1,14 +1,29 @@
-CC=cc
-CFLAGS=-I/usr/local/include
+OS := $(shell uname -s)
+
+ifeq ($(OS), FreeBSD)
+  CC=cc
+  CFLAGS=-I/usr/local/include
+  LDFLAGS=-L/usr/local/lib
+else 
+ifeq ($(OS), NetBSD)
+  CC=cc
+  CFLAGS=-I/usr/pkg/include
+  LDFLAGS=-L/usr/pkg/lib
+else
+  CC=gcc
+  CFLAGS=
+  LDFLAGS=
+endif
+
 DEPS = ticproc.c
 
-OBJ = ticproc.o ../../inih/ini.o crc32.o
+OBJ = ticproc.o ../../deps/inih/ini.o crc32.o
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 
 ticproc: $(OBJ)
-	$(CC) -o ticproc -o $@ $^ $(CFLAGS) -L/usr/local/lib -lsqlite3
+	$(CC) -o ticproc -o $@ $^ $(CFLAGS) $(LDFLAGS) -lsqlite3
 
 .PHONY: clean
 
