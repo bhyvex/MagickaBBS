@@ -8,7 +8,7 @@ ODOORS = deps/odoors/libs-`uname -s`/libODoors.a
 
 OBJ = inih/ini.o bbs.o main.o users.o main_menu.o mail_menu.o doors.o bbs_list.o chat_system.o email.o files.o settings.o lua_glue.o strings.o bluewave.o hashmap/hashmap.o
 
-all: magicka magimail magiedit ticproc
+all: magicka magimail magiedit ticproc mgpost
 
 ${LUA}:
 	cd deps/lua && $(MAKE) -f Makefile macosx MAKEFLAGS=
@@ -37,6 +37,9 @@ magiedit: $(ODOORS)
 ticproc:
 	cd utils/ticproc && $(MAKE)
 
+mgpost: $(JAMLIB)
+	cd utils/mgpost && $(MAKE)
+
 .PHONY: clean
 
 clean:
@@ -48,3 +51,4 @@ clean:
 	cd utils/magiedit && $(MAKE) clean
 	cd deps/odoors/ && rm -rf libs-`uname -s` objs-`uname -s` exe-`uname -s`
 	cd utils/ticproc && $(MAKE) clean
+	cd utils/mgpost && $(MAKE) clean

@@ -4,7 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/file.h>
-#include "../../jamlib/jam.h"
+#include "../../deps/jamlib/jam.h"
 #include "../../inih/ini.h"
 
 s_JamBase *open_jam_base(char *path) {
@@ -133,71 +133,27 @@ static int handler(void* user, const char* section, const char* name,
 }
 
 unsigned long generate_msgid(char *bbs_path) {
-	time_t theTime;
-	
 	char buffer[1024];
-	
-	struct tm timeStruct;
-	struct tm fileStruct;
-	unsigned long m;
-	unsigned long y;
-	unsigned long ya;
-	unsigned long j;
-	unsigned long msgid;
-	unsigned long c;
-	unsigned long d;
-	time_t lastread;
+
 	unsigned long lastid;
 	FILE *fptr;
-	
-	theTime = time(NULL);
-	localtime_r(&theTime, &timeStruct);
-	
-	m = timeStruct.tm_mon + 1;
-	y = timeStruct.tm_year + 1900;
-	d = timeStruct.tm_mday;
-	
-	if (m > 2) {
-		m = m - 3;
-	} else {
-		m = m + 9;
-		y = y - 1;
-	}
-	
-	c = y / 100;
-	ya = y - 100 * c;
-	j = (146097 * c) / 4 + (1461 * ya) / 4 + (153 * m + 2) / 5 + d + 1721119;
-	
-	msgid = (j % 0x800) * 0x200000;
 	
 	snprintf(buffer, 1024, "%s/msgserial", bbs_path);
 	
 	fptr = fopen(buffer, "r+");
 	if (fptr) {
 		flock(fileno(fptr), LOCK_EX);
-		fread(&lastread, sizeof(time_t), 1, fptr);
 		fread(&lastid, sizeof(unsigned long), 1, fptr);
-		localtime_r(&lastread, &fileStruct);
-		
-		
-		if (fileStruct.tm_mon != timeStruct.tm_mon || fileStruct.tm_mday != timeStruct.tm_mday || fileStruct.tm_year != timeStruct.tm_year) {
-			lastread = time(NULL);
-			lastid = 1;
-		} else {
-			lastid++;
-		}
+		lastid++;
 		rewind(fptr);
-		fwrite(&lastread, sizeof(time_t), 1, fptr);
 		fwrite(&lastid, sizeof(unsigned long), 1, fptr);
 		flock(fileno(fptr), LOCK_UN);
 		fclose(fptr);
 	} else {
 		fptr = fopen(buffer, "w");
 		if (fptr) {
-			lastread = time(NULL);
 			lastid = 1;
 			flock(fileno(fptr), LOCK_EX);
-			fwrite(&lastread, sizeof(time_t), 1, fptr);
 			fwrite(&lastid, sizeof(unsigned long), 1, fptr);
 			flock(fileno(fptr), LOCK_UN);
 			fclose(fptr);
@@ -207,9 +163,9 @@ unsigned long generate_msgid(char *bbs_path) {
 		}
 	}
 	
-	msgid += lastid;
+
 	
-	return msgid;
+	return lastid;
 }
 
 int main(int argc, char **argv) {
@@ -294,12 +250,12 @@ int main(int argc, char **argv) {
 	JAM_ClearMsgHeader( &jmh );
 	jmh.DateWritten = thetime;
 
-	jmh.Attribute |= MSG_LOCAL;
+	jmh.Attribute |= JAM_MSG_LOCAL;
 
 	if (!msg.echo) {
-		jmh.Attribute |= MSG_TYPELOCAL;
+		jmh.Attribute |= JAM_MSG_TYPELOCAL;
 	} else {
-		jmh.Attribute |= MSG_TYPEECHO;
+		jmh.Attribute |= JAM_MSG_TYPEECHO;
 	}
 
 	jsp = JAM_NewSubPacket();

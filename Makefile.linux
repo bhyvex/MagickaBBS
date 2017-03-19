@@ -6,7 +6,7 @@ ZMODEM = deps/Xmodem/libzmodem.a
 LUA = deps/lua/liblua.a
 ODOORS = deps/odoors/libs-`uname -s`/libODoors.a
 
-all: magicka magimail magiedit ticproc
+all: magicka magimail magiedit ticproc mgpost
 
 ${LUA}: 
 	cd deps/lua && $(MAKE) -f Makefile linux MAKEFLAGS=
@@ -36,6 +36,9 @@ magiedit: $(ODOORS)
 ticproc:
 	cd utils/ticproc && $(MAKE)
 
+mgpost: $(JAMLIB)
+	cd utils/mgpost && $(MAKE)
+
 .PHONY: clean
 
 clean:
@@ -47,3 +50,4 @@ clean:
 	cd utils/magiedit && $(MAKE) clean
 	cd deps/odoors/ && rm -rf libs-`uname -s` objs-`uname -s` exe-`uname -s`
 	cd utils/ticproc && $(MAKE) clean
+	cd utils/mgpost && $(MAKE) clean
