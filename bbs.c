@@ -46,6 +46,7 @@ void sigint_handler(int s)
 	// do nothing...
 }
 void broadcast(char *mess, ...) {
+	char json[1024];
 	char buffer[512];
     struct sockaddr_in s;
 	int bcast_sock;
@@ -75,7 +76,9 @@ void broadcast(char *mess, ...) {
 		vsnprintf(buffer, 512, mess, ap);
 		va_end(ap);		
 		
-		ret = sendto(bcast_sock, buffer, strlen(buffer) + 1, 0, (struct sockaddr *)&s, sizeof(struct sockaddr_in));
+		snprintf(json, "{\"System\": \"%s\", \"Program\": \"MagickaBBS\", \"Message\": \"%s\"}", conf.bbs_name, buffer);
+
+		ret = sendto(bcast_sock, json, strlen(json) + 1, 0, (struct sockaddr *)&s, sizeof(struct sockaddr_in));
 		
 		if (ret < 0) {
 			dolog("broadcast: Couldn't send broadcast");
