@@ -76,7 +76,7 @@ void broadcast(char *mess, ...) {
 		vsnprintf(buffer, 512, mess, ap);
 		va_end(ap);		
 		
-		snprintf(json, "{\"System\": \"%s\", \"Program\": \"MagickaBBS\", \"Message\": \"%s\"}", conf.bbs_name, buffer);
+		snprintf(json, 1024, "{\"System\": \"%s\", \"Program\": \"MagickaBBS\", \"Message\": \"%s\"}", conf.bbs_name, buffer);
 
 		ret = sendto(bcast_sock, json, strlen(json) + 1, 0, (struct sockaddr *)&s, sizeof(struct sockaddr_in));
 		
