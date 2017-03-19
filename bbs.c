@@ -753,7 +753,7 @@ tryagain:
 
 	// do post-login
 	dolog("%s logged in, on node %d", user->loginname, mynode);
-	broadcast("%s: %s logged in, on node %d", conf.bbs_name, user->loginname, mynode);
+	broadcast("%s logged in, on node %d", user->loginname, mynode);
 	// check time left
 	now = time(NULL);
 	localtime_r(&now, &thetime);
@@ -823,7 +823,7 @@ tryagain:
 
 
 	dolog("%s is logging out, on node %d", user->loginname, mynode);
-	broadcast("%s: %s is logging out, on node %d", conf.bbs_name, user->loginname, mynode);
+	broadcast("%s is logging out, on node %d", user->loginname, mynode);
 	disconnect("Log out");
 }
 
