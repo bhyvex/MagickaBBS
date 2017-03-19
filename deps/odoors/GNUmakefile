@@ -37,7 +37,6 @@
 #                  bcc - For Borland C++
 #                   cl - For Microsoft compilers
 #
-CC	:=	gcc
 #
 #------------------------------------------------------------------------------
 #
@@ -53,7 +52,13 @@ OBJDIR	:=	objs-$(OS)/
 LIBDIR	:=	libs-$(OS)/
 EXEDIR	:=	exe-$(OS)/
 
-LD	:=	gcc
+ifeq ($(OS), FreeBSD)
+  CC	:=	cc
+  LD	:=	cc
+else
+  CC	:=	gcc
+  LD	:=	gcc
+endif
 
 ifdef DEBUG
  CFLAGS	+=	-g -DOD_DEBUG
