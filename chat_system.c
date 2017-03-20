@@ -186,7 +186,7 @@ void chat_system(struct user_record *user) {
 		memset(screenbuffer[i], 0, 81);
 	}
 
-	raw("{ \"bbstag\": \"%s\", \"nick\": \"%s\", \"msg\": \"LOGIN\" }", conf.mgchat_bbstag, user->loginname);
+	raw("{ \"bbs\": \"%s\", \"nick\": \"%s\", \"msg\": \"LOGIN\" }", conf.mgchat_bbstag, user->loginname);
 
 	while (1) {
 		FD_ZERO(&fds);
@@ -221,7 +221,7 @@ void chat_system(struct user_record *user) {
 						}
 					} else {
 						input_b = encapsulate_quote(inputbuffer);
-						raw("{ \"bbstag\": \"%s\", \"nick\": \"%s\", \"msg\": \"%s\" }", conf.mgchat_bbstag, user->loginname, input_b);
+						raw("{ \"bbs\": \"%s\", \"nick\": \"%s\", \"msg\": \"%s\" }", conf.mgchat_bbstag, user->loginname, input_b);
 						free(input_b);
 						sprintf(buffer2, "%s: %s", user->loginname, inputbuffer);
 						append_screenbuffer(buffer2);
