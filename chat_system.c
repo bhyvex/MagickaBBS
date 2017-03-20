@@ -159,7 +159,9 @@ void chat_system(struct user_record *user) {
 
 	row_at = 0;
 	line_at = 0;
-	s_putstring("\e[2J\e[1;1H");
+	s_putstring("\e[2J\e[23;1H");
+	s_putstring(get_string(50));
+	s_putstring("\e[24;1H");
 
     memset(&servaddr, 0, sizeof(struct sockaddr_in));
     servaddr.sin_family = AF_INET;
@@ -293,7 +295,7 @@ void chat_system(struct user_record *user) {
 			}
 		}
 		if (do_update == 1) {
-			s_putstring("\e[2J");
+			s_putstring("\e[2J\e[1;1H");
 			for (i=0;i<=line_at;i++) {
 				s_printf("%s\r\n", screenbuffer[i]);
 			}
