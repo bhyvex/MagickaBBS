@@ -403,7 +403,7 @@ void disconnect(char *calledby) {
 
 void record_last10_callers(struct user_record *user) {
 	struct last10_callers new_entry;
-		struct last10_callers callers[10];
+	struct last10_callers callers[10];
 
 	int i,j;
 	FILE *fptr = fopen("last10.dat", "rb");
@@ -445,6 +445,7 @@ void display_last10_callers(struct user_record *user) {
 	int i,z;
 	struct tm l10_time;
 	FILE *fptr = fopen("last10.dat", "rb");
+	time_t l10_timet;
 
 	s_printf(get_string(2));
 	s_printf(get_string(3));
@@ -463,7 +464,8 @@ void display_last10_callers(struct user_record *user) {
 	}
 
 	for (z=0;z<i;z++) {
-		localtime_r(&callers[z].time, &l10_time);
+		l10_timet = callers[z].time;
+		localtime_r(&l10_timet, &l10_time);
 		s_printf(get_string(4), callers[z].name, callers[z].location, l10_time.tm_hour, l10_time.tm_min, l10_time.tm_mday, l10_time.tm_mon + 1, l10_time.tm_year - 100);
 	}
 	s_printf(get_string(5));
