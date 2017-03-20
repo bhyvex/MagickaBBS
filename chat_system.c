@@ -137,7 +137,7 @@ void chat_system(struct user_record *user) {
 	int j;
 	int chat_in;
     jsmn_parser parser;
-    jsmntok_t tokens[6];
+    jsmntok_t tokens[8];
     int r;
 	struct chat_msg msg;
 	char *input_b;
