@@ -41,7 +41,7 @@ static char *encapsulate_quote(char *in) {
 	int i;
 	int j = 0;
 	for (i=0;i<strlen(in);i++) {
-		if (in[j] == '\"') {
+		if (in[j] == '\"' || in[j] == '\\') {
 			out[i++] = '\\';
 		}
 		out[i] = in[j];
@@ -155,7 +155,7 @@ void chat_system(struct user_record *user) {
 		return;
 	}
 
-	jsmn_init(&parser);
+
 
 	row_at = 0;
 	line_at = 0;
@@ -255,6 +255,7 @@ void chat_system(struct user_record *user) {
 				}
 
 				// json parse
+				jsmn_init(&parser);				
                 // we got some data from a client
                 r = jsmn_parse(&parser, readbuffer, len, tokens, sizeof(tokens)/sizeof(tokens[0]));
      

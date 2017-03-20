@@ -85,7 +85,6 @@ int main(int argc, char **argv) {
 
     c = sizeof(struct sockaddr_in);
 
-    jsmn_init(&parser);
 
     while (1) {
         read_fds = master;
@@ -165,6 +164,8 @@ int main(int argc, char **argv) {
                         FD_CLR(i, &master); // remove from master set
                     } else {
                         // we got some data from a client
+
+                        jsmn_init(&parser);                        
                         r = jsmn_parse(&parser, buf, nbytes, tokens, sizeof(tokens)/sizeof(tokens[0]));
      
                         if (r < 0) {
