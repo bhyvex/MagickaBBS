@@ -112,7 +112,6 @@ void free_message_headers(struct msg_headers *msghs) {
 
 int msg_is_to(struct user_record *user, char *addressed_to, char *address, int type, int rn, int msgconf) {
 	char *myname;
-	char *wwiv_addressee;
 	struct fido_addr *dest;
 	int j;
 	if (rn) {
@@ -121,27 +120,7 @@ int msg_is_to(struct user_record *user, char *addressed_to, char *address, int t
 	} else {
 		myname = strdup(user->loginname);
 	}
-	if (type == NETWORK_WWIV) {
-		wwiv_addressee = strdup(addressed_to);
-		for (j=1;j<strlen(addressed_to);j++) {
-			if (wwiv_addressee[j] == '(' || wwiv_addressee[j] == '#') {
-				wwiv_addressee[j-1] = '\0';
-				break;
-			}
-		}
-
-		if (strcasecmp(myname, wwiv_addressee) == 0) {
-			// name match
-			if (conf.mail_conferences[msgconf]->wwivnode == atoi(address)) {
-				free(wwiv_addressee);
-				free(myname);
-				return 1;
-			}
-		}
-		free(wwiv_addressee);
-		free(myname);
-		return 0;
-	} else if (type == NETWORK_FIDO) {
+	if (type == NETWORK_FIDO) {
 		if (strcasecmp(myname, addressed_to) == 0) {
 			dest = parse_fido_addr(address);
 			if (conf.mail_conferences[msgconf]->fidoaddr->zone == dest->zone &&
@@ -176,10 +155,7 @@ int msg_is_from(struct user_record *user, char *addressed_from, char *address, i
 	} else {
 		myname = strdup(user->loginname);
 	}
-	if (type == NETWORK_WWIV) {
-		free(myname);
-		return 0;
-	} else if (type == NETWORK_FIDO) {
+	if (type == NETWORK_FIDO) {
 		if (strcasecmp(myname, addressed_from) == 0) {
 			orig = parse_fido_addr(address);
 			if (conf.mail_conferences[msgconf]->fidoaddr->zone == orig->zone &&
@@ -1386,41 +1362,7 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 		JAM_ReadMsgText(jb, msghs->msgs[mailno]->msg_h->TxtOffset, msghs->msgs[mailno]->msg_h->TxtLen, (char *)body);
 		JAM_WriteLastRead(jb, user->id, &jlr);
 
-		if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_WWIV) {
-			body2 = (char *)malloc(msghs->msgs[mailno]->msg_h->TxtLen);
-			z2 = 0;
-			if (body[0] == 4 && body[1] == '0') {
-				skip_line = 1;
-			} else {
-				skip_line = 0;
-			}
-			for (z=0;z<msghs->msgs[mailno]->msg_h->TxtLen;z++) {
-				if (body[z] == '\r') {
-					if (body[z+1] == '\n') {
-						z++;
-					}
-					if (body[z+1] == 4 && body[z+2] == '0') {
-						skip_line = 1;
-					} else {
-						body2[z2++] = '\r';
-						skip_line = 0;
-					}
-				} else {
-					if (!skip_line) {
-						if (body[z] == 3 || body[z] == 4 || body[z] == 0xff) {
-							z++;
-						} else {
-							body2[z2++] = body[z];
-						}
-					}
-				}
-			}
-
-			free(body);
-			body = body2;
-		} else {
-			z2 = msghs->msgs[mailno]->msg_h->TxtLen;
-		}
+		z2 = msghs->msgs[mailno]->msg_h->TxtLen;
 
 		lines = 0;
 		chars = 0;
@@ -1566,23 +1508,13 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 					strcpy(buffer, msghs->msgs[mailno]->from);
 				}
 				if (conf.mail_conferences[user->cur_mail_conf]->realnames == 0) {
-					if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_WWIV) {
-						from = (char *)malloc(strlen(user->loginname) + 20);
-						sprintf(from, "%s #%d @%d", user->loginname, user->id, conf.mail_conferences[user->cur_mail_conf]->wwivnode);
-					} else {
-						from = (char *)malloc(strlen(user->loginname) + 1);
-						strcpy(from, user->loginname);
-					}
+					from = (char *)malloc(strlen(user->loginname) + 1);
+					strcpy(from, user->loginname);
 				} else {
-					if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_WWIV) {
-						from = (char *)malloc(strlen(user->loginname) + 23 + strlen(user->firstname));
-						sprintf(from, "%s #%d @%d (%s)", user->loginname, user->id, conf.mail_conferences[user->cur_mail_conf]->wwivnode, user->firstname);
-					} else {
-						from = (char *)malloc(strlen(user->firstname) + strlen(user->lastname) + 2);
-						sprintf(from, "%s %s", user->firstname, user->lastname);
-					}
+					from = (char *)malloc(strlen(user->firstname) + strlen(user->lastname) + 2);
+					sprintf(from, "%s %s", user->firstname, user->lastname);
 				}
-				if ((conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_WWIV && conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_ECHOMAIL_AREA) || conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NEWSGROUP_AREA) {
+				if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NEWSGROUP_AREA) {
 					to = (char *)malloc(4);
 					strcpy(to, "ALL");
 				} else {
@@ -1748,14 +1680,7 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 							jsf.Buffer = (char *)buffer;
 							JAM_PutSubfield(jsp, &jsf);
 							jmh.ReplyCRC = JAM_Crc32(buffer, strlen(buffer));
-						} else if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_WWIV) {
-							sprintf(buffer, "%d", atoi(strchr(from, '@') + 1));
-							jsf.LoID   = JAMSFLD_DADDRESS;
-							jsf.HiID   = 0;
-							jsf.DatLen = strlen(buffer);
-							jsf.Buffer = (char *)buffer;
-							JAM_PutSubfield(jsp, &jsf);
-						}
+						} 
 					}
 
 					while (1) {
@@ -1870,7 +1795,6 @@ int mail_menu(struct user_record *user) {
 	char *msg;
 	int closed;
 	struct fido_addr *from_addr = NULL;
-	int wwiv_to;
 	struct stat s;
 	int do_internal_menu = 0;
 	char *lRet;
@@ -1990,7 +1914,7 @@ int mail_menu(struct user_record *user) {
 						s_printf(get_string(113));
 						break;
 					}
-					if ((conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_WWIV && conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type  == TYPE_ECHOMAIL_AREA) || conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NEWSGROUP_AREA) {
+					if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NEWSGROUP_AREA) {
 						sprintf(buffer, "ALL");
 					} else {
 						s_printf(get_string(54));
@@ -2021,14 +1945,6 @@ int mail_menu(struct user_record *user) {
 									break;
 								}
 								s_printf(get_string(123), from_addr->zone, from_addr->net, from_addr->node, from_addr->point);
-							}
-						} else if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_WWIV) {
-							wwiv_to = atoi(buffer2);
-							if (wwiv_to == 0) {
-								s_printf(get_string(122));
-								break;
-							} else {
-								s_printf(get_string(124), wwiv_to);
 							}
 						}
 					}
@@ -2070,17 +1986,9 @@ int mail_menu(struct user_record *user) {
 						jmh.DateWritten = (uint32_t)time(NULL);
 						jmh.Attribute |= JAM_MSG_LOCAL;
 						if (conf.mail_conferences[user->cur_mail_conf]->realnames == 0) {
-							if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_WWIV) {
-								sprintf(buffer, "%s #%d @%d", user->loginname, user->id, conf.mail_conferences[user->cur_mail_conf]->wwivnode);
-							} else {
-								strcpy(buffer, user->loginname);
-							}
+							strcpy(buffer, user->loginname);
 						} else {
-							if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_WWIV) {
-								sprintf(buffer, "%s #%d @%d (%s)", user->loginname, user->id, conf.mail_conferences[user->cur_mail_conf]->wwivnode, user->firstname);
-							} else {
-								sprintf(buffer, "%s %s", user->firstname, user->lastname);
-							}
+							sprintf(buffer, "%s %s", user->firstname, user->lastname);
 						}
 
 						jsp = JAM_NewSubPacket();
@@ -2191,14 +2099,7 @@ int mail_menu(struct user_record *user) {
 								jsf.Buffer = (char *)buffer;
 								JAM_PutSubfield(jsp, &jsf);
 								jmh.MsgIdCRC = JAM_Crc32(buffer, strlen(buffer));
-							} else if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_WWIV) {
-								sprintf(buffer, "%d", wwiv_to);
-								jsf.LoID   = JAMSFLD_DADDRESS;
-								jsf.HiID   = 0;
-								jsf.DatLen = strlen(buffer);
-								jsf.Buffer = (char *)buffer;
-								JAM_PutSubfield(jsp, &jsf);
-							}
+							} 
 						}
 
 						while (1) {

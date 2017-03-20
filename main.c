@@ -321,14 +321,10 @@ static int mail_area_handler(void* user, const char* section, const char* name,
 		if (strcasecmp(name, "type") == 0) {
 			if (strcasecmp(value, "fido") == 0) {
 				mc->nettype = NETWORK_FIDO;
-			} else if (strcasecmp(value, "wwiv") == 0) {
-				mc->nettype = NETWORK_WWIV;
-			}
+			} 
 		} else if (strcasecmp(name, "fido node") == 0) {
 			mc->fidoaddr = parse_fido_addr(value);
-		} else if (strcasecmp(name, "wwiv node") == 0) {
-			mc->wwivnode = atoi(value);
-		}
+		} 
 	} else {
 		// check if it's partially filled in
 		for (i=0;i<mc->mail_area_count;i++) {
