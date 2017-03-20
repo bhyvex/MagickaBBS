@@ -211,7 +211,7 @@ int main(int argc, char **argv) {
                             for (j=0;j<client_count;j++) {
                                 if (clients[j]->fd == i) {
                                     if (strcmp(clients[j]->nick, "UNKNOWN") != 0) {
-                                        for(k = 0; k <= client_count; k++) {
+                                        for(k = 0; k < client_count; k++) {
                                             if (i != clients[k]->fd && strcmp(clients[k]->nick, "UNKNOWN") != 0) {
 
                                                 if (send(k, buf, nbytes, 0) == -1) {
