@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
     char buffer[1024];
     char buf[1024];
     jsmn_parser parser;
-    jsmntok_t tokens[6];
+    jsmntok_t tokens[8];
     int r;
     int nbytes;
     if (argc < 2) {
@@ -196,7 +196,7 @@ int main(int argc, char **argv) {
                                     strncpy(clients[j]->bbstag, msg.bbstag, 16);
                                     strncpy(clients[j]->nick, msg.nick, 16);
 
-                                    for(k = 0; k <= client_count; k++) {
+                                    for(k = 0; k < client_count; k++) {
                                         if (i != clients[k]->fd && strcmp(clients[k]->nick, "UNKNOWN") != 0) {
                                             snprintf(buffer, 1024, "{\"bbs\": \"SYSTEM\", \"nick\": \"SYSTEM\", \"msg\": \"%s (%s) has joined the chat\" }", clients[j]->nick, clients[j]->bbstag);
                                             if (send(k, buffer, strlen(buffer) + 1, 0) == -1) {
