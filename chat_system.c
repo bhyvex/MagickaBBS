@@ -149,7 +149,7 @@ void chat_system(struct user_record *user) {
 	}
 
 	memset(inputbuffer, 0, 80);
-	if (conf.mgchat_server == NULL) {
+	if (conf.mgchat_server == NULL && conf.mgchat_bbstag != NULL) {
 		s_putstring(get_string(49));
 		return;
 	}
@@ -185,6 +185,8 @@ void chat_system(struct user_record *user) {
 		screenbuffer[i] = (char *)malloc(81);
 		memset(screenbuffer[i], 0, 81);
 	}
+
+	raw("{ \"bbstag\": \"%s\", \"nick\": \"%s\", \"msg\": \"LOGIN\" }", conf.mgchat_bbstag, user->loginname);
 
 	while (1) {
 		FD_ZERO(&fds);

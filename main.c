@@ -1083,6 +1083,7 @@ int main(int argc, char **argv) {
 	conf.file_directory_count = 0;
 	conf.mgchat_server = NULL;
 	conf.mgchat_port = 2025;
+	conf.mgchat_bbstag = NULL;
 	conf.text_file_count = 0;
 	conf.external_editor_cmd = NULL;
 	conf.log_path = NULL;
