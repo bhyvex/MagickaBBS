@@ -45,6 +45,7 @@ static char *encapsulate_quote(char *in) {
 			out[i++] = '\\';
 		}
 		out[i] = in[j];
+		out[i+1] = '\0';
 		j++;
 	}
 	return strdup(out);
