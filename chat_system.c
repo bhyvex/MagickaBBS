@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include "deps/jsmn/jsmn.h"
 #include "bbs.h"
 
 extern struct bbs_config conf;
@@ -20,6 +21,34 @@ static int line_at;
 static int row_at;
 static char sbuf[512];
 extern struct user_record gUser;
+
+struct chat_msg {
+    char nick[16];
+    char bbstag[16];
+    char msg[256];
+};
+
+static int jsoneq(const char *json, jsmntok_t *tok, const char *s) {
+	if (tok->type == JSMN_STRING && (int) strlen(s) == tok->end - tok->start &&
+			strncmp(json + tok->start, s, tok->end - tok->start) == 0) {
+		return 0;
+	}
+	return -1;
+}
+
+static char *encapsulate_quote(char *in) {
+	char out[160];
+	int i;
+	int j = 0;
+	for (i=0;i<strlen(in);i++) {
+		if (in[j] == '\"') {
+			out[i++] = '\\';
+		}
+		out[i] = in[j];
+		j++;
+	}
+	return strdup(out);
+}
 
 void scroll_up() {
 	int y;
@@ -91,27 +120,27 @@ void append_screenbuffer(char *buffer) {
 
 void chat_system(struct user_record *user) {
 	struct sockaddr_in servaddr;
-  fd_set fds;
-  int t;
-  int ret;
-  char inputbuffer[80];
-  int inputbuffer_at = 0;
-  int len;
-  char c;
-  char buffer2[256];
-  char buffer[513];
-  char outputbuffer[513];
-  int buffer_at = 0;
+	fd_set fds;
+	int t;
+	int ret;
+	char inputbuffer[80];
+	int inputbuffer_at = 0;
+	int len;
+	char c;
+	char buffer2[256];
+	char buffer[513];
+	char outputbuffer[513];
+	char readbuffer[1024];
+	int buffer_at = 0;
 	int do_update = 1;
 	int i;
 	int j;
-	char *usr;
-	char *cmd;
-	char *where;
-	char *message;
-	char *sep;
-	char *target;
 	int chat_in;
+    jsmn_parser parser;
+    jsmntok_t tokens[6];
+    int r;
+	struct chat_msg msg;
+	char *input_b;
 
 	if (sshBBS) {
 		chat_in = STDIN_FILENO;
@@ -120,24 +149,27 @@ void chat_system(struct user_record *user) {
 	}
 
 	memset(inputbuffer, 0, 80);
-  if (conf.irc_server == NULL) {
+	if (conf.mgchat_server == NULL) {
 		s_putstring(get_string(49));
 		return;
 	}
+
+	jsmn_init(&parser);
+
 	row_at = 0;
 	line_at = 0;
-	s_putstring("\e[2J");
+	s_putstring("\e[2J\e[1;1H");
 
     memset(&servaddr, 0, sizeof(struct sockaddr_in));
     servaddr.sin_family = AF_INET;
-    servaddr.sin_port = htons(conf.irc_port);
+    servaddr.sin_port = htons(conf.mgchat_port);
 
 
     if ( (chat_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         return;
     }
-    if (inet_pton(AF_INET, conf.irc_server, &servaddr.sin_addr) != 0) {
-        hostname_to_ip(conf.irc_server, buffer);
+    if (inet_pton(AF_INET, conf.mgchat_server, &servaddr.sin_addr) != 0) {
+        hostname_to_ip(conf.mgchat_server, buffer);
         if (!inet_pton(AF_INET, buffer, &servaddr.sin_addr)) {
 			return;
 		}
@@ -145,10 +177,6 @@ void chat_system(struct user_record *user) {
     if (connect(chat_socket, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0 ) {
         return;
     }
-
-	raw("USER %s 0 0 :%s\r\n", user->loginname, user->loginname);
-	raw("NICK %s\r\n", user->loginname);
-	raw("JOIN %s\r\n", conf.irc_channel);
 
 	memset(buffer, 0, 513);
 
@@ -175,14 +203,14 @@ void chat_system(struct user_record *user) {
 			if (FD_ISSET(chat_in, &fds)) {
 				len = read(chat_in, &c, 1);
 				if (len == 0) {
-					raw("QUIT\r\n");
+					close(chat_socket);
 					disconnect("Socket closed");
 				}
 
 				if (c == '\r') {
 					if (inputbuffer[0] == '/') {
 						if (strcasecmp(&inputbuffer[1], "quit") == 0) {
-							raw("QUIT\r\n");
+							close(chat_socket);
 							for (i=0;i<22;i++) {
 								free(screenbuffer[i]);
 							}
@@ -190,7 +218,9 @@ void chat_system(struct user_record *user) {
 							return;
 						}
 					} else {
-						raw("PRIVMSG %s :%s\r\n", conf.irc_channel, inputbuffer);
+						input_b = encapsulate_quote(inputbuffer);
+						raw("{ \"bbstag\": \"%s\", \"nick\": \"%s\", \"msg\": \"%s\" }", conf.mgchat_bbstag, user->loginname, input_b);
+						free(input_b);
 						sprintf(buffer2, "%s: %s", user->loginname, inputbuffer);
 						append_screenbuffer(buffer2);
 						do_update = 1;
@@ -211,7 +241,7 @@ void chat_system(struct user_record *user) {
 				}
 			}
 			if (FD_ISSET(chat_socket, &fds)) {
-				len = read(chat_socket, &c, 1);
+				len = read(chat_socket, readbuffer, 1024);
 				if (len == 0) {
 					s_putstring("\r\n\r\n\r\nLost connection to chat server!\r\n");
 					for (i=0;i<22;i++) {
@@ -221,57 +251,41 @@ void chat_system(struct user_record *user) {
 					return;
 				}
 
-				if (c == '\r' || buffer_at == 512) {
-					if (!strncmp(buffer, "PING", 4)) {
-						buffer[1] = 'O';
-						raw(buffer);
-					} else if (buffer[0] == ':') {
-						usr = cmd = where = message = NULL;
-						for (j=1;j<buffer_at;j++) {
-							if (buffer[j] == ' ') {
-								usr = &buffer[1];
-								buffer[j] = '\0';
-								cmd = &buffer[j+1];
-								break;
-							}
-						}
-
-						for (;j<buffer_at;j++) {
-							if (buffer[j] == ' ') {
-								message = &buffer[j+1];
-								buffer[j] = '\0';
-								break;
-							}
-						}
-
-
-						if (!strncmp(cmd, "PRIVMSG", 7) || !strncmp(cmd, "NOTICE", 6)) {
-							for (j=0;j<strlen(message);j++) {
-								if (message[j] == ' ') {
-									where = message;
-									message[j] = '\0';
-									message = &message[j+2];
-									break;
-								}
-							}
-							if ((sep = strchr(usr, '!')) != NULL) usr[sep - usr] = '\0';
-							if (where[0] == '#' || where[0] == '&' || where[0] == '+' || where[0] == '!') target = where; else target = usr;
-							if (!strncmp(cmd, "PRIVMSG", 7)) {
-								if (strcmp(target, conf.irc_channel) == 0) {
-									sprintf(outputbuffer, "%s: %s", usr, message);
-								}
-								append_screenbuffer(outputbuffer);
-								do_update = 1;
-							}
-						}
-					}
-
-					memset(buffer, 0, 513);
-					buffer_at = 0;
-				} else if (c != '\n') {
-					buffer[buffer_at] = c;
-					buffer_at++;
+				// json parse
+                // we got some data from a client
+                r = jsmn_parse(&parser, readbuffer, len, tokens, sizeof(tokens)/sizeof(tokens[0]));
+     
+                if ((r < 0) ||  (r < 1 || tokens[0].type != JSMN_OBJECT)) {
+					// invalid json
+				} else {
+					for (j = 1; j < r; j++) {
+                    	if (jsoneq(readbuffer, &tokens[j], "bbs") == 0) {
+			            	sprintf(msg.bbstag, "%.*s", tokens[j+1].end-tokens[j+1].start, readbuffer + tokens[j+1].start);
+			            	j++;
+                        }
+                    	if (jsoneq(readbuffer, &tokens[j], "nick") == 0) {
+			                sprintf(msg.nick, "%.*s", tokens[j+1].end-tokens[j+1].start, readbuffer + tokens[j+1].start);
+			                j++;
+                        }
+                        if (jsoneq(readbuffer, &tokens[j], "msg") == 0) {
+			                sprintf(msg.msg, "%.*s", tokens[j+1].end-tokens[j+1].start, readbuffer + tokens[j+1].start);
+			                j++;
+                        }                     
+                    } 
 				}
+				// set outputbuffer
+				if (strcmp(msg.bbstag, "SYSTEM") == 0 && strcmp(msg.nick, "SYSTEM") == 0) {
+					snprintf(outputbuffer, 512, ">> %s", msg.msg);
+				} else {
+					snprintf(outputbuffer, 512, "(%s)[%s]: %s", msg.bbstag, msg.nick, msg.msg);
+				}
+				// screen_append output buffer
+				append_screenbuffer(outputbuffer);
+				do_update = 1;
+
+
+				memset(buffer, 0, 513);
+				buffer_at = 0;
 			}
 		}
 		if (do_update == 1) {

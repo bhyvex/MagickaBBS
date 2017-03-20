@@ -5,10 +5,11 @@ JAMLIB = deps/jamlib/jamlib.a
 ZMODEM = deps/Xmodem/libzmodem.a
 LUA = deps/lua/liblua.a
 ODOORS = deps/odoors/libs-`uname -s`/libODoors.a
+JSMN = deps/jsmn/libjsmn.a
 
 OBJ = inih/ini.o bbs.o main.o users.o main_menu.o mail_menu.o doors.o bbs_list.o chat_system.o email.o files.o settings.o lua_glue.o strings.o bluewave.o hashmap/hashmap.o
 
-all: magicka magimail magiedit ticproc mgpost
+all: magicka magimail magiedit ticproc mgpost magichat
 
 ${LUA}:
 	cd deps/lua && $(MAKE) -f Makefile macosx MAKEFLAGS=
@@ -22,11 +23,14 @@ ${ZMODEM}:
 ${ODOORS}:
 	cd deps/odoors/ && $(MAKE)
 
+$(JSMN):
+	cd deps/jsmn/ && $(MAKE)
+
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-magicka: $(OBJ) ${LUA} ${ZMODEM} ${JAMLIB}
-	$(CC) -o magicka -o $@ $^ $(CFLAGS) -L/opt/local/lib -lsqlite3 $(JAMLIB) $(ZMODEM) $(LUA) -lutil -lm -ldl -lssl -lcrypto -lssh
+magicka: $(OBJ) ${LUA} ${ZMODEM} ${JAMLIB} ${JSMN}
+	$(CC) -o magicka -o $@ $^ $(CFLAGS) -L/opt/local/lib -lsqlite3 -lutil -lm -ldl -lssl -lcrypto -lssh
 
 magimail: $(JAMLIB)
 	cd utils/magimail && $(MAKE) linux
@@ -40,6 +44,9 @@ ticproc:
 mgpost: $(JAMLIB)
 	cd utils/mgpost && $(MAKE)
 
+magichat: $(JSMN)
+	cd utils/magichat && $(MAKE)
+
 .PHONY: clean
 
 clean:
@@ -52,3 +59,4 @@ clean:
 	cd deps/odoors/ && rm -rf libs-`uname -s` objs-`uname -s` exe-`uname -s`
 	cd utils/ticproc && $(MAKE) clean
 	cd utils/mgpost && $(MAKE) clean
+	cd utils/magichat && $(MAKE) clean

@@ -432,12 +432,12 @@ static int handler(void* user, const char* section, const char* name,
 			conf->nodes = atoi(value);
 		} else if (strcasecmp(name, "new user level") == 0) {
 			conf->newuserlvl = atoi(value);
-		} else if (strcasecmp(name, "irc server") == 0) {
-			conf->irc_server = strdup(value);
-		} else if (strcasecmp(name, "irc port") == 0) {
-			conf->irc_port = atoi(value);
-		} else if (strcasecmp(name, "irc channel") == 0) {
-			conf->irc_channel = strdup(value);
+		} else if (strcasecmp(name, "magichat server") == 0) {
+			conf->mgchat_server = strdup(value);
+		} else if (strcasecmp(name, "magichat port") == 0) {
+			conf->mgchat_port = atoi(value);
+		} else if (strcasecmp(name, "magichat bbstag") == 0) {
+			conf->mgchat_bbstag = strdup(value);
 		} else if (strcasecmp(name, "default tagline") == 0) {
 			conf->default_tagline = strdup(value);
 		} else if (strcasecmp(name, "external editor cmd") == 0) {
@@ -1081,8 +1081,8 @@ int main(int argc, char **argv) {
 	conf.mail_conference_count = 0;
 	conf.door_count = 0;
 	conf.file_directory_count = 0;
-	conf.irc_server = NULL;
-	conf.irc_port = 6667;
+	conf.mgchat_server = NULL;
+	conf.mgchat_port = 2025;
 	conf.text_file_count = 0;
 	conf.external_editor_cmd = NULL;
 	conf.log_path = NULL;

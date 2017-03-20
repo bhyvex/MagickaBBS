@@ -5,8 +5,9 @@ JAMLIB = deps/jamlib/jamlib.a
 ZMODEM = deps/Xmodem/libzmodem.a
 LUA = deps/lua/liblua.a
 ODOORS = deps/odoors/libs-`uname -s`/libODoors.a
+JSMN = deps/jsmn/libjsmn.a
 
-all: magicka magimail magiedit ticproc mgpost
+all: magicka magimail magiedit ticproc mgpost magichat
 
 ${LUA}:
 	cd deps/lua && $(MAKE) -f Makefile freebsd MAKEFLAGS=
@@ -20,12 +21,15 @@ ${ZMODEM}:
 ${ODOORS}:
 	cd deps/odoors/ && $(MAKE)
 
+$(JSMN):
+	cd deps/jsmn/ && $(MAKE)
+
 OBJ = inih/ini.o bbs.o main.o users.o main_menu.o mail_menu.o doors.o bbs_list.o chat_system.o email.o files.o settings.o lua_glue.o strings.o bluewave.o hashmap/hashmap.o
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-magicka: $(OBJ) ${LUA} ${JAMLIB} ${ZMODEM}
-	$(CC) -o magicka -o $@ $^ $(CFLAGS) -L/usr/local/lib -lsqlite3 $(JAMLIB) $(ZMODEM) $(LUA) -lutil -lm -lssl -lcrypto -lssh
+magicka: $(OBJ) ${LUA} ${JAMLIB} ${ZMODEM} ${JSMN}
+	$(CC) -o magicka -o $@ $^ $(CFLAGS) -L/usr/local/lib -lsqlite3 -lutil -lm -lssl -lcrypto -lssh
 
 magimail: $(JAMLIB)
 	cd utils/magimail && $(MAKE) freebsd
@@ -35,6 +39,9 @@ magiedit: $(ODOORS)
 
 ticproc:
 	cd utils/ticproc && $(MAKE)
+
+magichat: $(JSMN)
+	cd utils/magichat && $(MAKE)
 
 mgpost: $(JAMLIB)
 	cd utils/mgpost && $(MAKE)
@@ -51,3 +58,4 @@ clean:
 	cd deps/odoors/ && rm -rf libs-`uname -s` objs-`uname -s` exe-`uname -s`
 	cd utils/ticproc && $(MAKE) clean
 	cd utils/mgpost && $(MAKE) clean
+	cd utils/magichat && $(MAKE) clean

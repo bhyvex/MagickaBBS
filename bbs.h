@@ -134,9 +134,9 @@ struct bbs_config {
 	char *ssh_dsa_key;
 	char *ssh_rsa_key;
 	char *string_file;
-	char *irc_server;
-	int irc_port;
-	char *irc_channel;
+	char *mgchat_server;
+	int mgchat_port;
+	char *mgchat_bbstag;
 	int bwave_max_msgs;
 	struct fido_addr *main_aka;
 	

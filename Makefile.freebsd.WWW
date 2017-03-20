@@ -7,8 +7,9 @@ LUA = deps/lua/liblua.a
 B64 = deps/libb64-1.2/src/libb64.a
 MICROHTTPD=-lmicrohttpd 
 ODOORS = deps/odoors/libs-`uname -s`/libODoors.a
+JSMN = deps/jsmn/libjsmn.a
 
-all: magicka magimail magiedit ticproc mgpost
+all: magicka magimail magiedit ticproc mgpost magichat
 
 ${LUA}:
 	cd deps/lua && $(MAKE) -f Makefile freebsd MAKEFLAGS=
@@ -25,12 +26,15 @@ ${B64}:
 ${ODOORS}:
 	cd deps/odoors/ && $(MAKE)
 
+$(JSMN):
+	cd deps/jsmn/ && $(MAKE)
+
 OBJ = inih/ini.o bbs.o main.o users.o main_menu.o mail_menu.o doors.o bbs_list.o chat_system.o email.o files.o settings.o lua_glue.o strings.o bluewave.o www.o www_email.o www_msgs.o www_last10.o hashmap/hashmap.o
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-magicka: $(OBJ) ${LUA} ${ZMODEM} ${JAMLIB} ${B64}
-	$(CC) -o magicka -o $@ $^ $(CFLAGS) -L/usr/local/lib -lsqlite3 $(JAMLIB) $(ZMODEM) $(LUA) $(B64) -lutil -lm -lssl -lcrypto -lssh $(MICROHTTPD)
+magicka: $(OBJ) ${LUA} ${ZMODEM} ${JAMLIB} ${B64} ${JSMN}
+	$(CC) -o magicka -o $@ $^ $(CFLAGS) -L/usr/local/lib -lsqlite3 -lutil -lm -lssl -lcrypto -lssh $(MICROHTTPD)
 
 magimail: $(JAMLIB)
 	cd utils/magimail && $(MAKE) freebsd
@@ -43,6 +47,9 @@ ticproc:
 
 mgpost: $(JAMLIB)
 	cd utils/mgpost && $(MAKE)
+
+magichat: $(JSMN)
+	cd utils/magichat && $(MAKE)
 
 .PHONY: clean
 
@@ -57,3 +64,4 @@ clean:
 	cd deps/odoors/ && rm -rf libs-`uname -s` objs-`uname -s` exe-`uname -s`
 	cd utils/ticproc && $(MAKE) clean
 	cd utils/mgpost && $(MAKE) clean
+	cd utils/magichat && $(MAKE) clean
