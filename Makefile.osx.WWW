@@ -8,6 +8,7 @@ B64 = deps/libb64-1.2/src/libb64.a
 MICROHTTPD=-lmicrohttpd 
 ODOORS = deps/odoors/libs-`uname -s`/libODoors.a
 JSMN = deps/jsmn/libjsmn.a
+CDK = deps/cdk-5-20161210/libcdk.a
 
 all: magicka magimail magiedit ticproc mgpost magichat fileapprove
 
