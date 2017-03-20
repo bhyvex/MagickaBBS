@@ -31,7 +31,11 @@ $(JSMN):
 	cd deps/jsmn/ && $(MAKE)
 
 $(CDK):
+<<<<<<< HEAD
 	cd deps/cdk-5.0-20161210/ && export CPPFLAGS=-I/usr/local/include ./configure --with-ncurses
+=======
+	cd deps/cdk-5.0-20161210/ && ./configure
+>>>>>>> 1f0a635cdf2a7776adc1af2f770ac4cffb297034
 	cd deps/cdk-5.0-20161210/ && $(MAKE)
 
 OBJ = inih/ini.o bbs.o main.o users.o main_menu.o mail_menu.o doors.o bbs_list.o chat_system.o email.o files.o settings.o lua_glue.o strings.o bluewave.o www.o www_email.o www_msgs.o www_last10.o hashmap/hashmap.o
