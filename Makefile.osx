@@ -9,7 +9,7 @@ JSMN = deps/jsmn/libjsmn.a
 
 OBJ = inih/ini.o bbs.o main.o users.o main_menu.o mail_menu.o doors.o bbs_list.o chat_system.o email.o files.o settings.o lua_glue.o strings.o bluewave.o hashmap/hashmap.o
 
-all: magicka magimail magiedit ticproc mgpost magichat
+all: magicka magimail magiedit ticproc mgpost magichat fileapprove
 
 ${LUA}:
 	cd deps/lua && $(MAKE) -f Makefile macosx MAKEFLAGS=
@@ -25,6 +25,10 @@ ${ODOORS}:
 
 $(JSMN):
 	cd deps/jsmn/ && $(MAKE)
+
+$(CDK):
+	cd deps/cdk-5.0-20161210/ && ./configure
+	cd deps/cdk-5.0-20161210/ && $(MAKE)
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
@@ -47,6 +51,9 @@ mgpost: $(JAMLIB)
 magichat: $(JSMN)
 	cd utils/magichat && $(MAKE)
 
+fileapprove: $(CDK)
+	cd utils/fileapprove && $(MAKE)
+
 .PHONY: clean
 
 clean:
@@ -60,3 +67,5 @@ clean:
 	cd utils/ticproc && $(MAKE) clean
 	cd utils/mgpost && $(MAKE) clean
 	cd utils/magichat && $(MAKE) clean
+	cd deps/cdk-5.0-20161210 && $(MAKE) clean
+	cd utils/fileapprove && $(MAKE) clean
