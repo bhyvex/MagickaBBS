@@ -200,7 +200,7 @@ int main(int argc, char **argv) {
                                     for(k = 0; k < client_count; k++) {
                                         if (i != clients[k]->fd && strcmp(clients[k]->nick, "UNKNOWN") != 0) {
                                             snprintf(buffer, 1024, "{\"bbs\": \"SYSTEM\", \"nick\": \"SYSTEM\", \"msg\": \"%s (%s) has joined the chat\" }", clients[j]->nick, clients[j]->bbstag);
-                                            if (send(k, buffer, strlen(buffer) + 1, 0) == -1) {
+                                            if (send(clients[k]->fd, buffer, strlen(buffer) + 1, 0) == -1) {
                                                 perror("send");
                                             }
                                         }
@@ -215,7 +215,7 @@ int main(int argc, char **argv) {
                                         for(k = 0; k < client_count; k++) {
                                             if (i != clients[k]->fd && strcmp(clients[k]->nick, "UNKNOWN") != 0) {
 
-                                                if (send(k, buf, nbytes, 0) == -1) {
+                                                if (send(clients[k]->fd, buf, nbytes, 0) == -1) {
                                                     perror("send");
                                                 }
                                             }
