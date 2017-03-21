@@ -44,6 +44,7 @@ s_JamBase *open_jam_base(char *path) {
 unsigned long generate_msgid() {
 	
 	char buffer[1024];
+	time_t unixtime;
 
 	unsigned long msgid;
 	unsigned long lastid;
@@ -51,11 +52,18 @@ unsigned long generate_msgid() {
 
 	snprintf(buffer, 1024, "%s/msgserial", conf.bbs_path);
 	
+	unixtime = time(NULL);
+
 	fptr = fopen(buffer, "r+");
 	if (fptr) {
 		flock(fileno(fptr), LOCK_EX);
 		fread(&lastid, sizeof(unsigned long), 1, fptr);	
-		lastid++;
+
+		if (unixtime > lastid) {
+			lastid = unixtime;
+		} else {
+			lastid++;
+		}
 		rewind(fptr);
 		fwrite(&lastid, sizeof(unsigned long), 1, fptr);
 		flock(fileno(fptr), LOCK_UN);
@@ -63,7 +71,7 @@ unsigned long generate_msgid() {
 	} else {
 		fptr = fopen(buffer, "w");
 		if (fptr) {
-			lastid = 1;
+			lastid = unixtime;
 			flock(fileno(fptr), LOCK_EX);
 			fwrite(&lastid, sizeof(unsigned long), 1, fptr);
 			flock(fileno(fptr), LOCK_UN);

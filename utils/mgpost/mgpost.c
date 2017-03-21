@@ -140,11 +140,19 @@ unsigned long generate_msgid(char *bbs_path) {
 	
 	snprintf(buffer, 1024, "%s/msgserial", bbs_path);
 	
+	unixtime = time(NULL);
+
 	fptr = fopen(buffer, "r+");
 	if (fptr) {
 		flock(fileno(fptr), LOCK_EX);
 		fread(&lastid, sizeof(unsigned long), 1, fptr);
-		lastid++;
+		
+		if (unixtime > lastid) {
+			lastid = unixtime;
+		} else {
+			lastid++;
+		}
+
 		rewind(fptr);
 		fwrite(&lastid, sizeof(unsigned long), 1, fptr);
 		flock(fileno(fptr), LOCK_UN);
@@ -152,7 +160,7 @@ unsigned long generate_msgid(char *bbs_path) {
 	} else {
 		fptr = fopen(buffer, "w");
 		if (fptr) {
-			lastid = 1;
+			lastid = unixtime;
 			flock(fileno(fptr), LOCK_EX);
 			fwrite(&lastid, sizeof(unsigned long), 1, fptr);
 			flock(fileno(fptr), LOCK_UN);
