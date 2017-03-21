@@ -137,7 +137,7 @@ unsigned long generate_msgid(char *bbs_path) {
 
 	unsigned long lastid;
 	FILE *fptr;
-	
+	time_t unixtime;
 	snprintf(buffer, 1024, "%s/msgserial", bbs_path);
 	
 	unixtime = time(NULL);
