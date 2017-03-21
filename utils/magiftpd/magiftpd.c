@@ -414,8 +414,10 @@ void handle_LIST(struct ftpserver *cfg, struct ftpclient *client) {
     snprintf(newpath, PATH_MAX, "%s/%s", cfg->fileroot, client->current_path);
     struct stat s;
     struct tm file_tm;
+    struct tm now_tm;
+    time_t now;
     pid_t pid = fork();
-    char *days[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+    char *months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
     if (pid > 0) {
         // nothing
@@ -437,11 +439,22 @@ void handle_LIST(struct ftpserver *cfg, struct ftpclient *client) {
             snprintf(newpath, PATH_MAX, "%s/%s/%s", cfg->fileroot, client->current_path, dp->d_name);
             if (stat(newpath, &s) == 0) {
                 localtime_r(&s.st_mtime, &file_tm);
-                snprintf(linebuffer, 1024, "%c%c%c%c%c%c%c%c%c%c %d %d %d %lld %d %s %02d:%02d %s\r\n", S_ISDIR(s.st_mode) ? 'd' : '-', 
+                now = time(NULL);
+                localtime_r(&now, &now_tm);
+
+                if (now_tm.tm_year != file_tm.tm_year) {
+                    snprintf(linebuffer, 1024, "%c%c%c%c%c%c%c%c%c%c %d %d %d %lld %s %d %d %s\r\n", S_ISDIR(s.st_mode) ? 'd' : '-', 
                                                                       S_IRUSR & s.st_mode ? 'r' : '-', S_IWUSR & s.st_mode ? 'w' : '-',S_IXUSR & s.st_mode ? 'x' : '-',
                                                                       S_IRGRP & s.st_mode ? 'r' : '-', S_IWGRP & s.st_mode ? 'w' : '-',S_IXGRP & s.st_mode ? 'x' : '-',
                                                                       S_IROTH & s.st_mode ? 'r' : '-', S_IWOTH & s.st_mode ? 'w' : '-',S_IXOTH & s.st_mode ? 'x' : '-',
-                                                                      s.st_nlink, s.st_uid, s.st_gid, s.st_size, file_tm.tm_mday, days[file_tm.tm_wday], file_tm.tm_hour, file_tm.tm_min, dp->d_name);
+                                                                      s.st_nlink, s.st_uid, s.st_gid, s.st_size, months[file_tm.tm_mon], file_tm.tm_mday, file_tm.tm_year + 1900, dp->d_name);
+                } else {
+                    snprintf(linebuffer, 1024, "%c%c%c%c%c%c%c%c%c%c %d %d %d %lld %s %d %02d:%02d %s\r\n", S_ISDIR(s.st_mode) ? 'd' : '-', 
+                                                                      S_IRUSR & s.st_mode ? 'r' : '-', S_IWUSR & s.st_mode ? 'w' : '-',S_IXUSR & s.st_mode ? 'x' : '-',
+                                                                      S_IRGRP & s.st_mode ? 'r' : '-', S_IWGRP & s.st_mode ? 'w' : '-',S_IXGRP & s.st_mode ? 'x' : '-',
+                                                                      S_IROTH & s.st_mode ? 'r' : '-', S_IWOTH & s.st_mode ? 'w' : '-',S_IXOTH & s.st_mode ? 'x' : '-',
+                                                                      s.st_nlink, s.st_uid, s.st_gid, s.st_size, months[file_tm.tm_mon], file_tm.tm_mday, file_tm.tm_hour, file_tm.tm_min, dp->d_name);
+                }
                 send_data(client, linebuffer, strlen(linebuffer));
             }
         }
@@ -605,6 +618,8 @@ int handle_client(struct ftpserver *cfg, struct ftpclient *client, char *buf, in
         }
     }
     
+    fprintf(stderr, "command: %s, argument: %s\n", cmd, argument);
+
     if (strcmp(cmd, "USER") == 0) {
         if (argument_len > 0) {
             handle_USER(cfg, client, argument);
