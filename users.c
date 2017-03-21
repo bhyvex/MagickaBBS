@@ -230,9 +230,9 @@ struct user_record *check_user_pass(char *loginname, char *password) {
 	struct user_record *user;
 	char buffer[1024];
 	sqlite3 *db;
-  sqlite3_stmt *res;
-  int rc;
-  char *sql = "SELECT Id, loginname, password, salt, firstname,"
+  	sqlite3_stmt *res;
+  	int rc;
+  	char *sql = "SELECT Id, loginname, password, salt, firstname,"
 					   "lastname, email, location, sec_level, last_on, time_left, cur_mail_conf, cur_mail_area, cur_file_dir, cur_file_sub, times_on, bwavepktno, archiver, protocol FROM users WHERE loginname LIKE ?";
 	char *pass_hash;
 
