@@ -14,6 +14,7 @@
 #include <dirent.h>
 #include <signal.h>
 #include <errno.h>
+#include <time.h>
 #include "magiftpd.h"
 #include "../../inih/ini.h"
 
@@ -34,6 +35,84 @@ void sigchld_handler(int s)
     while(waitpid(-1, NULL, WNOHANG) > 0);
 
     errno = saved_errno;
+}
+
+static void parse_path(struct ftpclient *client, char *path, char **result) {
+    struct dllist *proot;
+    struct dllist *pptr;
+    char *rescpy;
+    char *ptr;
+    char *newpath = *result;
+
+    proot = (struct dllist *)malloc(sizeof(struct dllist));
+
+    if (!proot) {
+        fprintf(stderr, "Out of memory\n");
+        exit(-1);
+    }
+
+    proot->next = NULL;
+    proot->prev = NULL;
+    proot->data = NULL;
+
+    pptr = proot;
+
+    if (path[0] == '/') {
+        rescpy = strdup(path);
+    } else {
+        rescpy = (char *)malloc(strlen(path) + strlen(client->current_path) + 2);
+        if (!rescpy) {
+            fprintf(stderr, "Out of memory\n");
+            exit(-1);
+        }
+        sprintf(rescpy, "%s/%s", client->current_path, path);
+    }
+    ptr = strtok(rescpy, "/");
+
+    while (ptr != NULL) {
+        if (strcmp(ptr, "..") == 0) {
+            if (pptr->prev != NULL) {
+                pptr = pptr->prev;
+                free(pptr->next);
+                pptr->next = NULL;
+            }
+        } else if (strcmp(ptr, ".") != 0) {
+            pptr->data = ptr;
+            pptr->next = (struct dllist *)malloc(sizeof(struct dllist));
+            if (!pptr->next) {
+                fprintf(stderr, "Out of memory\n");
+                exit(-1);
+            }
+            pptr->next->data = NULL;
+            pptr->next->prev = pptr;
+            pptr->next->next = NULL;
+
+            pptr = pptr->next;
+        }
+
+        ptr = strtok(NULL, "/");
+    }
+
+    newpath[0] = '\0';   
+    pptr = proot;
+
+    while (pptr != NULL && pptr->data != NULL) {
+        snprintf(newpath, PATH_MAX, "%s/%s", newpath, pptr->data);
+        pptr = pptr->next;
+    }
+
+    pptr = proot;
+
+    while (pptr != NULL) {
+        if (pptr->next != NULL) {
+            pptr = pptr->next;
+            free(pptr->prev);
+        } else {
+            free(pptr);
+            pptr = NULL;
+        }
+    }
+    free(rescpy);
 }
 
 static int handler(void* user, const char* section, const char* name, const char* value) {
@@ -197,10 +276,20 @@ void handle_PASV(struct ftpserver *cfg, struct ftpclient *client) {
 }
 
 void handle_RETR(struct ftpserver *cfg, struct ftpclient *client, char *file) {
-    char newpath[PATH_MAX];
+    char *newpath;
+    char fullpath[PATH_MAX];
     FILE *fptr;
     char buffer[1024];
-    snprintf(newpath, PATH_MAX, "%s/%s/%s", cfg->fileroot, client->current_path, file);
+
+    newpath = (char *)malloc(1024);
+    parse_path(client, file, &newpath);
+
+    if (newpath[0] == '/') {
+        snprintf(fullpath, PATH_MAX, "%s%s", cfg->fileroot, newpath);
+    } else {
+        snprintf(fullpath, PATH_MAX, "%s/%s/%s", cfg->fileroot, client->current_path, newpath);
+    }
+    free(newpath);
     struct stat s;
     pid_t pid = fork();
     int n;
@@ -209,9 +298,9 @@ void handle_RETR(struct ftpserver *cfg, struct ftpclient *client, char *file) {
         // nothing
     } else if (pid == 0) {
 
-        if (stat(newpath, &s) == 0) {
+        if (stat(fullpath, &s) == 0) {
             if (!S_ISDIR(s.st_mode)) {
-                fptr = fopen(newpath, "rb");
+                fptr = fopen(fullpath, "rb");
                 if (fptr) {
                     if (open_tcp_connection(cfg, client)) {
                         send_msg(client, "150 Data connection accepted; transfer starting.\r\n");
@@ -232,7 +321,7 @@ void handle_RETR(struct ftpserver *cfg, struct ftpclient *client, char *file) {
             }
         }
 
-        send_msg(client, "451 RETR Failed\r\n");
+        send_msg(client, "451 RETR Failed.\r\n");
         exit(0);
     } else {
         send_msg(client, "451 RETR Failed.\r\n");
@@ -243,10 +332,12 @@ void handle_LIST(struct ftpserver *cfg, struct ftpclient *client) {
     char newpath[PATH_MAX];
     DIR *dirp;
     struct dirent *dp;
-    char linebuffer[256];
+    char linebuffer[1024];
     snprintf(newpath, PATH_MAX, "%s/%s", cfg->fileroot, client->current_path);
     struct stat s;
+    struct tm file_tm;
     pid_t pid = fork();
+    char *days[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 
     if (pid > 0) {
         // nothing
@@ -267,7 +358,12 @@ void handle_LIST(struct ftpserver *cfg, struct ftpclient *client) {
         while ((dp = readdir(dirp)) != NULL) {
             snprintf(newpath, PATH_MAX, "%s/%s/%s", cfg->fileroot, client->current_path, dp->d_name);
             if (stat(newpath, &s) == 0) {
-                snprintf(linebuffer, 256, "%s%c\r\n", dp->d_name, (S_ISDIR(s.st_mode) ? '/' : ' '));
+                localtime_r(&s.st_mtime, &file_tm);
+                snprintf(linebuffer, 1024, "%c%c%c%c%c%c%c%c%c%c %d %d %d %lld %d %s %02d:%02d %s\r\n", S_ISDIR(s.st_mode) ? 'd' : '-', 
+                                                                      S_IRUSR & s.st_mode ? 'r' : '-', S_IWUSR & s.st_mode ? 'w' : '-',S_IXUSR & s.st_mode ? 'x' : '-',
+                                                                      S_IRGRP & s.st_mode ? 'r' : '-', S_IWGRP & s.st_mode ? 'w' : '-',S_IXGRP & s.st_mode ? 'x' : '-',
+                                                                      S_IROTH & s.st_mode ? 'r' : '-', S_IWOTH & s.st_mode ? 'w' : '-',S_IXOTH & s.st_mode ? 'x' : '-',
+                                                                      s.st_nlink, s.st_uid, s.st_gid, s.st_size, file_tm.tm_mday, days[file_tm.tm_wday], file_tm.tm_hour, file_tm.tm_min, dp->d_name);
                 send_data(client, linebuffer, strlen(linebuffer));
             }
         }
@@ -293,78 +389,18 @@ void handle_PORT(struct ftpserver *cfg, struct ftpclient *client, char *arg) {
 }
 
 void handle_CWD(struct ftpserver *cfg, struct ftpclient *client, char *dir) {
-    struct dllist *proot;
-    struct dllist *pptr;
-    char *rescpy;
-    char *ptr;
-    char newpath[PATH_MAX];
+    char *newpath;
+    char fullpath[PATH_MAX];
     struct stat s;
 
-    proot = (struct dllist *)malloc(sizeof(struct dllist));
-
-    if (!proot) {
-        fprintf(stderr, "Out of memory\n");
-        exit(-1);
-    }
-
-    proot->next = NULL;
-    proot->prev = NULL;
-    proot->data = NULL;
-
-    pptr = proot;
-
-    if (dir[0] == '/') {
-        rescpy = strdup(dir);
-    } else {
-        rescpy = (char *)malloc(strlen(dir) + strlen(client->current_path) + 2);
-        if (!rescpy) {
-            fprintf(stderr, "Out of memory\n");
-            exit(-1);
-        }
-        sprintf(rescpy, "%s/%s", client->current_path, dir);
-    }
-    ptr = strtok(rescpy, "/");
-
-    while (ptr != NULL) {
-        if (strcmp(ptr, "..") == 0) {
-            if (pptr->prev != NULL) {
-                pptr = pptr->prev;
-                free(pptr->next);
-                pptr->next = NULL;
-            }
-        } else if (strcmp(ptr, ".") != 0) {
-            pptr->data = ptr;
-            pptr->next = (struct dllist *)malloc(sizeof(struct dllist));
-            if (!pptr->next) {
-                fprintf(stderr, "Out of memory\n");
-                exit(-1);
-            }
-            pptr->next->data = NULL;
-            pptr->next->prev = pptr;
-            pptr->next->next = NULL;
-        }
-
-        ptr = strtok(NULL, "/");
-    }
+    newpath = (char *)malloc(1024);
+    parse_path(client, dir, &newpath);
     
-    strcpy(newpath, cfg->fileroot);
+    snprintf(fullpath, PATH_MAX, "%s/%s", cfg->fileroot, newpath);
 
-    pptr = proot;
-
-    while (pptr != NULL && pptr->data != NULL) {
-        snprintf(newpath, PATH_MAX, "%s/%s", newpath, pptr->data);
-        pptr = pptr->next;
-    }
-
-    if (stat(newpath, &s) == 0) {
+    if (stat(fullpath, &s) == 0) {
         if (S_ISDIR(s.st_mode)) {
-            pptr = proot;
-            client->current_path[0] = '\0';
-            while (pptr != NULL && pptr->data != NULL) {
-                snprintf(client->current_path, PATH_MAX, "%s/%s", client->current_path, pptr->data);
-                pptr = pptr->next;
-            }
-
+            strcpy(client->current_path, newpath);
             send_msg(client, "250 Okay.\r\n");
         } else {
             send_msg(client, "550 No such file or directory.\r\n");    
@@ -373,18 +409,7 @@ void handle_CWD(struct ftpserver *cfg, struct ftpclient *client, char *dir) {
         send_msg(client, "550 No such file or directory.\r\n");
     }
 
-    pptr = proot;
-
-    while (pptr != NULL) {
-        if (pptr->next != NULL) {
-            pptr = pptr->next;
-            free(pptr->prev);
-        } else {
-            free(pptr);
-            pptr = NULL;
-        }
-    }
-    free(rescpy);
+    free(newpath);
 }
 
 void handle_TYPE(struct ftpserver *cfg, struct ftpclient *client) {
@@ -463,7 +488,6 @@ void handle_PASS(struct ftpserver *cfg, struct ftpclient *client, char *password
 }
 
 void handle_USER(struct ftpserver *cfg, struct ftpclient *client, char *username) {
-    fprintf(stderr, "username %s\n", username);
     strncpy(client->name, username, 16);
     client->name[15] = '\0';
     if (strcmp(client->name, "anonymous") == 0) {
@@ -502,8 +526,6 @@ int handle_client(struct ftpserver *cfg, struct ftpclient *client, char *buf, in
         }
     }
     
-    fprintf(stderr, "Command: %s, Argument: %s\n", cmd, argument);
-
     if (strcmp(cmd, "USER") == 0) {
         if (argument_len > 0) {
             handle_USER(cfg, client, argument);
