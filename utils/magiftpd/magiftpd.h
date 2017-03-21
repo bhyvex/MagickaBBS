@@ -13,12 +13,15 @@ struct ftpclient {
     char password[32];
     int data_srv_socket;
     int status;
+    int seclevel;
 };
 
 struct ftpserver {
     int port;
     char *fileroot;
     char *userdb;
+    char *upload_folder;
+    int upload_seclevel;
 };
 
 #endif

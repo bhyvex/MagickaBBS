@@ -128,7 +128,11 @@ static int handler(void* user, const char* section, const char* name, const char
             if (cfg->fileroot[strlen(cfg->fileroot) -1] == '/') {
                 cfg->fileroot[strlen(cfg->fileroot) -1] = '\0';
             }
-		}
+		} else if (strcasecmp(name, "upload folder") == 0) {
+            cfg->upload_folder = strdup(value);
+        } else if (strcasecmp(name, "upload sec level") == 0) {
+            cfg->upload_seclevel = atoi(value);
+        }
 	}
 	return 1;
 }
@@ -219,6 +223,80 @@ int open_tcp_connection(struct ftpserver *cfg, struct ftpclient *client) {
 		} 
     }
     return 1;
+}
+
+void handle_STOR(struct ftpserver *cfg, struct ftpclient *client, char *path) {
+    char newpath[PATH_MAX];
+    struct stat s;
+    pid_t pid;
+    char buffer[1024];
+    int j;
+    int i;
+    FILE *fptr;
+    if (path[0] == '/') {
+        snprintf(newpath, PATH_MAX, "%s", path);
+    } else {
+        snprintf(newpath, PATH_MAX, "%s/%s", client->current_path, path);
+    }
+
+    for (i=strlen(newpath);i > 0; i--) {
+        if (newpath[i] == '/') {
+            newpath[i] = '\0';
+            break;
+        }
+    }
+    
+    if (strcmp(&newpath[1], cfg->upload_folder) == 0) {
+        if (path[0] == '/') {
+            snprintf(newpath, PATH_MAX, "%s%s", cfg->fileroot, path);
+        } else {
+            snprintf(newpath, PATH_MAX, "%s%s/%s",cfg->fileroot, client->current_path, path);
+        }
+        if (client->seclevel >= cfg->upload_seclevel) {
+
+            if (stat(newpath, &s) != 0) {
+                pid = fork();
+                if (pid == 0) {
+                    fptr = fopen(newpath, "wb");
+                    if (fptr) {
+                        if (open_tcp_connection(cfg, client)) {
+                            send_msg(client, "150 Data connection accepted; transfer starting.\r\n");
+		                    while (1) {
+			                    j = recv(client->data_socket, buffer, 1024, 0);
+			                    if (j == 0) {
+				                    break;
+			                    }
+			                    if (j < 0) {
+				                    send_msg(client, "426 TCP connection was established but then broken\r\n");
+				                    fclose(fptr);
+                                    unlink(newpath);
+                                    close_tcp_connection(client);
+                                    exit(0);
+			                    }
+			                    fwrite(buffer, 1, j, fptr);
+                            }
+                            fclose(fptr);
+                            close_tcp_connection(client);
+                            send_msg(client, "226 Transfer OK.\r\n");
+                            exit(0);
+                        } else {
+                            send_msg(client, "425 TCP connection cannot be established.\r\n");
+                            fclose(fptr);
+                            exit(0);
+                        }
+                    }
+                } else if (pid < 0) {
+                    send_msg(client, "451 STOR Failed.\r\n");
+                }
+            } else {
+                send_msg(client, "553 File Exists.\n");    
+            }
+        } else {
+            send_msg(client, "532 Access Denied.\n");    
+        }
+    } else {
+        send_msg(client, "532 Access Denied.\n");
+    }
 }
 
 void handle_PASV(struct ftpserver *cfg, struct ftpclient *client) {
@@ -436,7 +514,7 @@ void handle_PASS(struct ftpserver *cfg, struct ftpclient *client, char *password
     sqlite3 *db;
   	sqlite3_stmt *res;
   	int rc;
-  	char *sql = "SELECT password, salt FROM users WHERE loginname = ?";
+  	char *sql = "SELECT password, salt, sec_level FROM users WHERE loginname = ?";
 	char *pass_hash;
 
     if (strlen(client->name) == 0) {
@@ -469,6 +547,7 @@ void handle_PASS(struct ftpserver *cfg, struct ftpclient *client, char *password
         if (step == SQLITE_ROW) {
             pass_hash = hash_sha256(password, (char *)sqlite3_column_text(res, 1));
             if (strcmp(pass_hash, (char *)sqlite3_column_text(res, 0)) == 0) {
+                client->seclevel = sqlite3_column_int(res, 2);
                 send_msg(client, "230 User Logged in, Proceed.\r\n");
                 strncpy(client->password, password, 32);
             } else {
@@ -566,6 +645,9 @@ int handle_client(struct ftpserver *cfg, struct ftpclient *client, char *buf, in
     } else
     if (strcmp(cmd, "RETR") == 0) {
         handle_RETR(cfg, client, argument);
+    } else
+    if (strcmp(cmd, "STOR") == 0) {
+        handle_STOR(cfg, client, argument);
     } else {
         send_msg(client, "500 Command not recognized.\r\n");
     }
@@ -654,6 +736,7 @@ void init(struct ftpserver *cfg) {
                         clients[client_count]->type = 1;
                         clients[client_count]->status = 0;
                         clients[client_count]->data_port = 0;
+                        clients[client_count]->seclevel = 0;
                         memset(clients[client_count]->name, 0, 16);
                         memset(clients[client_count]->password, 0, 32);
 
