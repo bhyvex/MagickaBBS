@@ -15,6 +15,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <time.h>
+#include <sys/wait.h>
 #include "magiftpd.h"
 #include "../../inih/ini.h"
 
