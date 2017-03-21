@@ -2,13 +2,41 @@
 #include <stdlib.h>
 #include <string.h>
 #include <openssl/sha.h>
+#include <sqlite3.h>
+#include <limits.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/select.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <unistd.h>
+#include <dirent.h>
+#include <signal.h>
+#include <errno.h>
 #include "magiftpd.h"
 #include "../../inih/ini.h"
 
 static struct ftpclient **clients;
 static int client_count = 0;
 
-static int handler(void* user, const char* section, const char* name, const char* value) {}
+struct dllist {
+    char *data;
+    struct dllist *prev;
+    struct dllist *next;
+};
+
+void sigchld_handler(int s)
+{
+    // waitpid() might overwrite errno, so we save and restore it:
+    int saved_errno = errno;
+
+    while(waitpid(-1, NULL, WNOHANG) > 0);
+
+    errno = saved_errno;
+}
+
+static int handler(void* user, const char* section, const char* name, const char* value) {
 	struct ftpserver *cfg = (struct ftpserver *)user;
 	
 	if (strcasecmp(section, "main") == 0) {
@@ -18,6 +46,9 @@ static int handler(void* user, const char* section, const char* name, const char
 			cfg->userdb = strdup(value);
 		} else if (strcasecmp(name, "file root") == 0) {
 			cfg->fileroot = strdup(value);
+            if (cfg->fileroot[strlen(cfg->fileroot) -1] == '/') {
+                cfg->fileroot[strlen(cfg->fileroot) -1] = '\0';
+            }
 		}
 	}
 	return 1;
@@ -50,14 +81,310 @@ char *hash_sha256(char *pass, char *salt) {
 	return shash;
 }
 
-int send_msg(struct ftpclient *client, char *msg) {
+void send_data(struct ftpclient *client, char *msg, int len) {
+    int n = 0;
+
+    while (len > 0) {
+        n = send(client->data_socket, msg + n, len, 0);
+        len -= n;
+    }
+}
+
+void send_msg(struct ftpclient *client, char *msg) {
     int len = strlen(msg);
     int n = 0;
 
-    while (l > 0) {
-        n = send(client->fd, msg + n, l, 0);
-        l -= n;
+    while (len > 0) {
+        n = send(client->fd, msg + n, len, 0);
+        len -= n;
     }
+}
+
+void close_tcp_connection(struct ftpclient* client) {
+	if (client->data_srv_socket > 0) {
+		close(client->data_srv_socket);
+		client->data_srv_socket = -1;
+	}
+	if (client->data_socket > 0) {
+		close(client->data_socket);
+		client->data_socket = -1;
+	}
+	if (strlen(client->data_ip) > 0) {
+		memset(client->data_ip, 0, 20);
+		client->data_port = 0;
+	}
+}
+
+int open_tcp_connection(struct ftpserver *cfg, struct ftpclient *client) {
+    if (strlen(client->data_ip) != 0) {
+        client->data_socket = socket(AF_INET, SOCK_STREAM, 0);
+		struct sockaddr_in servaddr;
+		servaddr.sin_family = AF_INET;
+		servaddr.sin_port = htons(client->data_port);
+		if (inet_aton(client->data_ip, &(servaddr.sin_addr)) <= 0) {
+            fprintf(stderr, "Error in port command\n");
+			return 0;
+		}
+		if (connect(client->data_socket, (struct sockaddr *) &servaddr, sizeof(struct sockaddr)) == -1) {
+            fprintf(stderr, "Error connecting to client\n");
+			return 0;
+		}
+    } else if (client->data_srv_socket != 0) {
+        socklen_t sock = sizeof(struct sockaddr);
+		struct sockaddr_in data_client;
+		client->data_socket = accept(client->data_srv_socket, (struct sockaddr*) &data_client, &sock);
+
+		if (client->data_socket < 0) {
+			fprintf(stderr, "Accept Error\n");
+            return 0;
+		} 
+    }
+    return 1;
+}
+
+void handle_PASV(struct ftpserver *cfg, struct ftpclient *client) {
+    char buffer[200];
+    char *ipcpy;
+    char *ipptr;
+    if (client->data_socket > 0) {
+		close(client->data_socket);
+		client->data_socket = -1;
+	}
+
+	if (client->data_srv_socket > 0) {
+		close(client->data_srv_socket);
+	}
+
+	client->data_srv_socket = socket(AF_INET, SOCK_STREAM, 0);
+	if (client->data_srv_socket < 0) {
+		send_msg(client, "426 PASV failure.\r\n");
+		return;
+	}
+	struct sockaddr_in server;
+	server.sin_family = AF_INET;
+	server.sin_addr.s_addr = inet_addr(client->ip);
+	server.sin_port = htons(0);
+
+	if (bind(client->data_srv_socket, (struct sockaddr*) &server, sizeof(struct sockaddr)) < 0) {
+		send_msg(client, "426 PASV failure\r\n");
+		return;
+	}
+
+	if (listen(client->data_srv_socket, 1) < 0) {
+		send_msg(client, "426 PASV failure\r\n");
+	}
+	
+    struct sockaddr_in file_addr;
+	socklen_t file_sock_len = sizeof(struct sockaddr);
+	getsockname(client->data_srv_socket, (struct sockaddr*) &file_addr, &file_sock_len);
+	int port = ntohs(file_addr.sin_port);
+
+    ipcpy = strdup(client->ip);
+
+    ipptr = strtok(ipcpy, ".");
+
+    strcpy(buffer, "227 Entering Passive Mode (");
+
+    while (ipptr != NULL) {
+        sprintf(buffer, "%s%s,", buffer, ipptr);
+        ipptr = strtok(NULL, ".");
+    }
+
+    sprintf(buffer, "%s%d,%d)\r\n", buffer, port / 256, port % 256);
+
+	send_msg(client, buffer);
+	free(ipcpy);
+}
+
+void handle_RETR(struct ftpserver *cfg, struct ftpclient *client, char *file) {
+    char newpath[PATH_MAX];
+    FILE *fptr;
+    char buffer[1024];
+    snprintf(newpath, PATH_MAX, "%s/%s/%s", cfg->fileroot, client->current_path, file);
+    struct stat s;
+    pid_t pid = fork();
+    int n;
+
+    if (pid > 0) {
+        // nothing
+    } else if (pid == 0) {
+
+        if (stat(newpath, &s) == 0) {
+            if (!S_ISDIR(s.st_mode)) {
+                fptr = fopen(newpath, "rb");
+                if (fptr) {
+                    if (open_tcp_connection(cfg, client)) {
+                        send_msg(client, "150 Data connection accepted; transfer starting.\r\n");
+                        do {
+                            n = fread(buffer, 1, 1024, fptr);
+                            send_data(client, buffer, n);
+                        } while (n == 1024);
+                        fclose(fptr);
+                        close_tcp_connection(client);
+                        send_msg(client, "226 Transfer OK.\r\n");
+                        exit(0);
+                    } else {
+                        send_msg(client, "425 TCP connection cannot be established.\r\n");
+                        fclose(fptr);
+                        exit(0);
+                    }
+                }
+            }
+        }
+
+        send_msg(client, "451 RETR Failed\r\n");
+        exit(0);
+    } else {
+        send_msg(client, "451 RETR Failed.\r\n");
+    }
+}
+
+void handle_LIST(struct ftpserver *cfg, struct ftpclient *client) {
+    char newpath[PATH_MAX];
+    DIR *dirp;
+    struct dirent *dp;
+    char linebuffer[256];
+    snprintf(newpath, PATH_MAX, "%s/%s", cfg->fileroot, client->current_path);
+    struct stat s;
+    pid_t pid = fork();
+
+    if (pid > 0) {
+        // nothing
+    } else if (pid == 0) {
+        dirp = opendir(newpath);
+
+        if (!dirp) {
+            send_msg(client, "451 Could not read directory.\r\n");
+            exit(0);
+        }
+        
+        if (!open_tcp_connection(cfg, client)) {
+            send_msg(client, "425 TCP connection cannot be established.\r\n");
+            closedir(dirp);
+            exit(0);
+        }
+        send_msg(client, "150 Data connection accepted; transfer starting.\r\n");
+        while ((dp = readdir(dirp)) != NULL) {
+            snprintf(newpath, PATH_MAX, "%s/%s/%s", cfg->fileroot, client->current_path, dp->d_name);
+            if (stat(newpath, &s) == 0) {
+                snprintf(linebuffer, 256, "%s%c\r\n", dp->d_name, (S_ISDIR(s.st_mode) ? '/' : ' '));
+                send_data(client, linebuffer, strlen(linebuffer));
+            }
+        }
+        closedir(dirp);
+        close_tcp_connection(client);
+        send_msg(client, "226 Transfer ok.\r\n");
+        exit(0);
+    } else {
+        send_msg(client, "451 Could not read directory.\r\n");
+    }
+}
+
+void handle_PORT(struct ftpserver *cfg, struct ftpclient *client, char *arg) {
+    if (client->data_socket > 0) {
+        close(client->data_socket);
+    }
+    int a,b,c,d,e,f;
+
+    sscanf(arg, "%d,%d,%d,%d,%d,%d", &a, &b, &c, &d, &e, &f);
+    sprintf(client->data_ip, "%d.%d.%d.%d", a, b, c, d);
+    client->data_port = e * 256 + f;
+    send_msg(client, "200 PORT command successful.\r\n");
+}
+
+void handle_CWD(struct ftpserver *cfg, struct ftpclient *client, char *dir) {
+    struct dllist *proot;
+    struct dllist *pptr;
+    char *rescpy;
+    char *ptr;
+    char newpath[PATH_MAX];
+    struct stat s;
+
+    proot = (struct dllist *)malloc(sizeof(struct dllist));
+
+    if (!proot) {
+        fprintf(stderr, "Out of memory\n");
+        exit(-1);
+    }
+
+    proot->next = NULL;
+    proot->prev = NULL;
+    proot->data = NULL;
+
+    pptr = proot;
+
+    if (dir[0] == '/') {
+        rescpy = strdup(dir);
+    } else {
+        rescpy = (char *)malloc(strlen(dir) + strlen(client->current_path) + 2);
+        if (!rescpy) {
+            fprintf(stderr, "Out of memory\n");
+            exit(-1);
+        }
+        sprintf(rescpy, "%s/%s", client->current_path, dir);
+    }
+    ptr = strtok(rescpy, "/");
+
+    while (ptr != NULL) {
+        if (strcmp(ptr, "..") == 0) {
+            if (pptr->prev != NULL) {
+                pptr = pptr->prev;
+                free(pptr->next);
+                pptr->next = NULL;
+            }
+        } else if (strcmp(ptr, ".") != 0) {
+            pptr->data = ptr;
+            pptr->next = (struct dllist *)malloc(sizeof(struct dllist));
+            if (!pptr->next) {
+                fprintf(stderr, "Out of memory\n");
+                exit(-1);
+            }
+            pptr->next->data = NULL;
+            pptr->next->prev = pptr;
+            pptr->next->next = NULL;
+        }
+
+        ptr = strtok(NULL, "/");
+    }
+    
+    strcpy(newpath, cfg->fileroot);
+
+    pptr = proot;
+
+    while (pptr != NULL && pptr->data != NULL) {
+        snprintf(newpath, PATH_MAX, "%s/%s", newpath, pptr->data);
+        pptr = pptr->next;
+    }
+
+    if (stat(newpath, &s) == 0) {
+        if (S_ISDIR(s.st_mode)) {
+            pptr = proot;
+            client->current_path[0] = '\0';
+            while (pptr != NULL && pptr->data != NULL) {
+                snprintf(client->current_path, PATH_MAX, "%s/%s", client->current_path, pptr->data);
+                pptr = pptr->next;
+            }
+
+            send_msg(client, "250 Okay.\r\n");
+        } else {
+            send_msg(client, "550 No such file or directory.\r\n");    
+        }
+    } else {
+        send_msg(client, "550 No such file or directory.\r\n");
+    }
+
+    pptr = proot;
+
+    while (pptr != NULL) {
+        if (pptr->next != NULL) {
+            pptr = pptr->next;
+            free(pptr->prev);
+        } else {
+            free(pptr);
+            pptr = NULL;
+        }
+    }
+    free(rescpy);
 }
 
 void handle_TYPE(struct ftpserver *cfg, struct ftpclient *client) {
@@ -92,9 +419,10 @@ void handle_PASS(struct ftpserver *cfg, struct ftpclient *client, char *password
         return;
     }
 
-    if (strcmp(client->name, "anonymous")) {
+    if (strcmp(client->name, "anonymous") == 0) {
         strncpy(client->password, password, 32);
         client->password[31] = '\0';
+        send_msg(client, "230 User Logged in, Proceed.\r\n");
     } else {
         rc = sqlite3_open(cfg->userdb, &db);
 	    if (rc != SQLITE_OK) {
@@ -106,7 +434,7 @@ void handle_PASS(struct ftpserver *cfg, struct ftpclient *client, char *password
         if (rc == SQLITE_OK) {
             sqlite3_bind_text(res, 1, client->name, -1, 0);
         } else {
-            fprintf(sterr, "Failed to execute statement: %s", sqlite3_errmsg(db));
+            fprintf(stderr, "Failed to execute statement: %s", sqlite3_errmsg(db));
     		sqlite3_close(db);
 	    	exit(-1);
         }
@@ -114,8 +442,8 @@ void handle_PASS(struct ftpserver *cfg, struct ftpclient *client, char *password
         int step = sqlite3_step(res);
 
         if (step == SQLITE_ROW) {
-            pass_hash = hash_sha256(password, sqlite3_column_text(res, 1));
-            if (strcmp(pass_hash, sqlite3_column_text(res, 0)) == 0) {
+            pass_hash = hash_sha256(password, (char *)sqlite3_column_text(res, 1));
+            if (strcmp(pass_hash, (char *)sqlite3_column_text(res, 0)) == 0) {
                 send_msg(client, "230 User Logged in, Proceed.\r\n");
                 strncpy(client->password, password, 32);
             } else {
@@ -135,12 +463,13 @@ void handle_PASS(struct ftpserver *cfg, struct ftpclient *client, char *password
 }
 
 void handle_USER(struct ftpserver *cfg, struct ftpclient *client, char *username) {
-    strncpy(client->name, username, 16)
+    fprintf(stderr, "username %s\n", username);
+    strncpy(client->name, username, 16);
     client->name[15] = '\0';
     if (strcmp(client->name, "anonymous") == 0) {
         send_msg(client, "331 Guest login ok, send your complete e-mail address as password.\r\n");
     } else {
-        send_msg(client, "331 User name ok, need password.\r\n")
+        send_msg(client, "331 User name ok, need password.\r\n");
     }
 }
 
@@ -152,6 +481,14 @@ int handle_client(struct ftpserver *cfg, struct ftpclient *client, char *buf, in
     int cmd_len = 0;
     int argument_len = 0;
     int stage = 0;
+
+    memset(cmd, 0, 1024);
+    memset(argument, 0, 1024);
+
+    while (buf[nbytes-1] == '\r' || buf[nbytes-1] == '\n') {
+        buf[nbytes-1] = '\0';
+        nbytes--;
+    }
 
     for (i=0;i<nbytes;i++) {
         if (stage == 0 && buf[i] != ' ') {
@@ -165,35 +502,50 @@ int handle_client(struct ftpserver *cfg, struct ftpclient *client, char *buf, in
         }
     }
     
+    fprintf(stderr, "Command: %s, Argument: %s\n", cmd, argument);
+
     if (strcmp(cmd, "USER") == 0) {
         if (argument_len > 0) {
             handle_USER(cfg, client, argument);
         } else {
-            send_msg(client, "530 Missing username.\r\n")
+            send_msg(client, "530 Missing username.\r\n");
         }
     } else
     if (strcmp(cmd, "PASS") == 0) {
         if (argument_len > 0) {
             handle_PASS(cfg, client, argument);
         } else {
-            send_msg(client, "530 Username or Password not accepted.\r\n")
+            send_msg(client, "530 Username or Password not accepted.\r\n");
         }
     } else
     if (strcmp(cmd, "SYST") == 0) {
         handle_SYST(cfg, client);
     } else
-    if (strcmp(cmd, "PWD" == 0) {
+    if (strcmp(cmd, "PWD") == 0) {
         handle_PWD(cfg, client);
     } else
     if (strcmp(cmd, "TYPE") == 0) {
         handle_TYPE(cfg, client);
     } else 
     if (strcmp(cmd, "CWD") == 0) {
-        if (argument_len > 0) {
-
-        } else {
-            
-        }
+        handle_CWD(cfg, client, argument);
+    } else
+    if (strcmp(cmd, "PORT") == 0) {
+        handle_PORT(cfg, client, argument);
+    } else
+    if (strcmp(cmd, "LIST") == 0) {
+        handle_LIST(cfg, client);
+    } else
+    if (strcmp(cmd, "PASV") == 0) {
+        handle_PASV(cfg, client);
+    } else
+    if (strcmp(cmd, "QUIT") == 0) {
+        send_msg(client, "221 Goodbye!\r\n");
+    } else
+    if (strcmp(cmd, "RETR") == 0) {
+        handle_RETR(cfg, client, argument);
+    } else {
+        send_msg(client, "500 Command not recognized.\r\n");
     }
 
     return 0;
@@ -204,10 +556,11 @@ void init(struct ftpserver *cfg) {
     struct sockaddr_in server, client;
     fd_set master, read_fds;
     int fdmax = 0;
-    int c;
+    socklen_t c;
     int i,j,k;
     char buf[1024];
-
+    int new_fd;
+    int nbytes;
 	server_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (server_socket == -1) {
 		fprintf(stderr, "Couldn't create socket..\n");
@@ -228,13 +581,16 @@ void init(struct ftpserver *cfg) {
 
     FD_ZERO(&master);
     FD_SET(server_socket, &master);
-    fd_max = server_socket;
+    fdmax = server_socket;
 
     c = sizeof(struct sockaddr_in);
 
     while (1) {
         read_fds = master;
         if (select(fdmax+1, &read_fds, NULL, NULL, NULL) == -1) {
+            if (errno == EINTR) {
+				continue;
+            }
             perror("select");
             exit(-1);
         }
@@ -254,15 +610,20 @@ void init(struct ftpserver *cfg) {
 
                         if (!clients) {
                             fprintf(stderr, "Out of memory!\n");
-                            return -1;
+                            exit(-1);
                         }
                         
                         clients[client_count] = (struct ftpclient *)malloc(sizeof(struct ftpclient));
 
+                        memset(clients[client_count], 0, sizeof(struct ftpclient));
+
                         if (!clients[client_count]) {
                             fprintf(stderr, "Out of memory!\n");
-                            return -1;                            
+                            exit(-1);                            
                         }
+
+                        getpeername(new_fd, (struct sockaddr *)&client, &c);
+                        inet_ntop(AF_INET, &(client.sin_addr), clients[client_count]->ip, INET_ADDRSTRLEN);
 
                         clients[client_count]->fd = new_fd;
                         strcpy(clients[client_count]->current_path, "/");
@@ -287,11 +648,21 @@ void init(struct ftpserver *cfg) {
                     if ((nbytes = recv(i, buf, sizeof buf, 0)) <= 0) {
                         for (k=0;k<client_count;k++) {
                             if (clients[k]->fd == i) {
+                                if (clients[k]->data_socket > 0) {
+                                    close(clients[k]->data_socket);
+                                }
+
+                                if (clients[k]->data_srv_socket > 0) {
+                                    close(clients[k]->data_srv_socket);
+                                }
+
                                 free(clients[k]);
 
                                 for (j=k;j<client_count-1;j++) {
                                     clients[j] = clients[j+1];
                                 }
+
+                                
 
                                 client_count--;
 
@@ -334,10 +705,20 @@ void init(struct ftpserver *cfg) {
 }
 
 int main(int argc, char **argv) {
+    struct sigaction sa;
     struct ftpserver ftpsrv;
     ftpsrv.port = 2121;
     ftpsrv.userdb = NULL;
     ftpsrv.fileroot = NULL;
+
+	sa.sa_handler = sigchld_handler; // reap all dead processes
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = SA_RESTART | SA_SIGINFO;
+	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
+			perror("sigaction - sigchld");
+			exit(-1);
+	}
+
 
     if (argc < 2) {
         fprintf(stderr, "Usage: %s [config.ini]\n", argv[0]);
