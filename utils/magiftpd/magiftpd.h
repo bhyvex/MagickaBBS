@@ -9,6 +9,7 @@ struct ftpclient {
     int data_port;
     int type;
     char ip[20];
+    char hostip[20];
     char name[16];
     char password[32];
     int data_srv_socket;

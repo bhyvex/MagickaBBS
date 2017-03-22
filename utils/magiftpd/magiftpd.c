@@ -342,7 +342,7 @@ void handle_PASV(struct ftpserver *cfg, struct ftpclient *client) {
 	getsockname(client->data_srv_socket, (struct sockaddr*) &file_addr, &file_sock_len);
 	int port = ntohs(file_addr.sin_port);
 
-    ipcpy = strdup(client->ip);
+    ipcpy = strdup(client->hostip);
 
     ipptr = strtok(ipcpy, ".");
 
@@ -687,7 +687,7 @@ int handle_client(struct ftpserver *cfg, struct ftpclient *client, char *buf, in
 
 void init(struct ftpserver *cfg) {
     int server_socket;
-    struct sockaddr_in server, client;
+    struct sockaddr_in server, client, host_addr;
     fd_set master, read_fds;
     int fdmax = 0;
     socklen_t c;
@@ -711,7 +711,6 @@ void init(struct ftpserver *cfg) {
 	}
 
     listen(server_socket, 3);
-
 
     FD_ZERO(&master);
     FD_SET(server_socket, &master);
@@ -756,6 +755,9 @@ void init(struct ftpserver *cfg) {
                             exit(-1);                            
                         }
 
+                        getsockname(new_fd, (struct sockaddr*) &host_addr, &c);
+                        inet_ntop(AF_INET, &(host_addr.sin_addr), client[client_count]->hostip, INET_ADDRSTRLEN);
+                        
                         getpeername(new_fd, (struct sockaddr *)&client, &c);
                         inet_ntop(AF_INET, &(client.sin_addr), clients[client_count]->ip, INET_ADDRSTRLEN);
 
