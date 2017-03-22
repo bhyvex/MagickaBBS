@@ -210,8 +210,6 @@ int open_tcp_connection(struct ftpserver *cfg, struct ftpclient *client) {
 			return 0;
 		}
 		if (connect(client->data_socket, (struct sockaddr *) &servaddr, sizeof(struct sockaddr)) == -1) {
-            memset(client->data_ip, 0, 20);
-            client->data_port = -1;
             fprintf(stderr, "Error connecting to client\n");
 			return 0;
 		}
@@ -290,6 +288,10 @@ void handle_STOR(struct ftpserver *cfg, struct ftpclient *client, char *path) {
                     }
                 } else if (pid < 0) {
                     send_msg(client, "451 STOR Failed.\r\n");
+                } else {
+                    client->data_socket = -1;
+                    memset(client->data_ip, 0, 20);
+                    client->data_srv_socket = -1;
                 }
             } else {
                 send_msg(client, "553 File Exists.\n");    
@@ -377,6 +379,10 @@ void handle_RETR(struct ftpserver *cfg, struct ftpclient *client, char *file) {
 
     if (pid > 0) {
         // nothing
+        client->data_socket = -1;
+        memset(client->data_ip, 0, 20);
+        client->data_srv_socket = -1;
+        
     } else if (pid == 0) {
 
         if (stat(fullpath, &s) == 0) {
@@ -424,6 +430,9 @@ void handle_LIST(struct ftpserver *cfg, struct ftpclient *client) {
 
     if (pid > 0) {
         // nothing
+        client->data_socket = -1;
+        memset(client->data_ip, 0, 20);
+        client->data_srv_socket = -1;
     } else if (pid == 0) {
         dirp = opendir(newpath);
 
