@@ -96,6 +96,7 @@ bool ReadConfig(char *filename,struct Config *cfg,short *seconderr,uint32_t *cfg
          jbNewList(&LastAka->AddList);
          jbNewList(&LastAka->RemList);
       }
+
       else if(stricmp(cfgword,"ADDNODE")==0)
       {
          if(!LastAka)
@@ -192,6 +193,24 @@ bool ReadConfig(char *filename,struct Config *cfg,short *seconderr,uint32_t *cfg
          }
 
       }
+      else if (stricmp(cfgword, "BROADCAST") == 0) 
+      {
+         if(!(jbstrcpy(buf2,cfgbuf,20,&jbcpos)))
+         {
+            strcpy(cfgerr,"Missing argument");
+            osClose(cfgfh);
+            return(FALSE);
+         }
+         strncpy(cfg->broadcastAddr, buf2, 20);
+
+         if(!(jbstrcpy(buf2,cfgbuf,6,&jbcpos)))
+         {
+            strcpy(cfgerr,"Missing argument");
+            osClose(cfgfh);
+            return(FALSE);
+         }
+         cfg->broadcastPort = atoi(buf2);
+      }      
       else if(stricmp(cfgword,"NODE")==0)
       {
          if(!(tmpnode=(struct ConfigNode *)osAllocCleared(sizeof(struct ConfigNode))))
@@ -890,6 +909,15 @@ bool ReadConfig(char *filename,struct Config *cfg,short *seconderr,uint32_t *cfg
             return(FALSE);
          }
       }
+      else if(stricmp(cfgword,"BBSNAME")==0)
+      {
+         if(!(jbstrcpy(cfg->cfg_bbsname,cfgbuf,35,&jbcpos)))
+         {
+            strcpy(cfgerr,"Missing argument");
+            osClose(cfgfh);
+            return(FALSE);
+         }
+      }      
       else if(stricmp(cfgword,"BEFORETOSS")==0)
       {
          if(!(jbstrcpy(cfg->cfg_BeforeToss,cfgbuf,79,&jbcpos)))
@@ -1910,7 +1938,8 @@ void InitConfig(struct Config *cfg)
    memset(cfg,0,sizeof(struct Config));
 
    strcpy(cfg->cfg_Sysop,"Sysop");
-
+   strcpy(cfg->cfg_bbsname, "MagickaBBS");
+   
    cfg->cfg_LogLevel=3;
    cfg->cfg_DupeSize=10000;
 

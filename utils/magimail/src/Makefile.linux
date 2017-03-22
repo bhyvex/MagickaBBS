@@ -75,7 +75,8 @@ CMOBJS = $(OBJDIR)/magimail.o \
 			$(OBJDIR)/scan.o \
 			$(OBJDIR)/outbound.o \
 			$(OBJDIR)/filter.o \
-			$(OBJDIR)/areafix.o
+			$(OBJDIR)/areafix.o \
+			$(OBJDIR)/broadcast.o
 
 files :  $(BINDIR)/magimail$(EXESUFFIX) \
          $(BINDIR)/magistats$(EXESUFFIX) \
@@ -120,6 +121,9 @@ $(BINDIR)/magilistout$(EXESUFFIX) : tools/magilistout.c $(SHOBJS) $(OSLIB)
 
 # magimail
 
+$(OBJDIR)/broadcast.o : magimail/broadcast.c 
+	$(CC) -c magimail/broadcast.c -o $(OBJDIR)/broadcast.o 
+	
 $(OBJDIR)/magimail.o : magimail/magimail.c 
 	$(CC) -c magimail/magimail.c -o $(OBJDIR)/magimail.o 
 

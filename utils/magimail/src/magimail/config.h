@@ -175,7 +175,8 @@ struct ConfigNode
    struct jbList RemoteAFList;
 
    char LastArcName[12];
-	
+
+
    /* Stats */
 
    uint32_t GotNetmails;
@@ -301,7 +302,7 @@ struct Config
 {
    bool changed;
    char filename[100];
-   
+   char cfg_bbsname[36];
    char cfg_Sysop[36];
    char cfg_Inbound[100];
    char cfg_Outbound[100];
@@ -326,6 +327,9 @@ struct Config
    uint16_t cfg_DupeMode;
    uint16_t cfg_LoopMode;
    uint32_t cfg_DefaultZone;
+   char broadcastAddr[21];
+   int broadcastPort;
+   
    struct jbList AkaList;
    struct jbList AreaList;
    struct jbList CNodeList;

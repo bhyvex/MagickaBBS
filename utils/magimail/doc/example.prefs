@@ -13,6 +13,12 @@
 
 SYSOP "Johan Billing"
 
+BBSNAME "Cauldron BBS"
+
+; BROADCAST <address> <port>
+
+;BROADCAST 192.168.1.255 2027
+
 ; LOGFILE <filename>
 ; LOGLEVEL <level>
 ;

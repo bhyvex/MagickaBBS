@@ -1,4 +1,5 @@
 #include "magimail.h"
+#include "broadcast.h"
 
 bool Compare(char *str,char *recog)
 {
@@ -62,11 +63,14 @@ void LogTossResults(void)
       if(ctrlc)
          return;
 
-      if(area->NewDupes)
+      if(area->NewDupes) {
          LogWrite(3,TOSSINGINFO,"Area %s -- %u messages (%u dupes)",area->Tagname,area->NewTexts,area->NewDupes);
-
-      else if(area->NewTexts)
+         broadcast("Tossed: Area %s: %u msgs (%u dupes)", area->Tagname,area->NewTexts,area->NewDupes);
+      }
+      else if(area->NewTexts) {
          LogWrite(3,TOSSINGINFO,"Area %s -- %u messages",area->Tagname,area->NewTexts);
+         broadcast("Tossed: Area %s: %u msgs", area->Tagname,area->NewTexts);
+      }
    }
 
    printf("\n");
