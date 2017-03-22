@@ -548,7 +548,7 @@ void handle_PASS(struct ftpserver *cfg, struct ftpclient *client, char *password
         return;
     }
 
-    if (strcmp(client->name, "anonymous") == 0) {
+    if (strcmp(client->name, "anonymous") == 0 || strcmp(client->name, "ftp") == 0) {
         strncpy(client->password, password, 32);
         client->password[31] = '\0';
         send_msg(client, "230 User Logged in, Proceed.\r\n");
@@ -597,7 +597,7 @@ void handle_PASS(struct ftpserver *cfg, struct ftpclient *client, char *password
 void handle_USER(struct ftpserver *cfg, struct ftpclient *client, char *username) {
     strncpy(client->name, username, 16);
     client->name[15] = '\0';
-    if (strcmp(client->name, "anonymous") == 0) {
+    if (strcmp(client->name, "anonymous") == 0 || strcmp(client->name, "ftp") == 0) {
         send_msg(client, "331 Guest login ok, send your complete e-mail address as password.\r\n");
     } else {
         send_msg(client, "331 User name ok, need password.\r\n");

@@ -466,6 +466,14 @@ struct user_record *new_user() {
 				s_printf(get_string(169));
 				continue;
 			}
+			if (strcasecmp(buffer, "anonymous") == 0) {
+				s_printf(get_string(169));
+				continue;
+			}
+			if (strcasecmp(buffer, "ftp") == 0) {
+				s_printf(get_string(169));
+				continue;
+			}						
 			user->loginname = strdup(buffer);
 			nameok = check_user(user->loginname);
 			if (!nameok) {
