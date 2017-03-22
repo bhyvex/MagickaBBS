@@ -756,7 +756,7 @@ void init(struct ftpserver *cfg) {
                         }
 
                         getsockname(new_fd, (struct sockaddr*) &host_addr, &c);
-                        inet_ntop(AF_INET, &(host_addr.sin_addr), client[client_count]->hostip, INET_ADDRSTRLEN);
+                        inet_ntop(AF_INET, &(host_addr.sin_addr), clients[client_count]->hostip, INET_ADDRSTRLEN);
                         
                         getpeername(new_fd, (struct sockaddr *)&client, &c);
                         inet_ntop(AF_INET, &(client.sin_addr), clients[client_count]->ip, INET_ADDRSTRLEN);
