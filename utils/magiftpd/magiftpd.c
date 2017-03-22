@@ -210,6 +210,8 @@ int open_tcp_connection(struct ftpserver *cfg, struct ftpclient *client) {
 			return 0;
 		}
 		if (connect(client->data_socket, (struct sockaddr *) &servaddr, sizeof(struct sockaddr)) == -1) {
+            memset(client->data_ip, 0, 20);
+            client->data_port = -1;
             fprintf(stderr, "Error connecting to client\n");
 			return 0;
 		}
@@ -320,7 +322,7 @@ void handle_PASV(struct ftpserver *cfg, struct ftpclient *client) {
 	}
 	struct sockaddr_in server;
 	server.sin_family = AF_INET;
-	server.sin_addr.s_addr = inet_addr(client->ip);
+	server.sin_addr.s_addr = INADDR_ANY;
 	server.sin_port = htons(0);
 
 	if (bind(client->data_srv_socket, (struct sockaddr*) &server, sizeof(struct sockaddr)) < 0) {
