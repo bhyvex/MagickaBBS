@@ -76,6 +76,7 @@ static void parse_path(struct ftpclient *client, char *path, char **result) {
                 pptr = pptr->prev;
                 free(pptr->next);
                 pptr->next = NULL;
+                pptr->data = NULL;
             }
         } else if (strcmp(ptr, ".") != 0) {
             pptr->data = ptr;
