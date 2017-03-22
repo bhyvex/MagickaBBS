@@ -34,8 +34,7 @@ int www_email_delete(struct user_record *user, int id) {
 
 		return 0;
 	}
-
-
+	sqlite3_busy_timeout(db, 5000);
 	rc = sqlite3_exec(db, csql, 0, 0, &err_msg);
 	if (rc != SQLITE_OK ) {
 		sqlite3_free(err_msg);
@@ -110,7 +109,7 @@ int www_send_email(struct user_record *user, char *recipient, char *subject, cha
 		return 0;
 	}
 
-
+	sqlite3_busy_timeout(db, 5000);
 	rc = sqlite3_exec(db, csql, 0, 0, &err_msg);
 	if (rc != SQLITE_OK ) {
 		sqlite3_free(err_msg);
@@ -254,7 +253,7 @@ char *www_email_display(struct user_record *user, int email) {
 		free(page);
 		return NULL;	
 	}
-
+	sqlite3_busy_timeout(db, 5000);
 	rc = sqlite3_exec(db, email_create_sql, 0, 0, &err_msg);
 	if (rc != SQLITE_OK ) {
 		sqlite3_free(err_msg);
@@ -573,7 +572,7 @@ char *www_email_summary(struct user_record *user) {
 		free(page);
 		return NULL;	
 	}
-
+sqlite3_busy_timeout(db, 5000);
 	rc = sqlite3_exec(db, email_create_sql, 0, 0, &err_msg);
 	if (rc != SQLITE_OK ) {
 		sqlite3_free(err_msg);

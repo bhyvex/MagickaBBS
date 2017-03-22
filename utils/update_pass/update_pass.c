@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
 		printf("Error opening database\n");
 		return -1;
 	}
-
+	sqlite3_busy_timeout(db, 5000);
 	rc = sqlite3_exec(db, alter_table_sql, 0, 0, &err_msg);
 	if (rc != SQLITE_OK ) {
 

@@ -187,6 +187,7 @@ int main(int argc, char **argv) {
 
 	// populate scroll list
 	rc = sqlite3_open(CDKparamString (&params, 'd'), &db);
+	
 
 	if (rc != SQLITE_OK) {
 		fprintf(stderr, "Cannot open database: %s", sqlite3_errmsg(db));
@@ -195,6 +196,7 @@ int main(int argc, char **argv) {
 		endCDK();
 		exit(1);
 	}
+	sqlite3_busy_timeout(db, 5000);
 	rc = sqlite3_prepare_v2(db, sql_read, -1, &res, 0);
 
 	if (rc != SQLITE_OK) {

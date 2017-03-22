@@ -93,7 +93,7 @@ int save_user(struct user_record *user) {
 
         exit(1);
     }
-
+sqlite3_busy_timeout(db, 5000);
     rc = sqlite3_prepare_v2(db, update_sql, -1, &res, 0);
 
     if (rc == SQLITE_OK) {
@@ -173,7 +173,7 @@ int inst_user(struct user_record *user) {
 
         exit(1);
     }
-
+sqlite3_busy_timeout(db, 5000);
     rc = sqlite3_exec(db, create_sql, 0, 0, &err_msg);
     if (rc != SQLITE_OK ) {
 
@@ -245,6 +245,7 @@ struct user_record *check_user_pass(char *loginname, char *password) {
 
         exit(1);
     }
+	sqlite3_busy_timeout(db, 5000);
     rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
 
     if (rc == SQLITE_OK) {
@@ -349,6 +350,7 @@ void list_users(struct user_record *user) {
         sqlite3_close(db);
         exit(1);
     }
+	sqlite3_busy_timeout(db, 5000);
     rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
 	if (rc != SQLITE_OK) {
         dolog("Cannot prepare statement: %s", sqlite3_errmsg(db));
@@ -394,6 +396,7 @@ int check_user(char *loginname) {
 
     exit(1);
   }
+  sqlite3_busy_timeout(db, 5000);
   rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
 
   if (rc == SQLITE_OK) {

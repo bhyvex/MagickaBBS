@@ -55,11 +55,12 @@ int main(int argc, char **argv) {
 	
     
     rc = sqlite3_open(argv[3], &db);
-    
+   
     if (rc != SQLITE_OK) {
 		printf("Cannot open database: %s\n", sqlite3_errmsg(db));
         exit(1);
     }
+	sqlite3_busy_timeout(db, 5000);
     rc = sqlite3_exec(db, create_sql, 0, 0, &err_msg);
     if (rc != SQLITE_OK ) { 
         printf("SQL error: %s\n", err_msg);      

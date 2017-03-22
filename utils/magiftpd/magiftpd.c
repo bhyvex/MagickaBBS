@@ -553,10 +553,12 @@ void handle_PASS(struct ftpserver *cfg, struct ftpclient *client, char *password
         send_msg(client, "230 User Logged in, Proceed.\r\n");
     } else {
         rc = sqlite3_open(cfg->userdb, &db);
+      
 	    if (rc != SQLITE_OK) {
             fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
             exit(-1);
         }
+        sqlite3_busy_timeout(db, 5000);
         rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
 
         if (rc == SQLITE_OK) {

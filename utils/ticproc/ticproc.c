@@ -156,11 +156,12 @@ int add_file(struct ticfile_t *ticfile) {
 	}
 
 	rc = sqlite3_open(conf.file_areas[i]->database, &db);
+	
 	if (rc != SQLITE_OK) {
 		fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
 		return -1;
 	}
-
+	sqlite3_busy_timeout(db, 5000);
 	rc = sqlite3_exec(db, create_sql, 0, 0, &err_msg);
 
 	if (rc != SQLITE_OK) {

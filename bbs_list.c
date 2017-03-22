@@ -50,14 +50,14 @@ void add_bbs(struct user_record *user) {
 		sprintf(buffer, "%s/bbslist.sq3", conf.bbs_path);
 
 		rc = sqlite3_open(buffer, &db);
-
+		
 		if (rc != SQLITE_OK) {
 			dolog("Cannot open database: %s", sqlite3_errmsg(db));
 			sqlite3_close(db);
 
 			exit(1);
 		}
-
+		sqlite3_busy_timeout(db, 5000);
 		rc = sqlite3_exec(db, create_sql, 0, 0, &err_msg);
 		if (rc != SQLITE_OK ) {
 
@@ -116,9 +116,11 @@ void delete_bbs(struct user_record *user) {
 	sprintf(buffer, "%s/bbslist.sq3", conf.bbs_path);
 
   rc = sqlite3_open(buffer, &db);
+ 
 	if (rc != SQLITE_OK) {
 		return;
 	}
+	 sqlite3_busy_timeout(db, 5000);
   rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
 	if (rc == SQLITE_OK) {
 		sqlite3_bind_int(res, 1, i);
@@ -165,11 +167,13 @@ void list_bbses() {
   sprintf(buffer, "%s/bbslist.sq3", conf.bbs_path);
 
   rc = sqlite3_open(buffer, &db);
+
 	if (rc != SQLITE_OK) {
         dolog("Cannot open database: %s", sqlite3_errmsg(db));
         sqlite3_close(db);
         exit(1);
     }
+	sqlite3_busy_timeout(db, 5000);
     rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
 	if (rc != SQLITE_OK) {
         sqlite3_close(db);

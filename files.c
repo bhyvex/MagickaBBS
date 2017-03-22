@@ -656,7 +656,7 @@ void upload(struct user_record *user) {
         sqlite3_close(db);
         exit(1);
     }
-
+	sqlite3_busy_timeout(db, 5000);
     rc = sqlite3_exec(db, create_sql, 0, 0, &err_msg);
     if (rc != SQLITE_OK ) {
         dolog("SQL error: %s", err_msg);
@@ -800,6 +800,7 @@ void download(struct user_record *user) {
 			sqlite3_close(db);
 			exit(1);
 		}
+		sqlite3_busy_timeout(db, 5000);
 		rc = sqlite3_prepare_v2(db, ssql, -1, &res, 0);
 
 		if (rc == SQLITE_OK) {
@@ -872,6 +873,7 @@ void list_files(struct user_record *user) {
 
         exit(1);
     }
+	sqlite3_busy_timeout(db, 5000);
     rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
 
     if (rc != SQLITE_OK) {

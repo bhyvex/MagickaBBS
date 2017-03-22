@@ -65,13 +65,14 @@ void send_email(struct user_record *user) {
 		sprintf(buffer, "%s/email.sq3", conf.bbs_path);
 
 		rc = sqlite3_open(buffer, &db);
+		
 		if (rc != SQLITE_OK) {
 			dolog("Cannot open database: %s", sqlite3_errmsg(db));
 			sqlite3_close(db);
 
 			exit(1);
 		}
-
+		sqlite3_busy_timeout(db, 5000);
 
 		rc = sqlite3_exec(db, csql, 0, 0, &err_msg);
 		if (rc != SQLITE_OK ) {
@@ -242,13 +243,14 @@ void show_email(struct user_record *user, int msgno, int email_count, struct ema
 		sprintf(buffer, "%s/email.sq3", conf.bbs_path);
 
 		rc = sqlite3_open(buffer, &db);
+		
 		if (rc != SQLITE_OK) {
 			dolog("Cannot open database: %s", sqlite3_errmsg(db));
 			sqlite3_close(db);
 
 			exit(1);
 		}
-
+		sqlite3_busy_timeout(db, 5000);
 		rc = sqlite3_prepare_v2(db, ssql, -1, &res, 0);
 
 		if (rc == SQLITE_OK) {
@@ -287,6 +289,7 @@ void show_email(struct user_record *user, int msgno, int email_count, struct ema
 
 					exit(1);
 				}
+				sqlite3_busy_timeout(db, 5000);
 				rc = sqlite3_prepare_v2(db, isql, -1, &res, 0);
 
 				if (rc == SQLITE_OK) {
@@ -320,6 +323,7 @@ void show_email(struct user_record *user, int msgno, int email_count, struct ema
 
 				exit(1);
 			}
+			 sqlite3_busy_timeout(db, 5000);
 			rc = sqlite3_prepare_v2(db, dsql, -1, &res, 0);
 
 			if (rc == SQLITE_OK) {
@@ -375,6 +379,7 @@ void list_emails(struct user_record *user) {
 
 		exit(1);
 	}
+	 sqlite3_busy_timeout(db, 5000);
 	rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
 
 	if (rc == SQLITE_OK) {
@@ -539,12 +544,14 @@ int mail_getemailcount(struct user_record *user) {
 	sprintf(buffer, "%s/email.sq3", conf.bbs_path);
 
 	rc = sqlite3_open(buffer, &db);
+	
 	if (rc != SQLITE_OK) {
     dolog("Cannot open database: %s", sqlite3_errmsg(db));
     sqlite3_close(db);
 
     exit(1);
   }
+  sqlite3_busy_timeout(db, 5000);
   rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
 
   if (rc == SQLITE_OK) {
