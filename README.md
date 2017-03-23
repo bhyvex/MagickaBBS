@@ -12,16 +12,16 @@ while still retaining the classic BBS feel. ANSI & Telnet, and good old ZModem.
 
 If you want to install Magicka BBS, follow these steps.
 
-1. Ensure you have git, c compiler, libsqlite3-dev, libreadline-dev, libssl-dev, libssh-dev and gnu make
+1. Ensure you have git, c compiler, libsqlite3-dev, libreadline-dev, libssl-dev, libssh-dev libncurses5-dev and gnu make
 
-   `sudo apt-get install build-essential libsqlite3-dev libreadline-dev git libssl-dev libssh-dev`
+   `sudo apt-get install build-essential libsqlite3-dev libreadline-dev git libssl-dev libssh-dev libncurses5-dev`
 
    should work on debian and debian derivatives.
 2. Clone the repo `git clone https://github.com/MagickaBBS/MagickaBBS`
 
 3. Build the BBS (You may have to adjust the Makefile for your system)
 
-  `make -f Makefile.linux` (Linux) `gmake -f Makefile.freebsd` (FreeBSD) `make -f Makefile.osx` (macOS)
+  `make -f Makefile.linux` (Linux) `gmake -f Makefile.freebsd` (FreeBSD) `make -f Makefile.osx` (macOS) `make -f Makefile.netbsd` (NetBSD)
 
 4. Make a directory for logs.
 
@@ -59,8 +59,8 @@ For information on how to configure your BBS, check the wiki https://github.com/
 
 Magicka now includes a built in webserver based on libmicrohttpd. It is not built by default, if you'd like to build it you will
 need a recent version of libmicrohttpd (raspbian doesn't have a recent enough version, and you will need to build it from source).
-You will also need libb64-dev. Once you have these prerequisites, you can build magicka with `make -f Makefile.linux.WWW` or 
-`make -f Makefile.freebsd.WWW` be sure to do this from a clean source tree.
+Once you have these prerequisites, you can build magicka with `make -f Makefile.linux.WWW` or `make -f Makefile.freebsd.WWW` be 
+sure to do this from a clean source tree.
 
 The webserver will use templates in the www/ folder to create internal webpages on the fly, anything in www/static/ is served up as is.
 
