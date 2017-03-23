@@ -8,7 +8,7 @@ ODOORS = deps/odoors/libs-`uname -s`/libODoors.a
 JSMN = deps/jsmn/libjsmn.a
 CDK = deps/cdk-5-20161210/libcdk.a
 
-all: magicka magimail magiedit ticproc mgpost magichat fileapprove
+all: magicka magimail magiedit ticproc mgpost magichat fileapprove magiftpd
 
 ${LUA}: 
 	cd deps/lua && $(MAKE) -f Makefile linux MAKEFLAGS=
@@ -55,6 +55,9 @@ magichat: $(JSMN)
 fileapprove: $(CDK)
 	cd utils/fileapprove && $(MAKE)
 
+magiftpd:
+	cd utils/magiftpd && $(MAKE)
+
 .PHONY: clean
 
 clean:
@@ -70,3 +73,4 @@ clean:
 	cd utils/magichat && $(MAKE) clean
 	cd deps/cdk-5.0-20161210 && $(MAKE) clean
 	cd utils/fileapprove && $(MAKE) clean
+	cd utils/magiftpd && $(MAKE) clean

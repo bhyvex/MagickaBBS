@@ -10,7 +10,7 @@ CDK = deps/cdk-5-20161210/libcdk.a
 
 OBJ = inih/ini.o bbs.o main.o users.o main_menu.o mail_menu.o doors.o bbs_list.o chat_system.o email.o files.o settings.o lua_glue.o strings.o bluewave.o hashmap/hashmap.o
 
-all: magicka magimail magiedit ticproc mgpost magichat fileapprove
+all: magicka magimail magiedit ticproc mgpost magichat fileapprove magiftpd
 
 ${LUA}:
 	cd deps/lua && $(MAKE) -f Makefile macosx MAKEFLAGS=
@@ -55,6 +55,9 @@ magichat: $(JSMN)
 fileapprove: $(CDK)
 	cd utils/fileapprove && $(MAKE)
 
+magiftpd:
+	cd utils/magiftpd && $(MAKE)
+
 .PHONY: clean
 
 clean:
@@ -70,3 +73,4 @@ clean:
 	cd utils/magichat && $(MAKE) clean
 	cd deps/cdk-5.0-20161210 && $(MAKE) clean
 	cd utils/fileapprove && $(MAKE) clean
+	cd utils/magiftpd && $(MAKE) clean
