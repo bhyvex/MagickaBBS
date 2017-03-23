@@ -29,7 +29,7 @@ OBJ = magiftpd.o ../../inih/ini.o
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 
-ticproc: $(OBJ)
+magiftpd: $(OBJ)
 	$(CC) -o magiftpd -o $@ $^ $(CFLAGS) $(LDFLAGS) -lsqlite3 -lcrypto
 
 .PHONY: clean
