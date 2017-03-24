@@ -314,7 +314,7 @@ char *message_editor() {
                                         if (q_line_count > 0) {
                                             for (i=0;i<q_line_count;i++) {
                                                 if (q_lines[i] == q_position) {
-                                                    for (j=i;j<q_line_count-1;j--) {
+                                                    for (j=i;j<q_line_count-1;j++) {
                                                         q_lines[j] = q_lines[j + 1];
                                                     }
                                                     q_line_count--;
