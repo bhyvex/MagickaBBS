@@ -43,6 +43,7 @@ char *message_editor() {
     int q_line_count;
     int q_unquote;
     int z;
+    int redraw;
 
     position_x = 0;
     position_y = 0;
@@ -189,6 +190,7 @@ char *message_editor() {
                     } else if (strcasecmp(line, "/Q") == 0) {
                         // quote
                         if (quote_line_count > 0) {
+                            redraw = 1;
                             od_clr_scr();
                             od_set_cursor(1, 1);
                             od_set_color(L_WHITE, D_BLUE);
@@ -206,24 +208,27 @@ char *message_editor() {
                             q_done = 0;
                             q_marker = ' ';
                             while (!q_done) {
-                                for (i=q_start;i<q_start + 21 && i < quote_line_count;i++) {
-                                    q_marker = ' ';
-                                    for (j=0;j<q_line_count;j++) {
-                                        if (q_lines[j] == i) {
-                                            q_marker = '+';
-                                            break;
+                                if (redraw) {
+                                    for (i=q_start;i<q_start + 21 && i < quote_line_count;i++) {
+                                        q_marker = ' ';
+                                        for (j=0;j<q_line_count;j++) {
+                                            if (q_lines[j] == i) {
+                                                q_marker = '+';
+                                                break;
+                                            }
+                                        }
+                                        od_set_cursor(i - q_start + 3, 1);
+                                        if (i == q_position) {
+                                           od_set_color(D_BLACK, D_GREEN);
+                                           od_printf("`bright yellow`%c`black green`%s", q_marker, quote_lines[i]);
+                                           od_clr_line();
+                                        } else {
+                                           od_set_color(L_WHITE, D_BLACK);
+                                           od_printf("`bright yellow`%c`bright white`%s", q_marker, quote_lines[i]);
+                                           od_clr_line();
                                         }
                                     }
-                                    od_set_cursor(i - q_start + 3, 1);
-                                    if (i == q_position) {
-                                       od_set_color(D_BLACK, D_GREEN);
-                                       od_printf("`bright yellow`%c`black green`%s", q_marker, quote_lines[i]);
-                                       od_clr_line();
-                                    } else {
-                                       od_set_color(L_WHITE, D_BLACK);
-                                       od_printf("`bright yellow`%c`bright white`%s", q_marker, quote_lines[i]);
-                                       od_clr_line();
-                                    }
+                                    redraw = 0;
                                 }
                                 od_get_input(&ch, OD_NO_TIMEOUT, GETIN_NORMAL);
                                 if (ch.EventType == EVENT_EXTENDED_KEY) {
@@ -237,6 +242,33 @@ char *message_editor() {
                                             if (q_start < 0) {
                                                 q_start = 0;
                                             }
+                                            redraw = 1;
+                                        }
+                                        
+                                        if (!redraw) {
+                                            q_marker = ' ';
+                                            for (j=0;j<q_line_count;j++) {
+                                                if (q_lines[j] == q_position) {
+                                                    q_marker = '+';
+                                                    break;
+                                                }
+                                            }
+                                            od_set_cursor(q_position - q_start + 3, 1);
+                                            od_set_color(D_BLACK, D_GREEN);
+                                            od_printf("`bright yellow`%c`black green`%s", q_marker, quote_lines[q_position]);
+                                            od_clr_line();
+                                            q_marker = ' ';
+                                            for (j=0;j<q_line_count;j++) {
+                                                if (q_lines[j] == q_position + 1) {
+                                                    q_marker = '+';
+                                                    break;
+                                                }
+                                            }
+                                            
+                                            od_set_cursor(q_position + 1 - q_start + 3, 1);
+                                            od_set_color(D_BLACK, D_GREEN);
+                                            od_printf("`bright yellow`%c`bright white`%s", q_marker, quote_lines[q_position + 1]);
+                                            od_clr_line();                                            
                                         }
                                     } else if (ch.chKeyPress == OD_KEY_DOWN) {
                                         q_position++;
@@ -249,7 +281,32 @@ char *message_editor() {
                                             if (q_start + 21 >= quote_line_count) {
                                                 q_start = quote_line_count - 21;
                                             }
+                                            redraw = 1;
                                         }
+                                        if (!redraw) {
+                                            q_marker = ' ';
+                                            for (j=0;j<q_line_count;j++) {
+                                                if (q_lines[j] == q_position) {
+                                                    q_marker = '+';
+                                                    break;
+                                                }
+                                            }
+                                            od_set_cursor(q_position - q_start + 3, 1);
+                                            od_set_color(D_BLACK, D_GREEN);
+                                            od_printf("`bright yellow`%c`black green`%s", q_marker, quote_lines[q_position]);
+                                            od_clr_line();
+                                            q_marker = ' ';
+                                            for (j=0;j<q_line_count;j++) {
+                                                if (q_lines[j] == q_position - 1) {
+                                                    q_marker = '+';
+                                                    break;
+                                                }
+                                            }
+                                            od_set_cursor(q_position - 1 - q_start + 3, 1);
+                                            od_set_color(D_BLACK, D_GREEN);
+                                            od_printf("`bright yellow`%c`bright white`%s", q_marker, quote_lines[q_position + 1]);
+                                            od_clr_line();                                            
+                                        }                                        
                                     }
                                 } else if (ch.EventType == EVENT_CHARACTER) {
                                     if (ch.chKeyPress == 13) {
@@ -280,7 +337,18 @@ char *message_editor() {
 
                                             q_lines[q_line_count] = q_position;
                                             q_line_count++;
+                                            od_set_cursor(q_position - q_start + 3, 1);
+                                            od_set_color(D_BLACK, D_GREEN);
+                                            od_printf("`bright yellow`%c`black green`%s", ' ', quote_lines[q_position]);
+                                            od_clr_line();                                              
+                                        } else {
+                                            od_set_cursor(q_position - q_start + 3, 1);
+                                            od_set_color(D_BLACK, D_GREEN);
+                                            od_printf("`bright yellow`%c`black green`%s", '+', quote_lines[q_position]);
+                                            od_clr_line();  
                                         }
+                                        
+                                        
                                     } else if (tolower(ch.chKeyPress) == 'q') {
                                         for (i=0;i<q_line_count;i++) {
                                             if (body_line_count == 0) {
@@ -544,10 +612,10 @@ char *message_editor() {
                         }
                     }
 
-					if (position_y > 20) {
+                    if (position_y > 20) {
                         od_set_cursor(23, position_x + 1);
-					} else {
-					    od_set_cursor(position_y - top_of_screen + 3, position_x + 1);
+                    } else {
+                        od_set_cursor(position_y - top_of_screen + 3, position_x + 1);
                     }
                 }
             }
@@ -571,6 +639,9 @@ int main(int argc, char **argv)
     FILE *fptr;
     char *body;
     int i;
+    
+    msgpath = NULL;
+    
 #if _MSC_VER
     int j;
 
@@ -597,6 +668,11 @@ int main(int argc, char **argv)
     od_parse_cmd_line(argc, argv);
     path_sep = '/';
 #endif
+
+    if (msgpath == NULL) {
+        fprintf(stderr, "No MSGTMP switch specified!\n");
+        exit(0);
+    }
 
     od_init();
 
