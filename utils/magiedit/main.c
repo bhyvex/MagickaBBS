@@ -304,7 +304,7 @@ char *message_editor() {
                                             }
                                             od_set_cursor(q_position - 1 - q_start + 3, 1);
                                             od_set_color(D_BLACK, D_GREEN);
-                                            od_printf("`bright yellow`%c`bright white`%s", q_marker, quote_lines[q_position + 1]);
+                                            od_printf("`bright yellow`%c`bright white`%s", q_marker, quote_lines[q_position - 1]);
                                             od_clr_line();                                            
                                         }                                        
                                     }
@@ -339,12 +339,12 @@ char *message_editor() {
                                             q_line_count++;
                                             od_set_cursor(q_position - q_start + 3, 1);
                                             od_set_color(D_BLACK, D_GREEN);
-                                            od_printf("`bright yellow`%c`black green`%s", ' ', quote_lines[q_position]);
+                                            od_printf("`bright yellow`%c`black green`%s", '+', quote_lines[q_position]);
                                             od_clr_line();                                              
                                         } else {
                                             od_set_cursor(q_position - q_start + 3, 1);
                                             od_set_color(D_BLACK, D_GREEN);
-                                            od_printf("`bright yellow`%c`black green`%s", '+', quote_lines[q_position]);
+                                            od_printf("`bright yellow`%c`black green`%s", ' ', quote_lines[q_position]);
                                             od_clr_line();  
                                         }
                                         
