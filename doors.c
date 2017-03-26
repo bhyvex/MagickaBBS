@@ -180,7 +180,7 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 	struct termios oldit2;
 
 	char inbuf[256];
-	char outbuf[256];
+	char outbuf[512];
 	int h;
 	int g;
 	timeoutpaused = 1;
@@ -310,7 +310,14 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 									close(master);
 									break;
 								}
-								write(door_out, inbuf, len);
+								g = 0;
+								for (h=0;h<len;h++) {
+									if (c == 255) {
+										outbuf[g++] = c;
+									}
+									outbuf[g++]	= c;
+								}
+								write(door_out, outbuf, g);
 							}
 						} else {
 							if (!running_door) {
