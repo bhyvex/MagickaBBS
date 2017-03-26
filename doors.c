@@ -179,6 +179,10 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 	struct termios oldot;
 	struct termios oldit2;
 
+	char inbuf[256];
+	char outbuf[256];
+	int h;
+	int g;
 	timeoutpaused = 1;
 
 	if (write_door32sys(user) != 0) {
@@ -254,57 +258,59 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 						ret = select(t, &fdset, NULL, NULL, &thetimeout);
 						if (ret > 0) {
 							if (FD_ISSET(door_in, &fdset)) {
-								len = read(door_in, &c, 1);
+								len = read(door_in, inbuf, 256);
 								if (len == 0) {
 									close(master);
 									disconnect("Socket Closed");
 									return;
 								}
-								if (!raw) {
-									if (c == '\n' || c == '\0') {
+								g = 0;
+								for (h=0;h<len;h++) {
+									c = inbuf[h];
+									if (!raw) {
+										if (c == '\n' || c == '\0') {
+											continue;
+										}
+									}
+									if (!running_door) {
 										continue;
 									}
-								}
-								if (!running_door) {
-									continue;
-								}
 
-								if (c == 255) {
-									if (gotiac == 1) {
-										write(master, &c, 1);
-										gotiac = 0;
-									} else {
-										gotiac = 1;
-									}
-								} else {
-									if (gotiac == 1) {
-										if (c == 254 || c == 253 || c == 252 || c == 251) {
-											gotiac = 2;
-										} else if (c == 250) {
-											gotiac = 3;
+									if (c == 255) {
+										if (gotiac == 1) {
+											outbuf[g++] = c;
+											gotiac = 0;
 										} else {
-											gotiac = 0;
-										}
-									} else if (gotiac == 2) {
-										gotiac = 0;
-									} else if (gotiac == 3) {
-										if (c == 240) {
-											gotiac = 0;
+											gotiac = 1;
 										}
 									} else {
-										write(master, &c, 1);
+										if (gotiac == 1) {
+											if (c == 254 || c == 253 || c == 252 || c == 251) {
+												gotiac = 2;
+											} else if (c == 250) {
+												gotiac = 3;
+											} else {
+												gotiac = 0;
+											}
+										} else if (gotiac == 2) {
+											gotiac = 0;
+										} else if (gotiac == 3) {
+											if (c == 240) {
+												gotiac = 0;
+											}
+										} else {
+											outbuf[g++] = c;
+										}
 									}
 								}
+								write(master, outbuf, g);
 							} else if (FD_ISSET(master, &fdset)) {
-								len = read(master, &c, 1);
+								len = read(master, inbuf, 256);
 								if (len == 0) {
 									close(master);
 									break;
 								}
-								if (c == 255) {
-									write(door_out, &c, 1);
-								}							
-								write(door_out, &c, 1);
+								write(door_out, inbuf, len);
 							}
 						} else {
 							if (!running_door) {
@@ -353,7 +359,7 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 	} else {
 		if (!sshBBS) {
 			snprintf(buffer, 1024, "%s", cmd);
-			for (i=0;argv[i] != NULL; i++) {
+			for (i=1;argv[i] != NULL; i++) {
 				snprintf(&buffer[strlen(buffer)], 1024 - strlen(buffer), " %s", argv[i]);
 			}
 			if (cwd != NULL) {
