@@ -1151,7 +1151,7 @@ void unmangle_ansi(char *body, int len, char **body_out, int *body_len) {
 	
 	for (i=0;i<line_count;i++) {
 		buf_at = 0;
-		for (j=0;j<80;j++) {
+		for (j=0;j<79;j++) {
 			if (fake_screen[i][j]->fg != fg || fake_screen[i][j]->bg != bg) {
 				buffer[buf_at++] = 27;
 				buffer[buf_at++] = '[';
@@ -1385,7 +1385,7 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
         
         // count the number of lines...
         for (z=0;z<z2;z++) {
-            if (body[z] == '\r' || chars == 79) {
+            if (body[z] == '\r' || chars == 80) {
                 if (msg_line_count == 0) {
                     msg_lines = (char **)malloc(sizeof(char *));
                 } else {
@@ -1403,7 +1403,7 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
                 msg_line_count++;
                 if (body[z] == '\r') {
                     start_line = z + 1;
-                } else {
+				} else {
                     start_line = z;
                 }
                 chars = 0;
