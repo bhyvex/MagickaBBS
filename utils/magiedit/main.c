@@ -476,10 +476,10 @@ char *message_editor() {
                                             position_x++;
                                         }
                                     }
-                                    od_set_cursor(position_y-1,1);
+                                    od_set_cursor(position_y + top_of_screen + 3 - 1, 1);
                                     od_printf("%s", body_lines[position_y - 1]);
                                     od_clr_line();
-                                    od_set_cursor(position_y, 1);
+                                    od_set_cursor(position_y + top_of_screen + 3, 1);
                                     od_printf("%s", line);
                                     od_clr_line();
                                     break;
