@@ -312,6 +312,7 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 								}
 								g = 0;
 								for (h=0;h<len;h++) {
+									c = inbuf[h];
 									if (c == 255) {
 										outbuf[g++] = c;
 									}
