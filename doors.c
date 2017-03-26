@@ -354,7 +354,7 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 		if (!sshBBS) {
 			snprintf(buffer, 1024, "%s", cmd);
 			for (i=0;argv[i] != NULL; i++) {
-				snprintf(&buffer[strlen(buffer) - 1], 1024 - strlen(buffer), " %s", argv[i]);
+				snprintf(&buffer[strlen(buffer)], 1024 - strlen(buffer), " %s", argv[i]);
 			}
 			if (cwd != NULL) {
 				chdir(cwd);
