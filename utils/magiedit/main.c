@@ -162,7 +162,7 @@ char *message_editor() {
                 if (stage == 1 && ch.chKeyPress == '[') {
                     stage = 2;
                     continue;
-                } else {
+                } else if (stage != 0) {
                     stage = 0;
                     continue;
                 }
