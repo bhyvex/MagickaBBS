@@ -48,7 +48,6 @@ char *message_editor() {
     int stage = 0;
     position_x = 0;
     position_y = 0;
-
     body_line_count = 0;
     done = 0;
 
@@ -477,6 +476,12 @@ char *message_editor() {
                                             position_x++;
                                         }
                                     }
+                                    od_set_cursor(position_y-1,1);
+                                    od_printf("%s", body_lines[position_y - 1]);
+                                    od_clr_line();
+                                    od_set_cursor(position_y, 1);
+                                    od_printf("%s", line);
+                                    od_clr_line();
                                     break;
                                 }
                             }
