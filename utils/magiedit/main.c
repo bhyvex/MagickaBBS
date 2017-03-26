@@ -45,7 +45,7 @@ char *message_editor() {
     int z;
     int redraw;
     int old_top_of_screen = 0;
-
+    int stage = 0;
     position_x = 0;
     position_y = 0;
 
@@ -159,7 +159,17 @@ char *message_editor() {
                     }
                 }
             } else if (ch.EventType == EVENT_CHARACTER) {
-                if (ch.chKeyPress == '\r' || strlen(line) >= 73) {
+                if (stage == 1 && ch.chKeyPress == '[') {
+                    stage = 2;
+                    continue;
+                } else {
+                    stage = 0;
+                    continue;
+                }
+                if (ch.chKeyPress == 27) {
+                    // got an escape that i shouldnt have
+                    stage = 1;
+                } else if (ch.chKeyPress == '\r' || strlen(line) >= 73) {
                     if (strcasecmp(line, "/S") == 0) {
                         // save message
                         body_len = 0;
