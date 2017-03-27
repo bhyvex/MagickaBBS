@@ -26,7 +26,7 @@ CC=cc
 CFLAGS=-I/usr/local/include
 DEPS = main.c
 
-OBJ = main.o
+OBJ = main.o load_ini.o systemconfig.o ../../inih/ini.o
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS) -I../../deps/cdk-5.0-20161210/include/
 

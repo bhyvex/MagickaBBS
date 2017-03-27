@@ -1,5 +1,6 @@
 #include <curses.h>
 #include <cdk.h>
+#include "ccenter.h"
 
 CDKSCREEN *cdkscreen = 0;
 
@@ -56,9 +57,11 @@ int main(int argc, char **argv) {
     menuItems[1][0] = strdup("Misc");
     menuItems[1][1] = strdup("About");
     int locations[1] = {LEFT, RIGHT};
-
-    CDKparseParams(argc, argv, &params, CDK_CLI_PARAMS);
-
+	CDKparseParams(argc, argv, &params, "c:" CDK_CLI_PARAMS);
+    if (!load_ini_file(CDKparamString (&params, 'c'))) {
+        fprintf(stderr, "Error opening ini file: %s\n", CDKparamString (&params, 'c'));
+        exit (-1);
+    }
     cursesWin = initscr();
   
     cdkscreen = initCDKScreen(cursesWin);
@@ -78,6 +81,9 @@ int main(int argc, char **argv) {
             switch(selection / 100) {
                 case 0:
                     switch (selection % 100) {
+                        case 0:
+                            system_config();
+                            break;
                         case 5:
                             doexit = 1;
                             break;
