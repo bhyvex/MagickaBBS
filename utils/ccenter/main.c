@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
     menuItems[0][6] = strdup("Exit");
     menuItems[1][0] = strdup("Misc");
     menuItems[1][1] = strdup("About");
-    int locations[1] = {LEFT, RIGHT};
+    int locations[2] = {LEFT, RIGHT};
 	CDKparseParams(argc, argv, &params, "c:" CDK_CLI_PARAMS);
     if (!load_ini_file(CDKparamString (&params, 'c'))) {
         fprintf(stderr, "Error opening ini file: %s\n", CDKparamString (&params, 'c'));
@@ -83,6 +83,12 @@ int main(int argc, char **argv) {
                     switch (selection % 100) {
                         case 0:
                             system_config();
+                            break;
+                        case 1:
+                            system_paths();
+                            break;
+                        case 2:
+                            mail_conferences();
                             break;
                         case 5:
                             doexit = 1;

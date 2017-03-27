@@ -168,8 +168,12 @@ struct user_record {
 	int defarchiver;
 	int defprotocol;
 };
+extern void choose_sec_level(int *result, int x, int y, int selected);
 extern int get_valid_seclevels(int **levels, int *count);
 extern struct fido_addr *parse_fido_addr(const char *str);
 extern int load_ini_file(char *ini_file);
 extern void system_config(void);
+extern void system_paths();
+extern void mail_conferences();
+extern void edit_mail_areas(int confer);
 #endif
