@@ -2,10 +2,39 @@
 #include <time.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <dirent.h>
 #include "ccenter.h"
 #include "../../inih/ini.h"
 
 struct bbs_config conf;
+
+int get_valid_seclevels(int **levels, int *count) {
+    DIR *dp;
+    struct dirent *dirp;
+    int c = 0;
+    int *lvls;
+
+    dp = opendir(conf.config_path);
+    if (!dp) {
+        return 0;
+    }
+    while ((dirp = readdir(dp)) != NULL) {
+        if (dirp->d_name[0] == 's' && atoi(&dirp->d_name[1]) > 0) {
+            if (c == 0) {
+                lvls = (int *)malloc(sizeof(int) * (c + 1));
+            } else {
+                lvls = (int *)realloc(lvls, sizeof(int) * (c + 1));
+            }
+            lvls[c] = atoi(&dirp->d_name[1]);
+            c++;
+        }
+    }
+    closedir(dp);
+
+    *levels = lvls;
+    *count = c;
+    return 1;
+}
 
 struct fido_addr *parse_fido_addr(const char *str) {
 	if (str == NULL) {
