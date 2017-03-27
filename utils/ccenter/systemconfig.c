@@ -313,6 +313,7 @@ void choose_sec_level(int *result, int x, int y, int selected) {
         res = (lvls[selection]);
 
         *result = res;
+        break;
     }
     destroyCDKScroll(secLevelOpts);
 
