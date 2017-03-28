@@ -46,17 +46,22 @@ int main(int argc, char **argv) {
     int selection;
     int doexit = 0;
     char *menuItems[MAX_MENU_ITEMS][MAX_SUB_ITEMS];
-    int menuLength[] = {7, 2};
+    int menuLength[] = {2, 9, 2};
     menuItems[0][0] = strdup("Main");
-    menuItems[0][1] = strdup("System Config");
-    menuItems[0][2] = strdup("System Paths");
-    menuItems[0][3] = strdup("Mail Conferences");
-    menuItems[0][4] = strdup("File Directories");
-    menuItems[0][5] = strdup("Text Files");
-    menuItems[0][6] = strdup("Exit");
-    menuItems[1][0] = strdup("Misc");
-    menuItems[1][1] = strdup("About");
-    int locations[2] = {LEFT, RIGHT};
+    menuItems[0][1] = strdup("Exit");
+    menuItems[1][0] = strdup("Configuration");
+    menuItems[1][1] = strdup("System Config");
+    menuItems[1][2] = strdup("System Paths");
+    menuItems[1][3] = strdup("Mail Conferences");
+    menuItems[1][4] = strdup("File Directories");
+    menuItems[1][5] = strdup("Text Files");
+    menuItems[1][6] = strdup("Archivers");
+    menuItems[1][7] = strdup("Protocols");
+    menuItems[1][8] = strdup("Doors");
+    menuItems[2][0] = strdup("Misc");
+    menuItems[2][1] = strdup("About");
+
+    int locations[3] = {LEFT, LEFT, RIGHT};
 	CDKparseParams(argc, argv, &params, "c:" CDK_CLI_PARAMS);
     if (!load_ini_file(CDKparamString (&params, 'c'))) {
         fprintf(stderr, "Error opening ini file: %s\n", CDKparamString (&params, 'c'));
@@ -69,7 +74,7 @@ int main(int argc, char **argv) {
 
     displayLabel();
 
-    mainMenu = newCDKMenu(cdkscreen, menuItems, 2, menuLength, locations, TOP, A_NORMAL, A_NORMAL);
+    mainMenu = newCDKMenu(cdkscreen, menuItems, 3, menuLength, locations, TOP, A_NORMAL, A_NORMAL);
     setCDKMenuTitleHighlight(mainMenu, A_STANDOUT);
     setCDKMenuSubTitleHighlight(mainMenu, A_STANDOUT);
 
@@ -80,6 +85,13 @@ int main(int argc, char **argv) {
         } else if (mainMenu->exitType == vNORMAL) {
             switch(selection / 100) {
                 case 0:
+                    switch (selection % 100) {
+                        case 5:
+                            doexit = 1;
+                            break;
+                    }
+                    break;
+                case 1:
                     switch (selection % 100) {
                         case 0:
                             system_config();
@@ -93,12 +105,14 @@ int main(int argc, char **argv) {
                         case 3:
                             file_directories();
                             break;
-                        case 5:
-                            doexit = 1;
+                        case 4:
+                            textfiles();
+                            break;
+                        default:
                             break;
                     }
                     break;
-                case 1:
+                case 2:
                     switch (selection % 100) {
                         case 0:
                             displayAbout();

@@ -178,4 +178,5 @@ extern void mail_conferences();
 extern void edit_mail_areas(int confer);
 extern void file_directories();
 extern void edit_file_subdirs(int fdir);
+extern void textfiles();
 #endif
