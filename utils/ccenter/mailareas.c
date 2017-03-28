@@ -150,7 +150,7 @@ void delete_mail_area(int confer, int area) {
     free(conf.mail_conferences[confer]->mail_areas[area]);
 
     for (i=area;i<conf.mail_conferences[confer]->mail_area_count - 1;i++) {
-        conf.mail_conferences[confer]->mail_areas[area] = conf.mail_conferences[confer]->mail_areas[area+1];
+        conf.mail_conferences[confer]->mail_areas[i] = conf.mail_conferences[confer]->mail_areas[i+1];
     }
     conf.mail_conferences[confer]->mail_area_count--;
     conf.mail_conferences[confer]->mail_areas = (struct mail_area **)realloc(conf.mail_conferences[confer]->mail_areas, sizeof(struct mail_area *) * conf.mail_conferences[confer]->mail_area_count);
@@ -207,27 +207,43 @@ void edit_mail_area(int confer, int area) {
     destroyCDKScroll(editAreaList);
 }
 
+void add_new_mail_area(int confer) {
+    char areapath[PATH_MAX];
+    conf.mail_conferences[confer]->mail_areas = (struct mail_area **)realloc(conf.mail_conferences[confer]->mail_areas, sizeof(struct mail_area *) * (conf.mail_conferences[confer]->mail_area_count + 1));
+    conf.mail_conferences[confer]->mail_areas[conf.mail_conferences[confer]->mail_area_count] = (struct mail_area *)malloc(sizeof(struct mail_area));
+    conf.mail_conferences[confer]->mail_areas[conf.mail_conferences[confer]->mail_area_count]->name = strdup("New Area");
+    snprintf(areapath, PATH_MAX, "%s/new_area", conf.bbs_path);
+    conf.mail_conferences[confer]->mail_areas[conf.mail_conferences[confer]->mail_area_count]->path = strdup(areapath);
+    conf.mail_conferences[confer]->mail_areas[conf.mail_conferences[confer]->mail_area_count]->qwkname = strdup("NEWAREA");
+    conf.mail_conferences[confer]->mail_areas[conf.mail_conferences[confer]->mail_area_count]->read_sec_level = conf.newuserlvl;
+    conf.mail_conferences[confer]->mail_areas[conf.mail_conferences[confer]->mail_area_count]->write_sec_level = conf.newuserlvl;
+    conf.mail_conferences[confer]->mail_areas[conf.mail_conferences[confer]->mail_area_count]->type = TYPE_LOCAL_AREA;
+    conf.mail_conferences[confer]->mail_area_count++;
+    edit_mail_area(confer, conf.mail_conferences[confer]->mail_area_count - 1);
+}
+
 void edit_mail_areas(int confer) {
     char **itemlist;
     int selection;
     int i;
+    int area_count;
 
     while (1) {
         itemlist = (char **)malloc(sizeof(char *) * (conf.mail_conferences[confer]->mail_area_count + 1));
 
         itemlist[0] = strdup("Add Area");
-
-        for (i=0;i<conf.mail_conferences[confer]->mail_area_count;i++) {
+        area_count = conf.mail_conferences[confer]->mail_area_count;
+        for (i=0;i<area_count;i++) {
             itemlist[i+1] = strdup(conf.mail_conferences[confer]->mail_areas[i]->name);
         }
 
-        CDKSCROLL *mailAreaList = newCDKScroll(cdkscreen, 7, 7, RIGHT, 12, 30, "</B/32>Mail Areas<!32>", itemlist, conf.mail_conferences[confer]->mail_area_count + 1, FALSE, A_STANDOUT, TRUE, FALSE);
+        CDKSCROLL *mailAreaList = newCDKScroll(cdkscreen, 7, 7, RIGHT, 12, 30, "</B/32>Mail Areas<!32>", itemlist, area_count + 1, FALSE, A_STANDOUT, TRUE, FALSE);
 
 
         selection = activateCDKScroll(mailAreaList, 0);
         if (mailAreaList->exitType == vESCAPE_HIT) {
             destroyCDKScroll(mailAreaList);
-            for (i=0;i<conf.mail_conferences[confer]->mail_area_count+1;i++) {
+            for (i=0;i<area_count+1;i++) {
                 free(itemlist[i]);
             }
             free(itemlist);
@@ -235,12 +251,13 @@ void edit_mail_areas(int confer) {
         }
         if (selection == 0) {
             // add new
+            add_new_mail_area(confer);
         } else {
             // edit existing
             edit_mail_area(confer, selection - 1);
         }
         destroyCDKScroll(mailAreaList);
-        for (i=0;i<conf.mail_conferences[confer]->mail_area_count+1;i++) {
+        for (i=0;i<area_count+1;i++) {
             free(itemlist[i]);
         }
         free(itemlist);

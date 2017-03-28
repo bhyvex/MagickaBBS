@@ -201,6 +201,73 @@ void edit_mail_conference_realnames(int confer) {
     destroyCDKScroll(mailConfRN);
 }
 
+void display_conf_error() {
+    char *message[] = {"Must have at least one Conference!"};
+    char *buttons[] = {" OK "}; 
+    CDKDIALOG *dialog = newCDKDialog(cdkscreen, 7, 7, message, 1, buttons, 1, A_STANDOUT, FALSE, TRUE, FALSE);
+    activateCDKDialog(dialog, 0);
+    destroyCDKDialog(dialog);
+}
+
+void delete_mail_conference(int confer) {
+    char *message[] = {"Do you want to Delete Related Files?"};
+    char *buttons[] = {" Yes ", " No "};
+    char filename[PATH_MAX];
+    int area;
+
+    if (conf.mail_conference_count == 1) {
+        display_conf_error();
+        return;
+    }
+
+    CDKDIALOG *dialog = newCDKDialog(cdkscreen, 7, 7, message, 1, buttons, 2, A_STANDOUT, FALSE, TRUE, FALSE);
+
+    int selection = activateCDKDialog(dialog, 0);
+    int i;
+
+    if (dialog->exitType == vESCAPE_HIT || (dialog->exitType == vNORMAL && selection == 1)) {
+        // do nothing
+    } else {
+        for (area=0;area<conf.mail_conferences[confer]->mail_area_count;area++) {
+            snprintf(filename, PATH_MAX, "%s.jdt", conf.mail_conferences[confer]->mail_areas[area]->path);
+            unlink(filename);
+            snprintf(filename, PATH_MAX, "%s.jdx", conf.mail_conferences[confer]->mail_areas[area]->path);
+            unlink(filename);
+            snprintf(filename, PATH_MAX, "%s.jhr", conf.mail_conferences[confer]->mail_areas[area]->path);
+            unlink(filename);
+            snprintf(filename, PATH_MAX, "%s.jlr", conf.mail_conferences[confer]->mail_areas[area]->path);
+            unlink(filename);
+            snprintf(filename, PATH_MAX, "%s.cmhw", conf.mail_conferences[confer]->mail_areas[area]->path);
+            unlink(filename);
+        }
+        unlink(conf.mail_conferences[confer]->path);
+    }
+    destroyCDKDialog(dialog);
+
+    for (area=0;area<conf.mail_conferences[confer]->mail_area_count;area++) {
+        free(conf.mail_conferences[confer]->mail_areas[area]->name);
+        free(conf.mail_conferences[confer]->mail_areas[area]->path);
+        free(conf.mail_conferences[confer]->mail_areas[area]->qwkname);
+        free(conf.mail_conferences[confer]->mail_areas[area]);
+        free(conf.mail_conferences[confer]->mail_areas);
+    }
+
+    free(conf.mail_conferences[confer]->mail_areas);
+    free(conf.mail_conferences[confer]->name);
+    free(conf.mail_conferences[confer]->path);
+    if (conf.mail_conferences[confer]->tagline) {
+        free(conf.mail_conferences[confer]->tagline);
+    }
+    if (conf.mail_conferences[confer]->fidoaddr) {
+        free(conf.mail_conferences[confer]->fidoaddr);
+    }
+    for (i=confer;i<conf.mail_conference_count - 1;i++) {
+        conf.mail_conferences[i]= conf.mail_conferences[i+1];
+    }
+    conf.mail_conference_count--;
+    conf.mail_conferences = (struct mail_conference **)realloc(conf.mail_conferences, sizeof(struct mail_conference *) * conf.mail_conference_count);
+}
+
 void edit_mail_conference(int confer) {
     char *itemList[] = {"Name",
                         "Path & Filename",
@@ -245,6 +312,9 @@ void edit_mail_conference(int confer) {
             case 6:
                 edit_mail_areas(confer);
                 break;
+            case 7:
+                delete_mail_conference(confer);
+                break;
             default:
                 break;
         }
@@ -253,27 +323,60 @@ void edit_mail_conference(int confer) {
     destroyCDKScroll(editConfList);
 }
 
+void add_new_mail_conference() {
+    char areapath[PATH_MAX];
+    conf.mail_conferences = (struct mail_conference **)realloc(conf.mail_conferences, sizeof(struct mail_conference *) * (conf.mail_conference_count + 1));
+    conf.mail_conferences[conf.mail_conference_count] = (struct mail_conference *)malloc(sizeof(struct mail_conference));    
+    conf.mail_conferences[conf.mail_conference_count]->mail_areas = (struct mail_area **)malloc(sizeof(struct mail_area *));
+    conf.mail_conferences[conf.mail_conference_count]->mail_areas[0] = (struct mail_area *)malloc(sizeof(struct mail_area));
+    conf.mail_conferences[conf.mail_conference_count]->mail_areas[0]->name = strdup("New Area");
+    snprintf(areapath, PATH_MAX, "%s/new_area", conf.bbs_path);
+    conf.mail_conferences[conf.mail_conference_count]->mail_areas[0]->path = strdup(areapath);
+    conf.mail_conferences[conf.mail_conference_count]->mail_areas[0]->qwkname = strdup("NEWAREA");
+    conf.mail_conferences[conf.mail_conference_count]->mail_areas[0]->read_sec_level = conf.newuserlvl;
+    conf.mail_conferences[conf.mail_conference_count]->mail_areas[0]->write_sec_level = conf.newuserlvl;
+    conf.mail_conferences[conf.mail_conference_count]->mail_areas[0]->type = TYPE_LOCAL_AREA;
+    conf.mail_conferences[conf.mail_conference_count]->mail_area_count = 1;
+    
+    conf.mail_conferences[conf.mail_conference_count]->name = strdup("New Conference");
+    snprintf(areapath, PATH_MAX, "%s/new_conf.ini", conf.config_path);
+    conf.mail_conferences[conf.mail_conference_count]->path = strdup(areapath);
+    conf.mail_conferences[conf.mail_conference_count]->tagline = strdup(conf.default_tagline);
+    conf.mail_conferences[conf.mail_conference_count]->networked = 0;
+    conf.mail_conferences[conf.mail_conference_count]->nettype = NETWORK_FIDO;
+    conf.mail_conferences[conf.mail_conference_count]->realnames = 0;
+    conf.mail_conferences[conf.mail_conference_count]->sec_level = conf.newuserlvl;
+    conf.mail_conferences[conf.mail_conference_count]->fidoaddr = (struct fido_addr *)malloc(sizeof(struct fido_addr));
+    memcpy(conf.mail_conferences[conf.mail_conference_count]->fidoaddr, conf.main_aka, sizeof(struct fido_addr));
+    conf.mail_conferences[conf.mail_conference_count]->wwivnode = 0;
+
+    conf.mail_conference_count ++;
+
+    edit_mail_conference(conf.mail_conference_count-1);
+}
+
 void mail_conferences() {
     char **itemlist;
     int selection;
     int i;
+    int confcount;
 
     while (1) {
         itemlist = (char **)malloc(sizeof(char *) * (conf.mail_conference_count + 1));
-
+        confcount = conf.mail_conference_count;
         itemlist[0] = strdup("Add Conference");
 
-        for (i=0;i<conf.mail_conference_count;i++) {
+        for (i=0;i<confcount;i++) {
             itemlist[i+1] = strdup(conf.mail_conferences[i]->name);
         }
 
-        CDKSCROLL *mailConfList = newCDKScroll(cdkscreen, 3, 3, RIGHT, 12, 30, "</B/32>Mail Conferences<!32>", itemlist, conf.mail_conference_count + 1, FALSE, A_STANDOUT, TRUE, FALSE);
+        CDKSCROLL *mailConfList = newCDKScroll(cdkscreen, 3, 3, RIGHT, 12, 30, "</B/32>Mail Conferences<!32>", itemlist, confcount + 1, FALSE, A_STANDOUT, TRUE, FALSE);
 
 
         selection = activateCDKScroll(mailConfList, 0);
         if (mailConfList->exitType == vESCAPE_HIT) {
             destroyCDKScroll(mailConfList);
-            for (i=0;i<conf.mail_conference_count+1;i++) {
+            for (i=0;i<confcount+1;i++) {
                 free(itemlist[i]);
             }
             free(itemlist);
@@ -281,12 +384,12 @@ void mail_conferences() {
         }
         if (selection == 0) {
             // add new
-        } else {
+            add_new_mail_conference();        } else {
             // edit existing
             edit_mail_conference(selection - 1);
         }
         destroyCDKScroll(mailConfList);
-        for (i=0;i<conf.mail_conference_count+1;i++) {
+        for (i=0;i<confcount+1;i++) {
             free(itemlist[i]);
         }
         free(itemlist);
