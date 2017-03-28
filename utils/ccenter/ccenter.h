@@ -176,4 +176,6 @@ extern void system_config(void);
 extern void system_paths();
 extern void mail_conferences();
 extern void edit_mail_areas(int confer);
+extern void file_directories();
+extern void edit_file_subdirs(int fdir);
 #endif

@@ -24,7 +24,7 @@ void edit_mail_conference_name(int confer) {
 
 void edit_mail_conference_file(int confer) {
     char *entrytext;
-    CDKENTRY *confFile = newCDKEntry(cdkscreen, 7, 7, "</B/32>Conference Path & Filename<!32>", NULL, A_NORMAL, ' ', vMIXED, 48, 1, 1024, TRUE, FALSE);
+    CDKENTRY *confFile = newCDKEntry(cdkscreen, 7, 7, "</B/32>Conference INI Path & Filename<!32>", NULL, A_NORMAL, ' ', vMIXED, 48, 1, 1024, TRUE, FALSE);
     
     setCDKEntry(confFile, conf.mail_conferences[confer]->path, 1, 1024, TRUE);
 
@@ -249,7 +249,6 @@ void delete_mail_conference(int confer) {
         free(conf.mail_conferences[confer]->mail_areas[area]->path);
         free(conf.mail_conferences[confer]->mail_areas[area]->qwkname);
         free(conf.mail_conferences[confer]->mail_areas[area]);
-        free(conf.mail_conferences[confer]->mail_areas);
     }
 
     free(conf.mail_conferences[confer]->mail_areas);
@@ -270,7 +269,7 @@ void delete_mail_conference(int confer) {
 
 void edit_mail_conference(int confer) {
     char *itemList[] = {"Name",
-                        "Path & Filename",
+                        "INI Path & Filename",
                         "Visible Sec. Level",
                         "Networked",
                         "Tag Line",
@@ -384,7 +383,8 @@ void mail_conferences() {
         }
         if (selection == 0) {
             // add new
-            add_new_mail_conference();        } else {
+            add_new_mail_conference();        
+        } else {
             // edit existing
             edit_mail_conference(selection - 1);
         }

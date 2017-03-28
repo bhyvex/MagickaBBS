@@ -90,6 +90,9 @@ int main(int argc, char **argv) {
                         case 2:
                             mail_conferences();
                             break;
+                        case 3:
+                            file_directories();
+                            break;
                         case 5:
                             doexit = 1;
                             break;
