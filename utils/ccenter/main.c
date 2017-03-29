@@ -108,6 +108,9 @@ int main(int argc, char **argv) {
                         case 4:
                             textfiles();
                             break;
+                        case 5:
+                            archivers();
+                            break;
                         default:
                             break;
                     }

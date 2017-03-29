@@ -313,7 +313,8 @@ void edit_mail_conference(int confer) {
                 break;
             case 7:
                 delete_mail_conference(confer);
-                break;
+                destroyCDKScroll(editConfList);
+                return;
             default:
                 break;
         }

@@ -198,7 +198,8 @@ void edit_mail_area(int confer, int area) {
                 break;
             case 6:
                 delete_mail_area(confer, area);
-                break;
+                destroyCDKScroll(editAreaList);
+                return;
             default:
                 break;
         }

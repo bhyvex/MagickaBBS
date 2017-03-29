@@ -79,7 +79,8 @@ void edit_text_file(int txtfile) {
                 break;
             case 2:
                 delete_txtfile(txtfile);
-                break;
+                destroyCDKScroll(editTxtFiles);
+                return;
             default:
                 break;
         }

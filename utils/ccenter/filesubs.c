@@ -138,7 +138,8 @@ void edit_file_sub(int fdir, int area) {
                 break;
             case 5:
                 delete_file_sub(fdir, area);
-                break;
+                destroyCDKScroll(editSubList);
+                return;
             default:
                 break;
         }

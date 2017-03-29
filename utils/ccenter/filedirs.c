@@ -129,7 +129,8 @@ void edit_file_directory(int fdir) {
                 break;
             case 4:
                 delete_file_directory(fdir);
-                break;
+                destroyCDKScroll(editDirList);
+                return;
             default:
                 break;
         }
