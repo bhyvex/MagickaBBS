@@ -101,6 +101,8 @@ char * aha(char *input)
     int unmangle_out_len;
     unmangle_ansi(input, strlen(input), &unmangle_out, &unmangle_out_len);
 
+    unmangle_out[unmangle_out_len] = '\0';
+
 	//Begin of Conversion
 	unsigned int c;
 	int fc = -1; //Standard Foreground Color //IRC-Color+8
@@ -332,7 +334,7 @@ char * aha(char *input)
 		{
 			for (;line<80;line++)
 
-                append_output(&output, "&nbsp;", &size, &outat);
+               append_output(&output, "&nbsp;", &size, &outat);
 			line=0;
 			momline++;
 			append_output(&output, "<br />", &size, &outat);
