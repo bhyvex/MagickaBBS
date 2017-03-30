@@ -407,6 +407,10 @@ char *message_editor() {
                         od_set_cursor(3, 1);
                         od_set_color(L_WHITE, D_BLACK);
 
+                        if (position_y - top_of_screen > 20) {
+                            top_of_screen = position_y - 20;
+                        }
+
                         for (i=top_of_screen;i<top_of_screen + 20;i++) {
                             od_set_cursor(i - top_of_screen + 3, 1);
                             if (i < body_line_count) {

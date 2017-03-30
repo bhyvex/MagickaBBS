@@ -151,7 +151,7 @@ void add_archiver() {
 
     conf.archivers[conf.archiver_count] = (struct archiver *)malloc(sizeof(struct archiver));
     conf.archivers[conf.archiver_count]->name = strdup("New Archiver");
-    conf.archivers[conf.archiver_count]->extension = strdup("NEW");
+    conf.archivers[conf.archiver_count]->extension = strdup("new");
     conf.archivers[conf.archiver_count]->unpack = strdup("newarc -u *a -d *d");
     conf.archivers[conf.archiver_count]->pack = strdup("newarc -p *a -f *f");
     conf.archiver_count++;
