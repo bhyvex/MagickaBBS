@@ -84,13 +84,13 @@ void deleteParse(pelem elem)
 	}
 }
 
-void append_output(char *output, char *stuff, int *size, int *at) {
+void append_output(char **output, char *stuff, int *size, int *at) {
     if (*at + strlen(stuff) + 1 >= *size) {
         *size += 256;
-        output = realloc(output, *size);
+        *output = realloc(*output, *size);
     }
 
-    strcat(output, stuff);
+    strcat(*output, stuff);
     *at += strlen(stuff);
 }
 
@@ -227,92 +227,92 @@ char * aha(char *input)
 				if ((fc!=ofc) || (bc!=obc) || (ul!=oul) || (bo!=obo) || (bl!=obl)) //ANY Change
 				{
 					if ((ofc!=-1) || (obc!=-1) || (oul!=0) || (obo!=0) || (obl!=0))
-						append_output(output, "</span>", &size, &outat);
+						append_output(&output, "</span>", &size, &outat);
 					if ((fc!=-1) || (bc!=-1) || (ul!=0) || (bo!=0) || (bl!=0))
 					{
-                        append_output(output, "<span style=\"", &size, &outat);
+                        append_output(&output, "<span style=\"", &size, &outat);
 						switch (fc)
 						{
 							case	0: 
-                                              append_output(output, "color:dimgray;", &size, &outat);
+                                              append_output(&output, "color:dimgray;", &size, &outat);
 											 break; //Black
 							case	1: 
-                                             append_output(output, "color:red;", &size, &outat);
+                                             append_output(&output, "color:red;", &size, &outat);
 											 break; //Red
 							case	2: 
-                                             append_output(output, "color:lime;", &size, &outat);
+                                             append_output(&output, "color:lime;", &size, &outat);
 											 break; //Green
 							case	3: 
-                                             append_output(output, "color:yellow;", &size, &outat);
+                                             append_output(&output, "color:yellow;", &size, &outat);
 											 break; //Yellow
 							case	4: 
-                                             append_output(output, "color:#3333FF;", &size, &outat);
+                                             append_output(&output, "color:#3333FF;", &size, &outat);
 											 break; //Blue
 							case	5: 
 
-                                             append_output(output, "color:fuchsia;", &size, &outat);
+                                             append_output(&output, "color:fuchsia;", &size, &outat);
 											 break; //Purple
 							case	6: 
-                                             append_output(output, "color:aqua;", &size, &outat);
+                                             append_output(&output, "color:aqua;", &size, &outat);
 											 break; //Cyan
 							case	7: 
-                                             append_output(output, "color:white;", &size, &outat);
+                                             append_output(&output, "color:white;", &size, &outat);
 											 break; //White
 							case	8: 
-                                             append_output(output, "color:black;", &size, &outat);
+                                             append_output(&output, "color:black;", &size, &outat);
 											 break; //Background Colour
 							case	9: 
-                                             append_output(output, "color:white;", &size, &outat);
+                                             append_output(&output, "color:white;", &size, &outat);
 											 break; //Foreground Color
 						}
 						switch (bc)
 						{
 							case	0: 
-                                             append_output(output, "background-color:black;", &size, &outat);
+                                             append_output(&output, "background-color:black;", &size, &outat);
 											 break; //Black
 							case	1: 
-											 append_output(output, "background-color:red;", &size, &outat);
+											 append_output(&output, "background-color:red;", &size, &outat);
 											 break; //Red
 							case	2: 
                                 			 
-                                             append_output(output, "background-color:lime;", &size, &outat);
+                                             append_output(&output, "background-color:lime;", &size, &outat);
 											 break; //Green
 							case	3: 
-                                             append_output(output, "background-color:yellow;", &size, &outat);
+                                             append_output(&output, "background-color:yellow;", &size, &outat);
 											 break; //Yellow
 							case	4: 
-                                             append_output(output, "background-color:#3333FF;", &size, &outat);
+                                             append_output(&output, "background-color:#3333FF;", &size, &outat);
 											 break; //Blue
 							case	5: 
-                                             append_output(output, "background-color:fuchsia;", &size, &outat);
+                                             append_output(&output, "background-color:fuchsia;", &size, &outat);
 											 break; //Purple
 							case	6: 
-                                             append_output(output, "background-color:aqua;", &size, &outat);
+                                             append_output(&output, "background-color:aqua;", &size, &outat);
 											 break; //Cyan
 							case	7: 
-                                             append_output(output, "background-color:white;", &size, &outat);
+                                             append_output(&output, "background-color:white;", &size, &outat);
 											 break; //White
 							case	8: 
-                                             append_output(output, "background-color:black;", &size, &outat);
+                                             append_output(&output, "background-color:black;", &size, &outat);
 											 break; //Background Colour
 							case	9: 
-                                             append_output(output, "background-color:white;", &size, &outat);
+                                             append_output(&output, "background-color:white;", &size, &outat);
 											 break; //Foreground Colour
 						}
 						if (ul)
 						{
-                            append_output(output, "text-decoration:underline;", &size, &outat);
+                            append_output(&output, "text-decoration:underline;", &size, &outat);
 						}
 						if (bo)
 						{
-                            append_output(output, "font-weight:bold;", &size, &outat);
+                            append_output(&output, "font-weight:bold;", &size, &outat);
 						}
 						if (bl)
 						{
-                            append_output(output, "text-decoration:blink;", &size, &outat);
+                            append_output(&output, "text-decoration:blink;", &size, &outat);
 						}
 
-                        append_output(output, "\">", &size, &outat);
+                        append_output(&output, "\">", &size, &outat);
 					}
 				}
 			}
@@ -322,10 +322,10 @@ char * aha(char *input)
 		{
 			for (;line<80;line++)
 
-                append_output(output, " ", &size, &outat);
+                append_output(&output, " ", &size, &outat);
 			line=0;
 			momline++;
-			append_output(output, "\n", &size, &outat);
+			append_output(&output, "\n", &size, &outat);
 		}
 		else if (c!=8)
 		{
@@ -334,22 +334,22 @@ char * aha(char *input)
 			{
 				while (newline>line)
 				{
-                    append_output(output, " ", &size, &outat);
+                    append_output(&output, " ", &size, &outat);
 					line++;
 				}
 				newline=-1;
 			}
 			switch (c)
 			{
-				case '&':	append_output(output, "&amp;", &size, &outat); break;
-				case '\"': append_output(output, "&quot;", &size, &outat); break;
-				case '<':	append_output(output, "&lt;", &size, &outat); break;
-				case '>':	append_output(output, "&gt;", &size, &outat); break;
+				case '&':	append_output(&output, "&amp;", &size, &outat); break;
+				case '\"': append_output(&output, "&quot;", &size, &outat); break;
+				case '<':	append_output(&output, "&lt;", &size, &outat); break;
+				case '>':	append_output(&output, "&gt;", &size, &outat); break;
 				case '\n':case 13: momline++;
 									 line=0;
 				default:	{
                     sprintf(minibuf, "%c", c);
-                    append_output(output, minibuf, &size, &outat);
+                    append_output(&output, minibuf, &size, &outat);
                 }
 			}
 		}
@@ -357,7 +357,7 @@ char * aha(char *input)
 
 	//Footer
 	if ((fc!=-1) || (bc!=-1) || (ul!=0) || (bo!=0) || (bl!=0))
-        append_output(output, "</span>\n", &size, &outat);
+        append_output(&output, "</span>\n", &size, &outat);
 	
 	return 0;
 }
