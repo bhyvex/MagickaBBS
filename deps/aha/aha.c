@@ -362,10 +362,10 @@ char * aha(char *input)
                  case '\x07' : append_output(&output, "&#x2022;", &size, &outat); break;
                  case '\x08' : append_output(&output, "&#x25D8;", &size, &outat); break;
                  case '\x09' : append_output(&output, "&#x25CB;", &size, &outat); break;
-                 case '\x0a' : append_output(&output, "&#x25D8;", &size, &outat); break;
+                 //case '\x0a' : append_output(&output, "&#x25D8;", &size, &outat); break;
                  case '\x0b' : append_output(&output, "&#x2642;", &size, &outat); break;
                  case '\x0c' : append_output(&output, "&#x2640;", &size, &outat); break;
-                 case '\x0d' : append_output(&output, "&#x266A;", &size, &outat); break;
+                 //case '\x0d' : append_output(&output, "&#x266A;", &size, &outat); break;
                  case '\x0e' : append_output(&output, "&#x266B;", &size, &outat); break;
                  case '\x0f' : append_output(&output, "&#x263C;", &size, &outat); break;
                  case '\x10' : append_output(&output, "&#x25B8;", &size, &outat); break;
@@ -527,8 +527,6 @@ char * aha(char *input)
                  case '\xfc' : append_output(&output, "&#x207F;", &size, &outat); break;
                  case '\xfd' : append_output(&output, "&#x00B2;", &size, &outat); break;
                  case '\xfe' : append_output(&output, "&#x25AA;", &size, &outat); break;
-				case '&':	append_output(&output, "&amp;", &size, &outat); break;
-				case '\"': append_output(&output, "&quot;", &size, &outat); break;
 				case '<':	append_output(&output, "&lt;", &size, &outat); break;
 				case '>':	append_output(&output, "&gt;", &size, &outat); break;
 				case '\n':case 13: momline++;
