@@ -12,7 +12,7 @@
 
 #define IN 0
 #define OUT 1
-
+extern char * aha(char *input);
 extern struct bbs_config conf;
 
 static int new_messages(struct user_record *user, int conference, int area) {
@@ -269,6 +269,10 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 	char buffer[4096];	
 	int chars;
 	int i;
+
+	char *aha_text;
+	char *aha_out;
+
 	if (conference < 0 || conference >= conf.mail_conference_count || area < 0 || area >= conf.mail_conferences[conference]->mail_area_count) {
 		return NULL;
 	}
@@ -461,23 +465,20 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		len += strlen(buffer);
 			
 		
-		for (z=0;z<jmh.TxtLen;z++) {
-			if (body[z] == '\r') {
-				sprintf(buffer, "<br />");
-			} else if (body[z] == '<') {
-				sprintf(buffer, "&lt;");
-			} else if (body[z] == '>') {
-				sprintf(buffer, "&gt;");
-			} else {
-				sprintf(buffer, "%c", body[z]);
-			}
-			if (len + strlen(buffer) > max_len - 1) {
-				max_len += 4096;
-				page = (char *)realloc(page, max_len);
-			}	
-			strcat(page, buffer);
-			len += strlen(buffer);			
-		}
+		aha_text = (char *)malloc(jmh.TxtLen + 1);
+
+		memcpy(aha_text, body, jmh.TxtLen);
+		aha_text[jmh.TxtLen] = '\0';
+
+		aha_out = aha(aha_text);
+
+		while (len + strlen(aha_out) > max_len - 1) {
+			max_len += 4096;
+			page = (char *)realloc(page, max_len);
+		}	
+		strcat(page, aha_out);
+		len += strlen(aha_out);			
+		
 		
 		sprintf(buffer, "</div>\n");
 		if (len + strlen(buffer) > max_len - 1) {
