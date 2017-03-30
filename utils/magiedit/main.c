@@ -626,7 +626,10 @@ char *message_editor() {
                         od_clr_line();
                         od_set_cursor(position_y - top_of_screen + 3, position_x + 1);
                     } else {
+                        od_set_cursor(position_y - top_of_screen + 3, 1);
+                        od_printf("%s", line);
                         od_clr_line();
+                        od_set_cursor(position_y - top_of_screen + 3, 1);
                     }
 /*
                     if (position_x > 1) {
