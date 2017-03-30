@@ -85,7 +85,7 @@ void deleteParse(pelem elem)
 }
 
 void append_output(char **output, char *stuff, int *size, int *at) {
-    if (*at + strlen(stuff) + 1 >= *size) {
+    while (*at + strlen(stuff) + 1 >= *size) {
         *size += 256;
         *output = realloc(*output, *size);
     }
