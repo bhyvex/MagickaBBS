@@ -475,8 +475,8 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		memcpy(aha_cp437, body, jmh.TxtLen);
 		aha_cp437[jmh.TxtLen] = '\0';
 		
-		insz = jmh.TextLen;
-		outsz = jmh.TextLen;
+		insz = jmh.TxtLen;
+		outsz = jmh.TxtLen;
 
 		ic = iconv_open("UTF-8//TRANSLIT", "CP437");
 		iconv(ic, &aha_cp437, &insz, &aha_text, &outsz);
