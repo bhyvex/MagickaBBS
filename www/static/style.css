@@ -1,3 +1,12 @@
+@font-face {
+    font-family: 'pxplus_ibm_vga8regular';
+    src: url('/static/fonts/pxplus_ibm_vga8-webfont.woff2') format('woff2'),
+         url('/static/fonts/pxplus_ibm_vga8-webfont.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+
+}
+
 .footer {
 	font-size: small;
 }
@@ -224,5 +233,5 @@
 #msgbody {
 	background-color: black;
 	color: white;
-	font-family: monospace;
+	font-family: 'pxplus_ibm_vga8regular';
 }
