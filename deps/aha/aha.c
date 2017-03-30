@@ -357,6 +357,8 @@ char * aha(char *input)
 				case '>':	append_output(&output, "&gt;", &size, &outat); break;
 				case '\n':case 13: momline++;
 									 line=0;
+                                     append_output(&output, "<br />", &size, &outat);
+                                     break;
 				default:	{
                     sprintf(minibuf, "%c", c);
                     append_output(&output, minibuf, &size, &outat);
