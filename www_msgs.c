@@ -471,7 +471,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		aha_text[jmh.TxtLen] = '\0';
 		fprintf(stderr, "Aha IN\n");
 		aha_out = aha(aha_text);
-		fprintf(stderr, "Aha OUT\n");
+		fprintf(stderr, "Aha OUT %d\n", strlen(aha_out));
 		while (len + strlen(aha_out) > max_len - 1) {
 			max_len += 4096;
 			page = (char *)realloc(page, max_len);
