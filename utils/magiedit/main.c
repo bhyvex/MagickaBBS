@@ -623,7 +623,7 @@ char *message_editor() {
                     od_set_cursor(position_y - top_of_screen + 3, position_x);
                     od_printf("%s", &line[position_x-1]);
                     od_clr_line();
-
+                    od_set_cursor(position_y - top_of_screen + 3, position_x);
 /*
                     if (position_x > 1) {
                         if (position_y > 20) {
