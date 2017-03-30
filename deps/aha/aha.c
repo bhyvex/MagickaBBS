@@ -118,6 +118,10 @@ char * aha(char *input)
     int size;
     int outat = 0;
     char minibuf[2];
+
+
+    memset(output, 0, 256);
+
 	while (*ptr != '\0')
 	{
         c = *ptr++;
