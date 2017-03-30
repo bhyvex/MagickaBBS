@@ -221,7 +221,7 @@
 	width: 200px;
 }
 
-.msgbody {
+#msgbody {
 	background-color: black;
 	color: white;
 }

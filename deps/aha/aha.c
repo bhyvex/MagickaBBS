@@ -332,7 +332,7 @@ char * aha(char *input)
 		{
 			for (;line<80;line++)
 
-                append_output(&output, " ", &size, &outat);
+                append_output(&output, "&nbsp;", &size, &outat);
 			line=0;
 			momline++;
 			append_output(&output, "<br />", &size, &outat);
@@ -359,6 +359,7 @@ char * aha(char *input)
 									 line=0;
                                      append_output(&output, "<br />", &size, &outat);
                                      break;
+                case ' ':	append_output(&output, "&nbsp;", &size, &outat); break;
 				default:	{
                     sprintf(minibuf, "%c", c);
                     append_output(&output, minibuf, &size, &outat);
