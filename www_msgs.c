@@ -276,7 +276,8 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 	char *aha_cp437;
 	int insz;
 	int outsz;
-
+	char *iconv_cp437
+	char *iconv_text;
 	if (conference < 0 || conference >= conf.mail_conference_count || area < 0 || area >= conf.mail_conferences[conference]->mail_area_count) {
 		return NULL;
 	}
@@ -472,6 +473,9 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 
 		aha_text = (char *)malloc(jmh.TxtLen + 1);
 		aha_cp437 = (char *)malloc(jmh.TxtLen + 1);
+
+		iconv_cp437 = aha_cp437;
+		iconv_text = aha_text;
 		memcpy(aha_cp437, body, jmh.TxtLen);
 		aha_cp437[jmh.TxtLen] = '\0';
 		
@@ -479,7 +483,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		outsz = jmh.TxtLen;
 
 		ic = iconv_open("UTF-8//TRANSLIT", "CP437");
-		iconv(ic, &aha_cp437, &insz, &aha_text, &outsz);
+		iconv(ic, &iconv_cp437, &insz, &iconv_text, &outsz);
 		iconv_close(ic);
 		free(aha_cp437);
 
