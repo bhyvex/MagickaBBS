@@ -580,18 +580,18 @@ char *message_editor() {
                             od_set_cursor(position_y - top_of_screen + 3, position_x);
                             od_printf("%s", &line[position_x-1]);
                             od_clr_line();
-                            od_set_cursor(position_y - top_of_screen + 3, position_x + 1);
+                            
                         } else {
                             od_set_cursor(position_y - top_of_screen + 3, 1);
                             od_printf("%s", line);
                             od_clr_line();
-                            od_set_cursor(position_y - top_of_screen + 3, 1);
                         }
                         for (i=position_y;i<body_line_count && i - top_of_screen < 20;i++) {
                             od_set_cursor(i - top_of_screen + 4, 1);
                             od_printf("%s", body_lines[i]);
                             od_clr_line();
-                        }                               
+                        }   
+                        od_set_cursor(position_y - top_of_screen + 3, position_x + 1);                            
                     }
                 } else {
                     if (ch.chKeyPress == '\b') {
@@ -633,14 +633,13 @@ char *message_editor() {
                     if (position_x > 0) {
                         od_set_cursor(position_y - top_of_screen + 3, position_x);
                         od_printf("%s", &line[position_x-1]);
-                        od_clr_line();
-                        od_set_cursor(position_y - top_of_screen + 3, position_x + 1);
+                        od_clr_line();       
                     } else {
                         od_set_cursor(position_y - top_of_screen + 3, 1);
                         od_printf("%s", line);
                         od_clr_line();
-                        od_set_cursor(position_y - top_of_screen + 3, 1);
                     }
+                    od_set_cursor(position_y - top_of_screen + 3, position_x + 1);
 /*
                     if (position_x > 1) {
                         if (position_y > 20) {
