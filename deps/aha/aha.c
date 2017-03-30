@@ -246,29 +246,60 @@ char * aha(char *input)
 						switch (fc)
 						{
 							case	0: 
-                                              append_output(&output, "color:dimgray;", &size, &outat);
+                                             if (bo) {
+                                                 append_output(&output, "color:dimgray;", &size, &outat);
+                                             } else {
+                                                 append_output(&output, "color:dimgray;", &size, &outat);
+                                             }
 											 break; //Black
 							case	1: 
-                                             append_output(&output, "color:red;", &size, &outat);
+                                             if (bo) {
+                                                append_output(&output, "color:#FF8888;", &size, &outat);
+                                             } else {
+                                                append_output(&output, "color:red;", &size, &outat);
+                                             }
 											 break; //Red
 							case	2: 
-                                             append_output(&output, "color:lime;", &size, &outat);
+                                             if (bo) {
+                                                 append_output(&output, "color:lime;", &size, &outat);
+                                             } else {
+                                                 append_output(&output, "color:#00ff00;", &size, &outat);
+                                             }
 											 break; //Green
 							case	3: 
-                                             append_output(&output, "color:yellow;", &size, &outat);
+                                            if (bo) {
+                                                 append_output(&output, "color:yellow;", &size, &outat);
+                                            } else {
+                                                 append_output(&output, "color:olive;", &size, &outat);
+                                            }
 											 break; //Yellow
 							case	4: 
-                                             append_output(&output, "color:#3333FF;", &size, &outat);
+                                            if (bo) {
+                                                 append_output(&output, "color:#8888FF;", &size, &outat);
+                                            } else {
+                                                 append_output(&output, "color:#0000FF;", &size, &outat);
+                                            }
 											 break; //Blue
 							case	5: 
-
-                                             append_output(&output, "color:fuchsia;", &size, &outat);
+                                            if (bo) {
+                                                 append_output(&output, "color:fuchsia;", &size, &outat);
+                                            } else {
+                                                 append_output(&output, "color:#FF00FF;", &size, &outat);
+                                            }
 											 break; //Purple
 							case	6: 
-                                             append_output(&output, "color:aqua;", &size, &outat);
+                                             if (bo) {
+                                                 append_output(&output, "color:aqua;", &size, &outat);
+                                             } else {
+                                                 append_output(&output, "color:#FFFF00", &size, &outat);
+                                             }
 											 break; //Cyan
 							case	7: 
-                                             append_output(&output, "color:white;", &size, &outat);
+                                            if (bo) {
+                                                 append_output(&output, "color:white;", &size, &outat);
+                                            } else {
+                                                 append_output(&output, "color:grey;", &size, &outat);
+                                            }
 											 break; //White
 							case	8: 
                                              append_output(&output, "color:black;", &size, &outat);
@@ -314,10 +345,6 @@ char * aha(char *input)
 						if (ul)
 						{
                             append_output(&output, "text-decoration:underline;", &size, &outat);
-						}
-						if (bo)
-						{
-                            append_output(&output, "font-weight:bold;", &size, &outat);
 						}
 						if (bl)
 						{
