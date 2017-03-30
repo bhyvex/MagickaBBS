@@ -7,7 +7,6 @@
 #ifdef __FreeBSD__
 #include <sys/stat.h>
 #endif
-#include <iconv.h>
 #include "bbs.h"
 #include "jamlib/jam.h"
 
@@ -270,14 +269,10 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 	char buffer[4096];	
 	int chars;
 	int i;
-	iconv_t ic;
+
 	char *aha_text;
 	char *aha_out;
-	char *aha_cp437;
-	size_t insz;
-	size_t outsz;
-	char *iconv_cp437;
-	char *iconv_text;
+
 	if (conference < 0 || conference >= conf.mail_conference_count || area < 0 || area >= conf.mail_conferences[conference]->mail_area_count) {
 		return NULL;
 	}
@@ -470,28 +465,10 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		len += strlen(buffer);
 			
 		
+		aha_text = (char *)malloc(jmh.TxtLen + 1);
 
-		aha_text = (char *)malloc((jmh.TxtLen + 1) * 2);
-		aha_cp437 = (char *)malloc(jmh.TxtLen + 1);
-
-		iconv_cp437 = aha_cp437;
-		iconv_text = aha_text;
-
-		memcpy(aha_cp437, body, jmh.TxtLen);
-		aha_cp437[jmh.TxtLen] = '\0';
-		
-		insz = jmh.TxtLen;
-		outsz = jmh.TxtLen * 2;
-
-		memset(aha_text, 0, (jmh.TxtLen + 1) * 2);
-
-		ic = iconv_open("UTF-8", "CP437");
-		iconv(ic, &iconv_cp437, &insz, &iconv_text, &outsz);
-		iconv_close(ic);
-		free(aha_cp437);
-
-		
-
+		memcpy(aha_text, body, jmh.TxtLen);
+		aha_text[jmh.TxtLen] = '\0';
 		aha_out = aha(aha_text);
 		while (len + strlen(aha_out) > max_len - 1) {
 			max_len += 4096;
@@ -502,7 +479,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		
 		free(aha_out);
 		free(aha_text);
-	
+		
 		sprintf(buffer, "</div>\n");
 		if (len + strlen(buffer) > max_len - 1) {
 			max_len += 4096;
@@ -513,7 +490,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 
 
 		
-		sprintf(buffer, "<div class=\"msg-reply-form\">\n");
+				sprintf(buffer, "<div class=\"msg-reply-form\">\n");
 		if (len + strlen(buffer) > max_len - 1) {
 			max_len += 4096;
 			page = (char *)realloc(page, max_len);
