@@ -274,8 +274,8 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 	char *aha_text;
 	char *aha_out;
 	char *aha_cp437;
-	int insz;
-	int outsz;
+	size_t insz;
+	size_t outsz;
 	char *iconv_cp437;
 	char *iconv_text;
 	if (conference < 0 || conference >= conf.mail_conference_count || area < 0 || area >= conf.mail_conferences[conference]->mail_area_count) {
@@ -476,6 +476,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 
 		iconv_cp437 = aha_cp437;
 		iconv_text = aha_text;
+
 		memcpy(aha_cp437, body, jmh.TxtLen);
 		aha_cp437[jmh.TxtLen] = '\0';
 		
@@ -510,7 +511,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 
 
 		
-				sprintf(buffer, "<div class=\"msg-reply-form\">\n");
+		sprintf(buffer, "<div class=\"msg-reply-form\">\n");
 		if (len + strlen(buffer) > max_len - 1) {
 			max_len += 4096;
 			page = (char *)realloc(page, max_len);
