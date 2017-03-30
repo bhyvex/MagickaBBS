@@ -620,6 +620,12 @@ char *message_editor() {
 
                     }
 
+                    od_set_cursor(position_y - top_of_screen + 3, position_x) {
+                        od_printf("%s", &line[position_x]);
+                        od_clr_line();
+                    }
+
+/*
                     if (position_x > 1) {
                         if (position_y > 20) {
                             od_set_cursor(23, position_x - 1);
@@ -656,6 +662,7 @@ char *message_editor() {
                     } else {
                         od_set_cursor(position_y - top_of_screen + 3, position_x + 1);
                     }
+                    */
                 }
             }
         }
