@@ -276,7 +276,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 	char *aha_cp437;
 	int insz;
 	int outsz;
-	char *iconv_cp437
+	char *iconv_cp437;
 	char *iconv_text;
 	if (conference < 0 || conference >= conf.mail_conference_count || area < 0 || area >= conf.mail_conferences[conference]->mail_area_count) {
 		return NULL;
