@@ -135,6 +135,9 @@ char * aha(char *input)
 			obl=bl;
 			//Searching the end (a letter) and safe the insert:
 			c= *ptr++;
+            if (c == '\0') {
+                return output;
+            }
 			if ( c == '[' ) // CSI code, see https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
 			{
 				char buffer[1024];
@@ -143,6 +146,9 @@ char * aha(char *input)
 				while ((c<'A') || ((c>'Z') && (c<'a')) || (c>'z'))
 				{
 					c=*ptr++;
+                    if (c == '\0') {
+                        return output;
+                    }
 					buffer[counter]=c;
 					if (c=='>') //end of htop
 						break;
@@ -363,5 +369,5 @@ char * aha(char *input)
 	if ((fc!=-1) || (bc!=-1) || (ul!=0) || (bo!=0) || (bl!=0))
         append_output(&output, "</span>\n", &size, &outat);
 	
-	return 0;
+	return output;
 }
