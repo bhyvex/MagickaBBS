@@ -335,7 +335,7 @@ char * aha(char *input)
                 append_output(&output, " ", &size, &outat);
 			line=0;
 			momline++;
-			append_output(&output, "\n", &size, &outat);
+			append_output(&output, "<br />", &size, &outat);
 		}
 		else if (c!=8)
 		{
