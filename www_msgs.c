@@ -483,7 +483,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		insz = jmh.TxtLen;
 		outsz = jmh.TxtLen * 2;
 
-		memxet(aha_text, 0, (jmh.TxtLen + 1) * 2);
+		memset(aha_text, 0, (jmh.TxtLen + 1) * 2);
 
 		ic = iconv_open("UTF-8", "CP437");
 		iconv(ic, &iconv_cp437, &insz, &iconv_text, &outsz);
