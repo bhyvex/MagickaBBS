@@ -456,7 +456,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		}	
 		strcat(page, buffer);
 		len += strlen(buffer);
-		sprintf(buffer, "<div id=\"msgbody\">\n");
+		sprintf(buffer, "<div id=\"msgbody\"><pre>\n");
 		if (len + strlen(buffer) > max_len - 1) {
 			max_len += 4096;
 			page = (char *)realloc(page, max_len);
@@ -480,7 +480,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		free(aha_out);
 		free(aha_text);
 		
-		sprintf(buffer, "</div>\n");
+		sprintf(buffer, "</pre></div>\n");
 		if (len + strlen(buffer) > max_len - 1) {
 			max_len += 4096;
 			page = (char *)realloc(page, max_len);
