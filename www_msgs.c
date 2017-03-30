@@ -477,6 +477,10 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		ic = iconv_open("UTF-8//TRANSLIT", "CP437");
 		iconv(ic, &aha_cp437, jmh.TxtLen, &aha_text, jmh.TxtLen);
 		iconv_close(ic);
+		free(aha_cp437);
+
+		aha_text[jmh.TxtLen] = '\0';
+
 		aha_out = aha(aha_text);
 		while (len + strlen(aha_out) > max_len - 1) {
 			max_len += 4096;
@@ -487,7 +491,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		
 		free(aha_out);
 		free(aha_text);
-		
+	
 		sprintf(buffer, "</div>\n");
 		if (len + strlen(buffer) > max_len - 1) {
 			max_len += 4096;
