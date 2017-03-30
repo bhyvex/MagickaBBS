@@ -480,8 +480,8 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		strcat(page, aha_out);
 		len += strlen(aha_out);			
 		
-		//free(aha_out);
-		//free(aha_text);
+		free(aha_out);
+		free(aha_text);
 		
 		sprintf(buffer, "</div>\n");
 		if (len + strlen(buffer) > max_len - 1) {

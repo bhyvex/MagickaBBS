@@ -115,7 +115,7 @@ char * aha(char *input)
 	int temp;
     char *ptr = unmangle_out;
     char *output = (char *)malloc(256);
-    int size;
+    int size = 256;
     int outat = 0;
     char minibuf[2];
 
