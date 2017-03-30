@@ -2,6 +2,7 @@
 <HEAD>
 	<TITLE>Magicka BBS</TITLE>
 	<link rel="stylesheet" type="text/css" href="/static/style.css">
+	<meta charset="utf-8">
 </HEAD>
 <BODY>
 	<div class="header">

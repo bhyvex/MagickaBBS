@@ -471,7 +471,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 			
 		
 
-		aha_text = (char *)malloc(jmh.TxtLen + 1);
+		aha_text = (char *)malloc((jmh.TxtLen + 1) * 2);
 		aha_cp437 = (char *)malloc(jmh.TxtLen + 1);
 
 		iconv_cp437 = aha_cp437;
@@ -481,14 +481,16 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		aha_cp437[jmh.TxtLen] = '\0';
 		
 		insz = jmh.TxtLen;
-		outsz = jmh.TxtLen;
+		outsz = jmh.TxtLen * 2;
 
-		ic = iconv_open("UTF-8//TRANSLIT", "CP437");
+		memxet(aha_text, 0, (jmh.TxtLen + 1) * 2);
+
+		ic = iconv_open("UTF-8", "CP437");
 		iconv(ic, &iconv_cp437, &insz, &iconv_text, &outsz);
 		iconv_close(ic);
 		free(aha_cp437);
 
-		aha_text[jmh.TxtLen] = '\0';
+		
 
 		aha_out = aha(aha_text);
 		while (len + strlen(aha_out) > max_len - 1) {

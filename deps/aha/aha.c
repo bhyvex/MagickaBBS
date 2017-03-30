@@ -337,7 +337,7 @@ char * aha(char *input)
                append_output(&output, "&nbsp;", &size, &outat);
 			line=0;
 			momline++;
-			append_output(&output, "<br />", &size, &outat);
+			append_output(&output, "<br />\n", &size, &outat);
 		}
 		else if (c!=8)
 		{
@@ -359,7 +359,7 @@ char * aha(char *input)
 				case '>':	append_output(&output, "&gt;", &size, &outat); break;
 				case '\n':case 13: momline++;
 									 line=0;
-                                     append_output(&output, "<br />", &size, &outat);
+                                     append_output(&output, "<br />\n", &size, &outat);
                                      break;
                 case ' ':	append_output(&output, "&nbsp;", &size, &outat); break;
 				default:	{
