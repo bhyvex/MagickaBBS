@@ -512,7 +512,6 @@ char *message_editor() {
                                 memset(line, 0, 81);
                             }
                         } else {
-
                             if (position_x < strlen(line)) {
                                 // insert line
                                 if (body_line_count == 0) {
@@ -581,7 +580,18 @@ char *message_editor() {
                             }
                         } 
                         old_top_of_screen = top_of_screen;
-                        od_set_cursor(position_y - top_of_screen + 3, position_x + 1);
+                       
+                        if (position_x > 0) {
+                            od_set_cursor(position_y - top_of_screen + 3, position_x);
+                            od_printf("%s", &line[position_x-1]);
+                            od_clr_line();
+                            od_set_cursor(position_y - top_of_screen + 3, position_x + 1);
+                        } else {
+                            od_set_cursor(position_y - top_of_screen + 3, 1);
+                            od_printf("%s", line);
+                            od_clr_line();
+                            od_set_cursor(position_y - top_of_screen + 3, 1);
+                        }                        
                     }
                 } else {
                     if (ch.chKeyPress == '\b') {
