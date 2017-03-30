@@ -7,6 +7,7 @@
 #ifdef __FreeBSD__
 #include <sys/stat.h>
 #endif
+#include <iconv.h>
 #include "bbs.h"
 #include "jamlib/jam.h"
 
@@ -269,9 +270,10 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 	char buffer[4096];	
 	int chars;
 	int i;
-
+	iconv_t ic;
 	char *aha_text;
 	char *aha_out;
+	char *aha_cp437;
 
 	if (conference < 0 || conference >= conf.mail_conference_count || area < 0 || area >= conf.mail_conferences[conference]->mail_area_count) {
 		return NULL;
@@ -465,10 +467,16 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		len += strlen(buffer);
 			
 		
-		aha_text = (char *)malloc(jmh.TxtLen + 1);
 
-		memcpy(aha_text, body, jmh.TxtLen);
-		aha_text[jmh.TxtLen] = '\0';
+		aha_text = (char *)malloc(jmh.TxtLen + 1);
+		aha_cp437 = (char *)malloc(jmh.TxtLen + 1);
+		memcpy(aha_cp437, body, jmh.TxtLen);
+		aha_cp437[jmh.TxtLen] = '\0';
+		
+
+		ic = iconv_open("UTF-8//TRANSLIT", "CP437");
+		iconv(ic, &aha_cp437, jmh.TxtLen, &aha_text, jmh.TxtLen);
+		iconv_close(ic);
 		aha_out = aha(aha_text);
 		while (len + strlen(aha_out) > max_len - 1) {
 			max_len += 4096;
