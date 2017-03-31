@@ -291,7 +291,7 @@ char * aha(char *input)
                                              if (bo) {
                                                  append_output(&output, "color:aqua;", &size, &outat);
                                              } else {
-                                                 append_output(&output, "color:#FFFF00;", &size, &outat);
+                                                 append_output(&output, "color:#008888;", &size, &outat);
                                              }
 											 break; //Cyan
 							case	7: 
