@@ -235,4 +235,6 @@
 	background-color: black;
 	color: gray;
 	font-family: 'pxplus_ibm_vga8regular';
+	line-height: 1;
+	padding: 5px;
 }
