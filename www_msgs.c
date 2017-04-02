@@ -557,7 +557,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 			strcat(page, buffer);
 			len += strlen(buffer);
 
-			sprintf(buffer, "<textarea name=\"body\" rows=25 cols=80 id=\"replybody\">");
+			sprintf(buffer, "<textarea name=\"body\" wrap=\"hard\" rows=\"25\" cols=\"79\" id=\"replybody\">");
 			if (len + strlen(buffer) > max_len - 1) {
 				max_len += 4096;
 				page = (char *)realloc(page, max_len);
@@ -907,7 +907,7 @@ char *www_new_msg(struct user_record *user, int conference, int area) {
 	strcat(page, buffer);
 	len += strlen(buffer);
 
-	sprintf(buffer, "<textarea name=\"body\" rows=25 cols=80></textarea>\n<br />");
+	sprintf(buffer, "<textarea name=\"body\" wrap=\"hard\" rows=\"25\" cols=\"79\"></textarea>\n<br />");
 	if (len + strlen(buffer) > max_len - 1) {
 		max_len += 4096;
 		page = (char *)realloc(page, max_len);
