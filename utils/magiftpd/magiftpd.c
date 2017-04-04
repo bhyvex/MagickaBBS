@@ -134,6 +134,10 @@ static int handler(void* user, const char* section, const char* name, const char
             cfg->upload_folder = strdup(value);
         } else if (strcasecmp(name, "upload sec level") == 0) {
             cfg->upload_seclevel = atoi(value);
+        } else if (strcasecmp(name, "min passive port") == 0) {
+            cfg->min_passive_port = atoi(value);
+        } else if (strcasecmp(name, "max passive port") == 0) {
+            cfg->max_passive_port = atoi(value);
         }
 	}
 	return 1;
@@ -326,7 +330,15 @@ void handle_PASV(struct ftpserver *cfg, struct ftpclient *client) {
 	struct sockaddr_in server;
 	server.sin_family = AF_INET;
 	server.sin_addr.s_addr = INADDR_ANY;
-	server.sin_port = htons(0);
+
+    cfg->last_passive_port++;
+    if (cfg->last_passive_port == cfg->max_passive_port) {
+        cfg->last_passive_port = cfg->min_passive_port;
+    }
+
+    int port = cfg->last_passive_port;
+
+	server.sin_port = htons(port);
 
 	if (bind(client->data_srv_socket, (struct sockaddr*) &server, sizeof(struct sockaddr)) < 0) {
 		send_msg(client, "426 PASV failure\r\n");
@@ -340,7 +352,6 @@ void handle_PASV(struct ftpserver *cfg, struct ftpclient *client) {
     struct sockaddr_in file_addr;
 	socklen_t file_sock_len = sizeof(struct sockaddr);
 	getsockname(client->data_srv_socket, (struct sockaddr*) &file_addr, &file_sock_len);
-	int port = ntohs(file_addr.sin_port);
 
     ipcpy = strdup(client->hostip);
 
@@ -847,6 +858,8 @@ int main(int argc, char **argv) {
     ftpsrv.port = 2121;
     ftpsrv.userdb = NULL;
     ftpsrv.fileroot = NULL;
+    ftpsrv.min_passive_port = 60000;
+    ftpsrv.max_passive_port = 65000;
 
 	sa.sa_handler = sigchld_handler; // reap all dead processes
 	sigemptyset(&sa.sa_mask);
@@ -867,10 +880,13 @@ int main(int argc, char **argv) {
 		exit(-1);
 	}
 
+
     if (ftpsrv.userdb == NULL || ftpsrv.fileroot == NULL) {
         fprintf(stderr, "Missing configuration values.\n");
         exit(-1);
     }
+
+    ftpsrv.last_passive_port = ftpsrv.min_passive_port;
 
     init(&ftpsrv);
 }

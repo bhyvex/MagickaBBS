@@ -23,6 +23,9 @@ struct ftpserver {
     char *userdb;
     char *upload_folder;
     int upload_seclevel;
+    int min_active_port;
+    int max_active_port;
+    int last_active_port;
 };
 
 #endif
