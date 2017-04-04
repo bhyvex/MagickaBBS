@@ -401,6 +401,10 @@ void handle_PASV(struct ftpserver *cfg, struct ftpclient *client) {
 	socklen_t file_sock_len = sizeof(struct sockaddr_in6);
 	getsockname(client->data_srv_socket, (struct sockaddr*) &file_addr, &file_sock_len);
 
+    ipcpy = strdup(client->hostip);
+
+    ipptr = strtok(ipcpy, ".");
+
     strcpy(buffer, "227 Entering Passive Mode (");
     while (ipptr != NULL) {
         sprintf(buffer, "%s%s,", buffer, ipptr);
