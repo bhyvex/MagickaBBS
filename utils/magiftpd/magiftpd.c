@@ -214,7 +214,8 @@ int open_tcp_connection(struct ftpserver *cfg, struct ftpclient *client) {
             fprintf(stderr, "Error in port command\n");
 			return 0;
 		}
-		if (connect(client->data_socket, (struct sockaddr *) &servaddr, sizeof(struct sockaddr)) == -1) {
+		if (connect(client->data_socket, (struct sockaddr *) &servaddr, sizeof(servaddr)) == -1) {
+            perror("Connect");
             fprintf(stderr, "Error connecting to client\n");
 			return 0;
 		}
@@ -337,13 +338,14 @@ void handle_EPSV(struct ftpserver *cfg, struct ftpclient *client) {
 
 	server.sin6_port = htons(port);
 
-	if (bind(client->data_srv_socket, (struct sockaddr*) &server, sizeof(struct sockaddr)) < 0) {
+	if (bind(client->data_srv_socket, (struct sockaddr*) &server, sizeof(server)) < 0) {
 		send_msg(client, "500 EPSV failure\r\n");
 		return;
 	}
 
 	if (listen(client->data_srv_socket, 1) < 0) {
 		send_msg(client, "500 EPSV failure\r\n");
+        return;
 	}
 	
     struct sockaddr_in6 file_addr;
