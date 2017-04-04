@@ -432,6 +432,8 @@ void handle_RETR(struct ftpserver *cfg, struct ftpclient *client, char *file) {
     } else {
         snprintf(fullpath, PATH_MAX, "%s/%s/%s", cfg->fileroot, client->current_path, newpath);
     }
+
+    fprintf(stderr, "FULL PATH %s\n", fullpath);
     free(newpath);
     struct stat s;
     pid_t pid = fork();
