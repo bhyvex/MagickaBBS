@@ -388,7 +388,7 @@ void handle_PASV(struct ftpserver *cfg, struct ftpclient *client) {
 
 	server.sin6_port = htons(port);
 
-	if (bind(client->data_srv_socket, (struct sockaddr*) &server, sizeof(struct sockaddr)) < 0) {
+	if (bind(client->data_srv_socket, (struct sockaddr*) &server, sizeof(server)) < 0) {
 		send_msg(client, "426 PASV failure\r\n");
 		return;
 	}
