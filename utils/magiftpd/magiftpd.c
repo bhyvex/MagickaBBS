@@ -352,7 +352,7 @@ void handle_EPSV(struct ftpserver *cfg, struct ftpclient *client) {
 	socklen_t file_sock_len = sizeof(struct sockaddr);
 	getsockname(client->data_srv_socket, (struct sockaddr*) &file_addr, &file_sock_len);
     char buffer[256];
-    sprintf(buffer, "229 Entering Extended Passive Mode (|||%d|)", port);
+    sprintf(buffer, "229 Entering Extended Passive Mode (|||%d|)\r\n", port);
 
 	send_msg(client, buffer);
 }
