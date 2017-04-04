@@ -782,7 +782,7 @@ int handle_client(struct ftpserver *cfg, struct ftpclient *client, char *buf, in
 
 void init(struct ftpserver *cfg) {
     int server_socket;
-    struct sockaddr_in server, client, host_addr;
+    struct sockaddr_in6 server, client, host_addr;
     fd_set master, read_fds;
     int fdmax = 0;
     socklen_t c;
@@ -790,15 +790,15 @@ void init(struct ftpserver *cfg) {
     char buf[1024];
     int new_fd;
     int nbytes;
-	server_socket = socket(AF_INET, SOCK_STREAM, 0);
+	server_socket = socket(AF_INET6, SOCK_STREAM, 0);
 	if (server_socket == -1) {
 		fprintf(stderr, "Couldn't create socket..\n");
 		exit(-1);
 	}
 
-	server.sin_family = AF_INET;
-	server.sin_addr.s_addr = INADDR_ANY;
-	server.sin_port = htons(cfg->port);
+	server.sin6_family = AF_INET6;
+	server.sin6_addr = in6addr_any;
+	server.sin6_port = htons(cfg->port);
 
 	if (bind(server_socket, (struct sockaddr *)&server, sizeof(server)) < 0) {
 		perror("Bind Failed, Error\n");
@@ -811,7 +811,7 @@ void init(struct ftpserver *cfg) {
     FD_SET(server_socket, &master);
     fdmax = server_socket;
 
-    c = sizeof(struct sockaddr_in);
+    c = sizeof(struct sockaddr_in6);
 
     while (1) {
         read_fds = master;
@@ -851,10 +851,10 @@ void init(struct ftpserver *cfg) {
                         }
 
                         getsockname(new_fd, (struct sockaddr*) &host_addr, &c);
-                        inet_ntop(AF_INET, &(host_addr.sin_addr), clients[client_count]->hostip, INET_ADDRSTRLEN);
+                        inet_ntop(AF_INET6, &(host_addr.sin6_addr), clients[client_count]->hostip, INET6_ADDRSTRLEN);
                         
                         getpeername(new_fd, (struct sockaddr *)&client, &c);
-                        inet_ntop(AF_INET, &(client.sin_addr), clients[client_count]->ip, INET_ADDRSTRLEN);
+                        inet_ntop(AF_INET6, &(client.sin6_addr), clients[client_count]->ip, INET6_ADDRSTRLEN);
 
                         clients[client_count]->fd = new_fd;
                         strcpy(clients[client_count]->current_path, "/");
