@@ -708,7 +708,7 @@ void serverssh(int port) {
 	//ssh_bind_listen(p_ssh_bind);
 
 	ssh_sock = socket(AF_INET6, SOCK_STREAM, 0);
-	if (server_socket == -1) {
+	if (ssh_sock == -1) {
 		fprintf(stderr, "Error starting SSH server.\n");
 		exit(-1);
 	}
