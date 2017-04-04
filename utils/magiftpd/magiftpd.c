@@ -199,18 +199,18 @@ void close_tcp_connection(struct ftpclient* client) {
 		client->data_socket = -1;
 	}
 	if (strlen(client->data_ip) > 0) {
-		memset(client->data_ip, 0, 20);
+		memset(client->data_ip, 0, INET6_ADDRSTRLEN);
 		client->data_port = 0;
 	}
 }
 
 int open_tcp_connection(struct ftpserver *cfg, struct ftpclient *client) {
     if (strlen(client->data_ip) != 0) {
-        client->data_socket = socket(AF_INET, SOCK_STREAM, 0);
-		struct sockaddr_in servaddr;
-		servaddr.sin_family = AF_INET;
-		servaddr.sin_port = htons(client->data_port);
-		if (inet_aton(client->data_ip, &(servaddr.sin_addr)) <= 0) {
+        client->data_socket = socket(AF_INET6, SOCK_STREAM, 0);
+		struct sockaddr_in6 servaddr;
+		servaddr.sin6_family = AF_INET6;
+		servaddr.sin6_port = htons(client->data_port);
+        if (inet_pton(AF_INET6, client->data_ip, &(servaddr.sin6_addr)) <= 0) {
             fprintf(stderr, "Error in port command\n");
 			return 0;
 		}
@@ -220,7 +220,7 @@ int open_tcp_connection(struct ftpserver *cfg, struct ftpclient *client) {
 		}
     } else if (client->data_srv_socket != 0) {
         socklen_t sock = sizeof(struct sockaddr);
-		struct sockaddr_in data_client;
+		struct sockaddr_in6 data_client;
 		client->data_socket = accept(client->data_srv_socket, (struct sockaddr*) &data_client, &sock);
 
 		if (client->data_socket < 0) {
@@ -295,7 +295,7 @@ void handle_STOR(struct ftpserver *cfg, struct ftpclient *client, char *path) {
                     send_msg(client, "451 STOR Failed.\r\n");
                 } else {
                     client->data_socket = -1;
-                    memset(client->data_ip, 0, 20);
+                    memset(client->data_ip, 0, INET6_ADDRSTRLEN);
                     client->data_srv_socket = -1;
                 }
             } else {
@@ -307,6 +307,52 @@ void handle_STOR(struct ftpserver *cfg, struct ftpclient *client, char *path) {
     } else {
         send_msg(client, "532 Access Denied.\n");
     }
+}
+
+void handle_EPSV(struct ftpserver *cfg, struct ftpclient *client) {
+    if (client->data_socket > 0) {
+		close(client->data_socket);
+		client->data_socket = -1;
+	}
+
+	if (client->data_srv_socket > 0) {
+		close(client->data_srv_socket);
+	}
+
+	client->data_srv_socket = socket(AF_INET6, SOCK_STREAM, 0);
+	if (client->data_srv_socket < 0) {
+		send_msg(client, "500 EPSV failure.\r\n");
+		return;
+	}
+	struct sockaddr_in6 server;
+	server.sin6_family = AF_INET6;
+	server.sin6_addr = in6addr_any;
+
+    cfg->last_passive_port++;
+    if (cfg->last_passive_port == cfg->max_passive_port) {
+        cfg->last_passive_port = cfg->min_passive_port;
+    }
+
+    int port = cfg->last_passive_port;
+
+	server.sin6_port = htons(port);
+
+	if (bind(client->data_srv_socket, (struct sockaddr*) &server, sizeof(struct sockaddr)) < 0) {
+		send_msg(client, "500 EPSV failure\r\n");
+		return;
+	}
+
+	if (listen(client->data_srv_socket, 1) < 0) {
+		send_msg(client, "500 EPSV failure\r\n");
+	}
+	
+    struct sockaddr_in6 file_addr;
+	socklen_t file_sock_len = sizeof(struct sockaddr);
+	getsockname(client->data_srv_socket, (struct sockaddr*) &file_addr, &file_sock_len);
+    char buffer[256];
+    sprintf(buffer, "229 Entering Extended Passive Mode (|||%d|)", port);
+
+	send_msg(client, buffer);
 }
 
 void handle_PASV(struct ftpserver *cfg, struct ftpclient *client) {
@@ -322,14 +368,14 @@ void handle_PASV(struct ftpserver *cfg, struct ftpclient *client) {
 		close(client->data_srv_socket);
 	}
 
-	client->data_srv_socket = socket(AF_INET, SOCK_STREAM, 0);
+	client->data_srv_socket = socket(AF_INET6, SOCK_STREAM, 0);
 	if (client->data_srv_socket < 0) {
 		send_msg(client, "426 PASV failure.\r\n");
 		return;
 	}
-	struct sockaddr_in server;
-	server.sin_family = AF_INET;
-	server.sin_addr.s_addr = INADDR_ANY;
+	struct sockaddr_in6 server;
+	server.sin6_family = AF_INET6;
+	server.sin6_addr = in6addr_any;
 
     cfg->last_passive_port++;
     if (cfg->last_passive_port == cfg->max_passive_port) {
@@ -338,7 +384,7 @@ void handle_PASV(struct ftpserver *cfg, struct ftpclient *client) {
 
     int port = cfg->last_passive_port;
 
-	server.sin_port = htons(port);
+	server.sin6_port = htons(port);
 
 	if (bind(client->data_srv_socket, (struct sockaddr*) &server, sizeof(struct sockaddr)) < 0) {
 		send_msg(client, "426 PASV failure\r\n");
@@ -349,23 +395,11 @@ void handle_PASV(struct ftpserver *cfg, struct ftpclient *client) {
 		send_msg(client, "426 PASV failure\r\n");
 	}
 	
-    struct sockaddr_in file_addr;
-	socklen_t file_sock_len = sizeof(struct sockaddr);
+    struct sockaddr_in6 file_addr;
+	socklen_t file_sock_len = sizeof(struct sockaddr_in6);
 	getsockname(client->data_srv_socket, (struct sockaddr*) &file_addr, &file_sock_len);
 
-    ipcpy = strdup(client->hostip);
-
-    ipptr = strtok(ipcpy, ".");
-
     strcpy(buffer, "227 Entering Passive Mode (");
-
-    while (ipptr != NULL) {
-        sprintf(buffer, "%s%s,", buffer, ipptr);
-        ipptr = strtok(NULL, ".");
-    }
-
-    sprintf(buffer, "%s%d,%d)\r\n", buffer, port / 256, port % 256);
-
 	send_msg(client, buffer);
 	free(ipcpy);
 }
@@ -392,7 +426,7 @@ void handle_RETR(struct ftpserver *cfg, struct ftpclient *client, char *file) {
     if (pid > 0) {
         // nothing
         client->data_socket = -1;
-        memset(client->data_ip, 0, 20);
+        memset(client->data_ip, 0, INET6_ADDRSTRLEN);
         client->data_srv_socket = -1;
         
     } else if (pid == 0) {
@@ -443,7 +477,7 @@ void handle_LIST(struct ftpserver *cfg, struct ftpclient *client) {
     if (pid > 0) {
         // nothing
         client->data_socket = -1;
-        memset(client->data_ip, 0, 20);
+        memset(client->data_ip, 0, INET6_ADDRSTRLEN);
         client->data_srv_socket = -1;
     } else if (pid == 0) {
         dirp = opendir(newpath);
@@ -498,9 +532,53 @@ void handle_PORT(struct ftpserver *cfg, struct ftpclient *client, char *arg) {
     int a,b,c,d,e,f;
 
     sscanf(arg, "%d,%d,%d,%d,%d,%d", &a, &b, &c, &d, &e, &f);
-    sprintf(client->data_ip, "%d.%d.%d.%d", a, b, c, d);
+    sprintf(client->data_ip, "::ffff:%d.%d.%d.%d", a, b, c, d);
     client->data_port = e * 256 + f;
     send_msg(client, "200 PORT command successful.\r\n");
+}
+
+void handle_EPRT(struct ftpserver *cfg, struct ftpclient *client, char *arg) {
+    if (client->data_socket > 0) {
+        close(client->data_socket);
+    }
+    int a,b,c,d,e,f;
+    char delim[2];
+    char *ptr;
+    int addrtype;
+
+    delim[0] = arg[0];
+    delim[1] = '\0';
+
+    ptr = strtok(arg, delim);    
+    if (ptr != NULL) {
+        addrtype = atoi(ptr);
+        if (addrtype == 1) {
+            //ipv4
+            ptr = strtok(NULL, delim);
+            if (ptr != NULL) {
+                sprintf(client->data_ip, "::ffff:%s", ptr);
+                ptr = strtok(NULL, delim);
+                if (ptr != NULL) {
+                    client->data_port = atoi(ptr);
+                    send_msg(client, "200 EPRT command successful.\r\n");
+                    return;
+                }
+            }
+            
+        } else if (addrtype == 2) {
+            //ipv6
+            ptr = strtok(NULL, delim);
+            if (ptr != NULL) {
+                sprintf(client->data_ip, "%s", ptr);
+                ptr = strtok(NULL, delim);
+                if (ptr != NULL) {
+                    client->data_port = atoi(ptr);
+                    send_msg(client, "200 EPRT command successful.\r\n");
+                    return;
+                }                
+            }
+        }
+    }
 }
 
 void handle_CWD(struct ftpserver *cfg, struct ftpclient *client, char *dir) {
@@ -689,6 +767,12 @@ int handle_client(struct ftpserver *cfg, struct ftpclient *client, char *buf, in
     } else
     if (strcmp(cmd, "STOR") == 0) {
         handle_STOR(cfg, client, argument);
+    } else
+    if (strcmp(cmd, "EPRT") == 0) {
+        handle_EPRT(cfg, client, argument);
+    } else 
+    if (strcmp(cmd, "EPSV") == 0) {
+        handle_EPSV(cfg, client);
     } else {
         send_msg(client, "500 Command not recognized.\r\n");
     }

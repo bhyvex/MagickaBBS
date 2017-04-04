@@ -5,11 +5,11 @@ struct ftpclient {
     int fd;
     int data_socket;
     char current_path[PATH_MAX];
-    char data_ip[20];
+    char data_ip[INET6_ADDRSTRLEN];
     int data_port;
     int type;
-    char ip[20];
-    char hostip[20];
+    char ip[INET6_ADDRSTRLEN];
+    char hostip[INET6_ADDRSTRLEN];
     char name[16];
     char password[32];
     int data_srv_socket;
