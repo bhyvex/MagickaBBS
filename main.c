@@ -863,12 +863,13 @@ void server(int port) {
 	int client_sock, c;
 	int pid;
 	char *ip;
-	struct sockaddr_in server, client;
+	struct sockaddr_in6 server, client;
 	FILE *fptr;
 	char buffer[1024];
 	struct ip_address_guard *ip_guard;
 	int i;
-	
+	int on = 1;
+	char str[INET6_ADDRSTRLEN];
 #if defined(ENABLE_WWW)
 	www_daemon = NULL;
 #endif
@@ -972,7 +973,7 @@ void server(int port) {
 	}
 #endif
 
-	server_socket = socket(AF_INET, SOCK_STREAM, 0);
+	server_socket = socket(AF_INET6, SOCK_STREAM, 0);
 	if (server_socket == -1) {
 		remove(conf.pid_file);
 		fprintf(stderr, "Couldn't create socket..\n");
@@ -980,9 +981,17 @@ void server(int port) {
 	}
 
 
-	server.sin_family = AF_INET;
-	server.sin_addr.s_addr = INADDR_ANY;
-	server.sin_port = htons(port);
+	if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(on)) < 0) {
+		remove(conf.pid_file);
+		fprintf(stderr, "setsockopt(SO_REUSEADDR) failed");
+		exit(1);
+	}
+
+	memset(&server, 0, sizeof(server));
+
+	server.sin6_family = AF_INET6;
+	server.sin6_addr = in6addr_any;
+	server.sin6_port = htons(port);
 
 	if (bind(server_socket, (struct sockaddr *)&server, sizeof(server)) < 0) {
 		perror("Bind Failed, Error\n");
@@ -992,10 +1001,10 @@ void server(int port) {
 
 	listen(server_socket, 3);
 
-	c = sizeof(struct sockaddr_in);
+	c = sizeof(struct sockaddr_in6);
 
 	while ((client_sock = accept(server_socket, (struct sockaddr *)&client, (socklen_t *)&c))) {
-		ip = strdup(inet_ntoa(client.sin_addr));
+		ip = strdup(inet_ntop(AF_INET6, &client.sin6_addr, str, sizeof(str)));
 		if (client_sock == -1) {
 			if (errno == EINTR) {
 				continue;
