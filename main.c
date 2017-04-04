@@ -775,7 +775,9 @@ void serverssh(int port) {
 			
 			pid = fork();
 			if (pid == 0) {
+				close(ssh_sock);
 				if (ssh_handle_key_exchange(p_ssh_session)) {
+					fprintf(stderr, "Key exchange failed.\n");
 					exit(-1);
 				}
 				if (ssh_authenticate(p_ssh_session) == 1) {
@@ -877,6 +879,7 @@ void serverssh(int port) {
 				exit(0);
 			} else if (pid > 0) {
 				close(csock);
+				free(ip);
 			} else {
 
 			}
