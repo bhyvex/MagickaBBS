@@ -1000,7 +1000,7 @@ void server(int port) {
 #if defined(ENABLE_WWW) 
 	if (conf.www_server && conf.www_path != NULL) {
 		www_init();
-		www_daemon = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION, conf.www_port, NULL, NULL, &www_handler, NULL, MHD_OPTION_NOTIFY_COMPLETED, &www_request_completed, NULL, MHD_OPTION_URI_LOG_CALLBACK, &www_logger, NULL, MHD_OPTION_END);
+		www_daemon = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION|MHD_USE_DUAL_STACK, conf.www_port, NULL, NULL, &www_handler, NULL, MHD_OPTION_NOTIFY_COMPLETED, &www_request_completed, NULL, MHD_OPTION_URI_LOG_CALLBACK, &www_logger, NULL, MHD_OPTION_END);
 	}
 #endif
 
