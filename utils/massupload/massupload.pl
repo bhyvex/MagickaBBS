@@ -60,7 +60,7 @@ foreach my $fp (glob("$dir/*")) {
 
         if (uc(substr($fp, -3)) == "ZIP") {
             mkdir("/tmp/massupload");
-            system("unzip -jCLL $fp file_id.diz -d /tmp/massupload");
+            system("unzip -jCLL $fp file_id.diz -d /tmp/massupload > /dev/null 2>&1");
             if ( -f "/tmp/massupload/file_id.diz") {
                 print(" found description.\n");
                 local $/=undef;
