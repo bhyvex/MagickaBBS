@@ -395,13 +395,14 @@ void handle_PASV(struct ftpserver *cfg, struct ftpclient *client) {
 
 	if (listen(client->data_srv_socket, 1) < 0) {
 		send_msg(client, "426 PASV failure\r\n");
+        return;
 	}
 	
     struct sockaddr_in6 file_addr;
 	socklen_t file_sock_len = sizeof(struct sockaddr_in6);
 	getsockname(client->data_srv_socket, (struct sockaddr*) &file_addr, &file_sock_len);
 
-    fprintf(stderr, "%s\n", client->hostip);
+    fprintf(stderr, "%s\n", &client->hostip[7]);
     ipcpy = strdup(&client->hostip[7]);
 
     ipptr = strtok(ipcpy, ".");
