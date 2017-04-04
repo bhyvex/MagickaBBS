@@ -402,6 +402,12 @@ void handle_PASV(struct ftpserver *cfg, struct ftpclient *client) {
 	getsockname(client->data_srv_socket, (struct sockaddr*) &file_addr, &file_sock_len);
 
     strcpy(buffer, "227 Entering Passive Mode (");
+    while (ipptr != NULL) {
+        sprintf(buffer, "%s%s,", buffer, ipptr);
+        ipptr = strtok(NULL, ".");
+    }
+
+    sprintf(buffer, "%s%d,%d)\r\n", buffer, port / 256, port % 256);    
 	send_msg(client, buffer);
 	free(ipcpy);
 }
