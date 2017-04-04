@@ -402,7 +402,7 @@ void handle_PASV(struct ftpserver *cfg, struct ftpclient *client) {
 	getsockname(client->data_srv_socket, (struct sockaddr*) &file_addr, &file_sock_len);
 
     fprintf(stderr, "%s\n", client->hostip);
-    ipcpy = strdup(&client->hostip[8]);
+    ipcpy = strdup(&client->hostip[7]);
 
     ipptr = strtok(ipcpy, ".");
 
