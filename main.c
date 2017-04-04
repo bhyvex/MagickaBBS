@@ -590,7 +590,7 @@ int ssh_authenticate(ssh_session p_ssh_session) {
 		ssh_message_free(message);
 	} while(1);
 }
-
+/*
 char *ssh_getip(ssh_session session) {
   struct sockaddr_storage tmp;
   struct sockaddr_in *sock;
@@ -603,7 +603,7 @@ char *ssh_getip(ssh_session session) {
 
 	return strdup(ip);
 }
-
+*/
 static int ssh_copy_fd_to_chan(socket_t fd, int revents, void *userdata) {
   ssh_channel chan = (ssh_channel)userdata;
   char buf[2048];
@@ -676,7 +676,11 @@ void serverssh(int port) {
 	int i;
 	char buffer[1024];
 	FILE *fptr;
-	
+	struct sockaddr_in6 server, client;
+	int ssh_sock, csock, c;
+	int on = 1;
+	char str[INET6_ADDRSTRLEN];
+
 	bbs_stdin = dup(STDIN_FILENO);
 	bbs_stdout = dup(STDOUT_FILENO);
 	bbs_stderr = dup(STDERR_FILENO);
@@ -698,15 +702,39 @@ void serverssh(int port) {
 		exit(-1);
 	}
 
-	ssh_bind_options_set(p_ssh_bind, SSH_BIND_OPTIONS_BINDPORT, &port);
 	ssh_bind_options_set(p_ssh_bind, SSH_BIND_OPTIONS_DSAKEY, conf.ssh_dsa_key);
 	ssh_bind_options_set(p_ssh_bind, SSH_BIND_OPTIONS_RSAKEY, conf.ssh_rsa_key);
 
-	ssh_bind_listen(p_ssh_bind);
+	//ssh_bind_listen(p_ssh_bind);
 
-	while (1) {
-		if (ssh_bind_accept(p_ssh_bind, p_ssh_session) == SSH_OK) {
-			ip = ssh_getip(p_ssh_session);
+	ssh_sock = socket(AF_INET6, SOCK_STREAM, 0);
+	if (server_socket == -1) {
+		fprintf(stderr, "Error starting SSH server.\n");
+		exit(-1);
+	}
+
+
+	if (setsockopt(ssh_sock, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(on)) < 0) {
+		fprintf(stderr, "setsockopt(SO_REUSEADDR) failed");
+		exit(-1);
+	}
+
+	memset(&server, 0, sizeof(server));
+
+	server.sin6_family = AF_INET6;
+	server.sin6_addr = in6addr_any;
+	server.sin6_port = htons(port);
+
+	if (bind(ssh_sock, (struct sockaddr *)&server, sizeof(server)) < 0) {
+		perror("Bind Failed, Error\n");
+		exit(1);
+	}
+
+	listen(ssh_sock, 3);
+	c = sizeof(struct sockaddr_in6);
+	while ((csock = accept(ssh_sock, (struct sockaddr *)&client, (socklen_t *)&c))) {
+		if (ssh_bind_accept_fd(p_ssh_bind, p_ssh_session, csock) == SSH_OK) {
+			ip = strdup(inet_ntop(AF_INET6, &client.sin6_addr, str, sizeof(str)));
 			
 			if (conf.ipguard_enable) {
 				i = hashmap_get(ip_guard_map, ip, (void **)(&ip_guard));
