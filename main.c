@@ -873,10 +873,10 @@ void serverssh(int port) {
 				}
 				ssh_disconnect(p_ssh_session);
 				ssh_finalize();
-
+				close(csock);
 				exit(0);
 			} else if (pid > 0) {
-
+				close(csock);
 			} else {
 
 			}
