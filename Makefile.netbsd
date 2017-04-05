@@ -1,5 +1,5 @@
 CC=cc
-CFLAGS=-I/usr/pkg/include -I./deps/
+CFLAGS=-std=gnu99 -I/usr/pkg/include -I./deps/
 DEPS = bbs.h
 JAMLIB = deps/jamlib/jamlib.a
 ZMODEM = deps/Xmodem/libzmodem.a

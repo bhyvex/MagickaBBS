@@ -1,5 +1,5 @@
 CC=cc
-CFLAGS=-I/opt/local/include -I./deps/ -I./deps/libb64-1.2/include -DENABLE_WWW=1 -Wall
+CFLAGS=-std=gnu99 -I/opt/local/include -I./deps/ -I./deps/libb64-1.2/include -DENABLE_WWW=1 -Wall
 DEPS = bbs.h
 JAMLIB = deps/jamlib/jamlib.a
 ZMODEM = deps/Xmodem/libzmodem.a
