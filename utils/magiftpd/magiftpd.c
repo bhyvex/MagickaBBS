@@ -98,8 +98,16 @@ static void parse_path(struct ftpclient *client, char *path, char **result) {
     newpath[0] = '\0';   
     pptr = proot;
 
+    int i = 0;
+
     while (pptr != NULL && pptr->data != NULL) {
-        snprintf(newpath, PATH_MAX, "%s/%s", newpath, pptr->data);
+        if (i + strlen(pptr->data) + 2 > PATH_MAX) {
+            break;
+        }
+        newpath[i++] = '/';
+        memcpy(&newpath[i], pptr->data, strlen(pptr->data));
+        i += strlen(pptr->data);
+        newpath[i] = '\0';
         pptr = pptr->next;
     }
 
