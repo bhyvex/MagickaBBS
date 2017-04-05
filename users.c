@@ -444,7 +444,7 @@ struct user_record *new_user() {
 			}
 
 			for (i=0;i<strlen(buffer);i++) {
-				if (!(tolower(buffer[i]) >= 97 && tolower(buffer[i]) <= 122) && buffer[i] != 32) {
+				if (!(tolower(buffer[i]) >= 97 && tolower(buffer[i]) <= 122) && buffer[i] != 32 && !(buffer[i] >= '0' && buffer[i] <= '9')) {
 					s_printf(get_string(168));
 					nameok = 1;
 					break;
