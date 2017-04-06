@@ -165,19 +165,7 @@ int main(int argc, char **argv) {
                       TRUE,
                       TRUE);
 	drawCDKLabel(instructions, TRUE);
-	scrollList = newCDKScroll(cdkscreen,
-	      		2,
-						1,
-						1,
-		      	36,
-			      36,
-			      title,
-						NULL,
-						0,
-						FALSE,
-						A_REVERSE,
-			      TRUE,
-			      TRUE);
+	scrollList = newCDKScroll(cdkscreen, 2,	1, 1, 36, 36, title, NULL, 0, FALSE, A_REVERSE, TRUE, TRUE);
 	if (scrollList == 0) {
 		fprintf(stderr, "Unable to make scrolllist!");
 		destroyCDKScreen(cdkscreen);
@@ -230,7 +218,7 @@ int main(int argc, char **argv) {
 		f[fcount]->description = strdup((char *)sqlite3_column_text(res, 1));
 		f[fcount]->approved = sqlite3_column_int(res, 2);
 
-		filenames[fcount] = (char *)malloc(strlen(basename(f[fcount]->name) + 30));
+		filenames[fcount] = (char *)malloc(strlen(basename(f[fcount]->name)) + 30);
 		if (stat(f[fcount]->name, &s) != 0) {
 			sprintf(filenames[fcount], "</16>%s (missing)<!16>", basename(f[fcount]->name));
 			if (f[fcount]->approved == 1) {
