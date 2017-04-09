@@ -905,6 +905,10 @@ void server(int port) {
 	www_daemon = NULL;
 #endif
 
+	if (!conf.fork) {
+		printf("Magicka BBS Server Starting....\n");
+	}
+
 	if (conf.ipguard_enable) {
 
 		ip_guard_map = hashmap_new();
@@ -984,6 +988,10 @@ void server(int port) {
 	}
 
 	if (conf.ssh_server) {
+		if (!conf.fork) {
+			printf(" - SSH Starting on Port %d\n", conf.ssh_port);
+		}
+
 		// fork ssh server
 		ssh_pid = fork();
 
@@ -999,6 +1007,9 @@ void server(int port) {
 
 #if defined(ENABLE_WWW) 
 	if (conf.www_server && conf.www_path != NULL) {
+		if (!conf.fork) {
+			printf(" - HTTP Starting on Port %d\n", conf.www_port);
+		}
 		www_init();
 		www_daemon = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION|MHD_USE_DUAL_STACK, conf.www_port, NULL, NULL, &www_handler, NULL, MHD_OPTION_NOTIFY_COMPLETED, &www_request_completed, NULL, MHD_OPTION_URI_LOG_CALLBACK, &www_logger, NULL, MHD_OPTION_END);
 	}
@@ -1023,6 +1034,10 @@ void server(int port) {
 	server.sin6_family = AF_INET6;
 	server.sin6_addr = in6addr_any;
 	server.sin6_port = htons(port);
+
+	if (!conf.fork) {
+		printf(" - Telnet Starting on Port %d\n", port);
+	}
 
 	if (bind(server_socket, (struct sockaddr *)&server, sizeof(server)) < 0) {
 		perror("Bind Failed, Error\n");
