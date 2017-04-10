@@ -118,11 +118,10 @@ int write_door32sys(struct user_record *user) {
 	fprintf(fptr, "%s\r\n", user->lastname);
 	fprintf(fptr, "%s\r\n", user->location);
 	fprintf(fptr, "1\r\n");
-	fprintf(fptr, "30\r\n");
+	fprintf(fptr, "%d\r\n", user->sec_level);
 	fprintf(fptr, "%d\r\n", user->timeleft);
 	fprintf(fptr, "-1\r\n");
-
-
+	
 	fclose(fptr);
 
 
