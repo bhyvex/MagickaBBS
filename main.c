@@ -202,9 +202,7 @@ static int door_config_handler(void* user, const char* section, const char* name
 	for (i=0;i<conf->door_count;i++) {
 		if (strcasecmp(conf->doors[i]->name, section) == 0) {
 			// found it
-			if (strcasecmp(name, "key") == 0) {
-				conf->doors[i]->key = value[0];
-			} else if (strcasecmp(name, "command") == 0) {
+			if (strcasecmp(name, "command") == 0) {
 				conf->doors[i]->command = strdup(value);
 			} else if (strcasecmp(name, "stdio") == 0) {
 				if (strcasecmp(value, "true") == 0) {
@@ -227,9 +225,7 @@ static int door_config_handler(void* user, const char* section, const char* name
 
 	conf->doors[conf->door_count]->name = strdup(section);
 
-	if (strcasecmp(name, "key") == 0) {
-		conf->doors[conf->door_count]->key = value[0];
-	} else if (strcasecmp(name, "command") == 0) {
+	if (strcasecmp(name, "command") == 0) {
 		conf->doors[conf->door_count]->command = strdup(value);
 	} else if (strcasecmp(name, "stdio") == 0) {
 		if (strcasecmp(value, "true") == 0) {

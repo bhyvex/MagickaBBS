@@ -43,7 +43,6 @@ struct text_file {
 
 struct door_config {
 	char *name;
-	char key;
 	char *command;
 	int stdio;
 };
