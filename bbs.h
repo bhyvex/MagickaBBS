@@ -140,6 +140,7 @@ struct bbs_config {
 	int bwave_max_msgs;
 	struct fido_addr *main_aka;
 	
+	char *root_menu;
 	char *external_editor_cmd;
 	int external_editor_stdio;
 	int fork;
@@ -245,6 +246,8 @@ extern struct user_record *new_user();
 extern struct user_record *check_user_pass(char *loginname, char *password);
 extern void list_users(struct user_record *user);
 
+extern void display_bulletins();
+extern void display_textfiles();
 extern void main_menu(struct user_record *user);
 
 extern s_JamBase *open_jam_base(char *path);

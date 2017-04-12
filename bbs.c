@@ -821,8 +821,12 @@ tryagain:
 	}
 	record_last10_callers(user);
 	// main menu
-	main_menu(user);
 
+	if (conf->root_menu != NULL) {
+		menu_system(conf->root_menu);
+	} else {
+		main_menu(user);
+	}
 
 	dolog("%s is logging out, on node %d", user->loginname, mynode);
 	broadcast("%s is logging out, on node %d", user->loginname, mynode);

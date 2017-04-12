@@ -481,6 +481,8 @@ static int handler(void* user, const char* section, const char* name,
 			conf->ipguard_timeout = atoi(value);
 		} else if (strcasecmp(name, "ip guard tries") == 0) {
 			conf->ipguard_tries = atoi(value);
+		} else if (strcasecmp(name, "root menu") == 0) {
+			conf->root_menu = strdup(value);
 		}
 	} else if (strcasecmp(section, "paths") == 0){
 		if (strcasecmp(name, "ansi path") == 0) {
