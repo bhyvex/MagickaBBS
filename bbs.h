@@ -43,7 +43,6 @@ struct text_file {
 
 struct door_config {
 	char *name;
-	char key;
 	char *command;
 	int stdio;
 };
@@ -140,6 +139,8 @@ struct bbs_config {
 	int bwave_max_msgs;
 	struct fido_addr *main_aka;
 	
+	char *root_menu;
+	char *menu_path;
 	char *external_editor_cmd;
 	int external_editor_stdio;
 	int fork;
@@ -235,7 +236,7 @@ extern char s_getc();
 extern void disconnect(char *calledby);
 extern void display_info();
 extern void display_last10_callers(struct user_record *user);
-extern int do_logout();
+extern void do_logout();
 
 extern void gen_salt(char **s);
 extern char *hash_sha256(char *pass, char *salt);
@@ -245,21 +246,28 @@ extern struct user_record *new_user();
 extern struct user_record *check_user_pass(char *loginname, char *password);
 extern void list_users(struct user_record *user);
 
-extern void main_menu(struct user_record *user);
+extern void display_bulletins();
+extern void display_textfiles();
 
 extern s_JamBase *open_jam_base(char *path);
 extern void free_message_headers(struct msg_headers *msghs);
 extern struct msg_headers *read_message_headers(int msgconf, int msgarea, struct user_record *user);
 extern void mail_scan(struct user_record *user);
-extern int mail_menu(struct user_record *user);
 extern char *editor(struct user_record *user, char *quote, int qlen, char *from, int email);
 extern char *external_editor(struct user_record *user, char *to, char *from, char *quote, int qlen, char *qfrom, char *subject, int email);
 extern int msg_is_to(struct user_record *user, char *addressed_to, char *address, int type, int rn, int msgconf);
 extern int msg_is_from(struct user_record *user, char *addressed_from, char *address, int type, int rn, int msgconf);
 extern unsigned long generate_msgid();
+extern void read_mail(struct user_record *user);
+extern void list_messages(struct user_record *user);
+extern void choose_conference(struct user_record *user);
+extern void choose_area(struct user_record *user);
+extern void next_mail_conf(struct user_record *user);
+extern void prev_mail_conf(struct user_record *user);
+extern void next_mail_area(struct user_record *user);
+extern void prev_mail_area(struct user_record *user);
+extern void post_message(struct user_record *user);
 
-
-extern int door_menu(struct user_record *user);
 extern void rundoor(struct user_record *user, char *cmd, int stdio);
 extern void runexternal(struct user_record *user, char *cmd, int stdio, char **argv, char *cwd, int raw);
 
@@ -271,13 +279,22 @@ extern int mail_getemailcount(struct user_record *user);
 extern void send_email(struct user_record *user);
 extern void list_emails(struct user_record *user);
 
-extern int file_menu(struct user_record *user);
 extern void download_zmodem(struct user_record *user, char *filename);
 extern void settings_menu(struct user_record *user);
 extern void upload_zmodem(struct user_record *user, char *upload_p);
 extern int ttySetRaw(int fd, struct termios *prevTermios);
 extern int do_upload(struct user_record *user, char *final_path);
 extern int do_download(struct user_record *user, char *file);
+extern void choose_directory(struct user_record *user);
+extern void choose_subdir(struct user_record *user);
+extern void list_files(struct user_record *user);
+extern void upload(struct user_record *user);
+extern void download(struct user_record *user);
+extern void clear_tagged_files();
+extern void next_file_dir(struct user_record *user);
+extern void prev_file_dir(struct user_record *user);
+extern void next_file_sub(struct user_record *user);
+extern void prev_file_sub(struct user_record *user);
 
 extern void lua_push_cfunctions(lua_State *L);
 

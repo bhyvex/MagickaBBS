@@ -202,9 +202,7 @@ static int door_config_handler(void* user, const char* section, const char* name
 	for (i=0;i<conf->door_count;i++) {
 		if (strcasecmp(conf->doors[i]->name, section) == 0) {
 			// found it
-			if (strcasecmp(name, "key") == 0) {
-				conf->doors[i]->key = value[0];
-			} else if (strcasecmp(name, "command") == 0) {
+			if (strcasecmp(name, "command") == 0) {
 				conf->doors[i]->command = strdup(value);
 			} else if (strcasecmp(name, "stdio") == 0) {
 				if (strcasecmp(value, "true") == 0) {
@@ -227,9 +225,7 @@ static int door_config_handler(void* user, const char* section, const char* name
 
 	conf->doors[conf->door_count]->name = strdup(section);
 
-	if (strcasecmp(name, "key") == 0) {
-		conf->doors[conf->door_count]->key = value[0];
-	} else if (strcasecmp(name, "command") == 0) {
+	if (strcasecmp(name, "command") == 0) {
 		conf->doors[conf->door_count]->command = strdup(value);
 	} else if (strcasecmp(name, "stdio") == 0) {
 		if (strcasecmp(value, "true") == 0) {
@@ -481,6 +477,8 @@ static int handler(void* user, const char* section, const char* name,
 			conf->ipguard_timeout = atoi(value);
 		} else if (strcasecmp(name, "ip guard tries") == 0) {
 			conf->ipguard_tries = atoi(value);
+		} else if (strcasecmp(name, "root menu") == 0) {
+			conf->root_menu = strdup(value);
 		}
 	} else if (strcasecmp(section, "paths") == 0){
 		if (strcasecmp(name, "ansi path") == 0) {
@@ -503,6 +501,8 @@ static int handler(void* user, const char* section, const char* name,
 			conf->www_path = strdup(value);
 		} else if (strcasecmp(name, "config path") == 0) {
 			conf->config_path = strdup(value);
+		} else if (strcasecmp(name, "menu path") == 0) {
+			conf->menu_path = strdup(value);
 		}
 	} else if (strcasecmp(section, "mail conferences") == 0) {
 		if (conf->mail_conference_count == 0) {
@@ -1166,6 +1166,11 @@ int main(int argc, char **argv) {
 		exit(-1);
 	}
 	
+	if (conf.root_menu == NULL) {
+		fprintf(stderr, "Root Menu must be set in your bbs ini!\n");
+		exit(-1);		
+	}
+
 	// Load mail Areas
 	for (i=0;i<conf.mail_conference_count;i++) {
 		if (ini_parse(conf.mail_conferences[i]->path, mail_area_handler, conf.mail_conferences[i]) <0) {
