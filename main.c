@@ -505,6 +505,8 @@ static int handler(void* user, const char* section, const char* name,
 			conf->www_path = strdup(value);
 		} else if (strcasecmp(name, "config path") == 0) {
 			conf->config_path = strdup(value);
+		} else if (strcasecmp(name, "menu path") == 0) {
+			conf->menu_path = strdup(value);
 		}
 	} else if (strcasecmp(section, "mail conferences") == 0) {
 		if (conf->mail_conference_count == 0) {
@@ -1168,6 +1170,11 @@ int main(int argc, char **argv) {
 		exit(-1);
 	}
 	
+	if (conf.root_menu == NULL) {
+		fprintf(stderr, "Root Menu must be set in your bbs ini!\n");
+		exit(-1);		
+	}
+
 	// Load mail Areas
 	for (i=0;i<conf.mail_conference_count;i++) {
 		if (ini_parse(conf.mail_conferences[i]->path, mail_area_handler, conf.mail_conferences[i]) <0) {

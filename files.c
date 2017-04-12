@@ -1072,205 +1072,119 @@ void list_files(struct user_record *user) {
 	}
 }
 
-int file_menu(struct user_record *user) {
-	int doquit = 0;
-	int dofiles = 0;
-	char c;
+void choose_subdir(struct user_record *user) {
 	int i;
+	char c;
 	int j;
-	char prompt[256];
-	struct stat s;
-	int do_internal_menu = 0;
-	char *lRet;
-	lua_State *L;
-	int result;
+	char prompt[6];
 
-	if (conf.script_path != NULL) {
-		sprintf(prompt, "%s/filemenu.lua", conf.script_path);
-		if (stat(prompt, &s) == 0) {
-			L = luaL_newstate();
-			luaL_openlibs(L);
-			lua_push_cfunctions(L);
-			luaL_loadfile(L, prompt);
-			do_internal_menu = 0;
-			result = lua_pcall(L, 0, 1, 0);
-			if (result) {
-				dolog("Failed to run script: %s", lua_tostring(L, -1));
-				do_internal_menu = 1;
-			}
-		} else {
-			do_internal_menu = 1;
-		}
-	} else {
-		do_internal_menu = 1;
-	}
+	s_printf(get_string(81));
+	for (i=0;i<conf.file_directories[user->cur_file_dir]->file_sub_count;i++) {
+		s_printf("  %d. %s\r\n", i, conf.file_directories[user->cur_file_dir]->file_subs[i]->name);
 
-	while (!dofiles) {
-		if (do_internal_menu == 1) {
-			s_displayansi("filemenu");
-
-			s_printf(get_string(76), user->cur_file_dir, conf.file_directories[user->cur_file_dir]->name, user->cur_file_sub, conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->name, user->timeleft);
-
+		if (i != 0 && i % 20 == 0) {
+			s_printf(get_string(6));
 			c = s_getc();
+		}
+	}
+	s_printf(get_string(82));
+	s_readstring(prompt, 5);
+	if (tolower(prompt[0]) != 'q') {
+		j = atoi(prompt);
+		if (j < 0 || j >= conf.file_directories[user->cur_file_dir]->file_sub_count) {
+			s_printf(get_string(83));
 		} else {
-			lua_getglobal(L, "menu");
-			result = lua_pcall(L, 0, 1, 0);
-			if (result) {
-				dolog("Failed to run script: %s", lua_tostring(L, -1));
-				do_internal_menu = 1;
-				lua_close(L);
-				continue;
-			}
-			lRet = (char *)lua_tostring(L, -1);
-			lua_pop(L, 1);
-			c = lRet[0];
-		}
-		switch(tolower(c)) {
-			case 27:
-				{
-					c = s_getc();
-					if (c == 91) {
-						c = s_getc();
-					}
-				}
-				break;			
-			case 'i':
-				{
-					s_printf(get_string(77));
-					for (i=0;i<conf.file_directory_count;i++) {
-						if (conf.file_directories[i]->sec_level <= user->sec_level) {
-							s_printf(get_string(78), i, conf.file_directories[i]->name);
-						}
-						if (i != 0 && i % 20 == 0) {
-							s_printf(get_string(6));
-							c = s_getc();
-						}
-					}
-					s_printf(get_string(79));
-					s_readstring(prompt, 5);
-					if (tolower(prompt[0]) != 'q') {
-						j = atoi(prompt);
-						if (j < 0 || j >= conf.file_directory_count || conf.file_directories[j]->sec_level > user->sec_level) {
-							s_printf(get_string(80));
-						} else {
-							s_printf("\r\n");
-							user->cur_file_dir = j;
-							user->cur_file_sub = 0;
-						}
-					}
-				}
-				break;
-			case 's':
-				{
-					s_printf(get_string(81));
-					for (i=0;i<conf.file_directories[user->cur_file_dir]->file_sub_count;i++) {
-						s_printf("  %d. %s\r\n", i, conf.file_directories[user->cur_file_dir]->file_subs[i]->name);
-
-						if (i != 0 && i % 20 == 0) {
-							s_printf(get_string(6));
-							c = s_getc();
-						}
-					}
-					s_printf(get_string(82));
-					s_readstring(prompt, 5);
-					if (tolower(prompt[0]) != 'q') {
-						j = atoi(prompt);
-						if (j < 0 || j >= conf.file_directories[user->cur_file_dir]->file_sub_count) {
-							s_printf(get_string(83));
-						} else {
-							s_printf("\r\n");
-							user->cur_file_sub = j;
-						}
-					}
-				}
-				break;
-			case 'l':
-				list_files(user);
-				break;
-			case 'u':
-				{
-					if (user->sec_level >= conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->upload_sec_level) {
-						upload(user);
-					} else {
-						s_printf(get_string(84));
-					}
-				}
-				break;
-			case 'd':
-				download(user);
-				break;
-			case 'c':
-				{
-					// Clear tagged files
-					if (tagged_count > 0) {
-						for (i=0;i<tagged_count;i++) {
-							free(tagged_files[i]);
-						}
-						free(tagged_files);
-						tagged_count = 0;
-					}
-				}
-				break;
-			case '}':
-				{
-
-					for (i=user->cur_file_dir;i<conf.file_directory_count;i++) {
-						if (i + 1 == conf.file_directory_count) {
-							i = -1;
-						}
-						if (conf.file_directories[i+1]->sec_level <= user->sec_level) {
-							user->cur_file_dir = i + 1;
-							user->cur_file_sub = 0;
-							break;
-						}
-					}
-				}
-				break;
-			case '{':
-				{
-					for (i=user->cur_file_dir;i>=0;i--) {
-						if (i - 1 == -1) {
-							i = conf.file_directory_count;
-						}
-						if (conf.file_directories[i-1]->sec_level <= user->sec_level) {
-							user->cur_file_dir = i - 1;
-							user->cur_file_sub = 0;
-							break;
-						}
-					}
-				}
-				break;
-			case ']':
-				{
-					i=user->cur_file_sub;
-					if (i + 1 == conf.file_directories[user->cur_file_dir]->file_sub_count) {
-						i = -1;
-					}
-					user->cur_file_sub = i + 1;
-				}
-				break;
-			case '[':
-				{
-					i=user->cur_file_sub;
-					if (i - 1 == -1) {
-						i = conf.file_directories[user->cur_file_dir]->file_sub_count;
-					}
-					user->cur_file_sub = i - 1;
-				}
-				break;
-			case 'q':
-				dofiles = 1;
-				break;
-			case 'g':
-				{
-					doquit = do_logout();
-					dofiles = doquit;
-				}
-				break;
+			s_printf("\r\n");
+			user->cur_file_sub = j;
 		}
 	}
-	if (do_internal_menu == 0) {
-		lua_close(L);
-	}
-	return doquit;
 }
+
+void choose_directory(struct user_record *user) {
+	int i;
+	char c;
+	int j;
+	char prompt[6];
+					
+	s_printf(get_string(77));
+	for (i=0;i<conf.file_directory_count;i++) {
+		if (conf.file_directories[i]->sec_level <= user->sec_level) {
+			s_printf(get_string(78), i, conf.file_directories[i]->name);
+		}
+		if (i != 0 && i % 20 == 0) {
+			s_printf(get_string(6));
+			c = s_getc();
+		}
+	}
+	s_printf(get_string(79));
+	s_readstring(prompt, 5);
+	if (tolower(prompt[0]) != 'q') {
+		j = atoi(prompt);
+		if (j < 0 || j >= conf.file_directory_count || conf.file_directories[j]->sec_level > user->sec_level) {
+			s_printf(get_string(80));
+		} else {
+			s_printf("\r\n");
+			user->cur_file_dir = j;
+			user->cur_file_sub = 0;
+		}
+	}
+}
+
+void clear_tagged_files() {
+	int i;
+	// Clear tagged files
+	if (tagged_count > 0) {
+		for (i=0;i<tagged_count;i++) {
+			free(tagged_files[i]);
+		}
+		free(tagged_files);
+		tagged_count = 0;
+	}
+}
+
+void next_file_dir(struct user_record *user) {
+	int i;
+	for (i=user->cur_file_dir;i<conf.file_directory_count;i++) {
+		if (i + 1 == conf.file_directory_count) {
+			i = -1;
+		}
+		if (conf.file_directories[i+1]->sec_level <= user->sec_level) {
+			user->cur_file_dir = i + 1;
+			user->cur_file_sub = 0;
+			break;
+		}
+	}
+}
+
+void prev_file_dir(struct user_record *user) {
+	int i;
+	for (i=user->cur_file_dir;i>=0;i--) {
+		if (i - 1 == -1) {
+			i = conf.file_directory_count;
+		}
+		if (conf.file_directories[i-1]->sec_level <= user->sec_level) {
+			user->cur_file_dir = i - 1;
+			user->cur_file_sub = 0;
+			break;
+		}
+	}
+}
+
+void next_file_sub(struct user_record *user) {
+	int i;
+	i=user->cur_file_sub;
+	if (i + 1 == conf.file_directories[user->cur_file_dir]->file_sub_count) {
+		i = -1;
+	}
+	user->cur_file_sub = i + 1;
+}
+
+void prev_file_sub(struct user_record *user) {
+	int i;
+	i=user->cur_file_sub;
+	if (i - 1 == -1) {
+		i = conf.file_directories[user->cur_file_dir]->file_sub_count;
+	}
+	user->cur_file_sub = i - 1;
+}
+

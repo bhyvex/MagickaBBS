@@ -822,18 +822,16 @@ tryagain:
 	record_last10_callers(user);
 	// main menu
 
-	if (conf->root_menu != NULL) {
-		menu_system(conf->root_menu);
-	} else {
-		main_menu(user);
-	}
-
+	menu_system(conf.root_menu);
+	
+	do_logout();
+	
 	dolog("%s is logging out, on node %d", user->loginname, mynode);
 	broadcast("%s is logging out, on node %d", user->loginname, mynode);
 	disconnect("Log out");
 }
 
-int do_logout() {
+void do_logout() {
 	char buffer[256];
 	struct stat s;
 	lua_State *L;
@@ -861,28 +859,15 @@ int do_logout() {
 	}
 
 	if (do_internal_logout == 1) {
-		s_printf(get_string(53));
-		c = s_getc();
-		if (tolower(c) == 'y') {
-			s_displayansi("goodbye");
-			ret = 1;
-		} else {
-			ret = 0;
-		}
+		s_displayansi("goodbye");
 	} else {
 		lua_getglobal(L, "logout");
-		result = lua_pcall(L, 0, 1, 0);
+		result = lua_pcall(L, 0, 0, 0);
 		if (result) {
 			dolog("Failed to run script: %s", lua_tostring(L, -1));
-			lua_close(L);
-			return 0;
 		}
-		ret = lua_tointeger(L, -1);
-		lua_pop(L, 1);
 		lua_close(L);
 	}
-	
-	return ret;
 }
 
 void runbbs(int socket, char *ip) {
