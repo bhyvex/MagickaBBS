@@ -1,5 +1,6 @@
 #include <stdio.h>
-#include <strings.h>
+#include <string.h>
+#include <stdlib.h>
 #include <sys/stat.h>
 #include "bbs.h"
 #include "lua/lua.h"
