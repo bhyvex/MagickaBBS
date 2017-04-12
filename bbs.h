@@ -260,7 +260,7 @@ extern char *external_editor(struct user_record *user, char *to, char *from, cha
 extern int msg_is_to(struct user_record *user, char *addressed_to, char *address, int type, int rn, int msgconf);
 extern int msg_is_from(struct user_record *user, char *addressed_from, char *address, int type, int rn, int msgconf);
 extern unsigned long generate_msgid();
-
+extern void read_mail(struct user_record *user);
 
 extern int door_menu(struct user_record *user);
 extern void rundoor(struct user_record *user, char *cmd, int stdio);

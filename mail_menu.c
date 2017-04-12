@@ -1777,6 +1777,313 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 	}
 }
 
+void read_mail(struct user_record *user) {
+	struct msg_headers *msghs;
+	s_JamBase *jb;
+	s_JamLastRead jlr;
+	int all_unread;
+	int i;
+	int k;
+	char buffer[7];
+
+	s_printf("\r\n");
+	// list mail in message base
+	msghs = read_message_headers(user->cur_mail_conf, user->cur_mail_area, user);
+	if (msghs != NULL && msghs->msg_count > 0) {
+		jb = open_jam_base(conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
+		if (!jb) {
+			dolog("Error opening JAM base.. %s", conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
+			break;
+		} else {
+			all_unread = 0;
+			if (JAM_ReadLastRead(jb, user->id, &jlr) == JAM_NO_USER) {
+				jlr.LastReadMsg = 0;
+				jlr.HighReadMsg = 0;
+				all_unread = 1;
+			}
+			JAM_CloseMB(jb);
+			s_printf(get_string(120), msghs->msg_count);
+
+			s_readstring(buffer, 6);
+
+			if (tolower(buffer[0]) == 'n') {
+				if (all_unread == 0) {
+					k = jlr.HighReadMsg;
+					for (i=0;i<msghs->msg_count;i++) {
+						if (msghs->msgs[i]->msg_h->MsgNum == k) {
+							break;
+						}
+					}
+					i += 2;
+				} else {
+					i = 1;
+				}
+			} else {
+				i = atoi(buffer);
+			}
+
+			if (i > 0 && i <= msghs->msg_count) {
+				read_message(user, msghs, i - 1);
+			}
+		}
+	}
+	if (msghs != NULL) {
+		free_message_headers(msghs);
+	}
+}
+
+void post_message(struct user_record *user) {
+	char *subject;
+	char *from;
+	char *to;
+	char *msg;
+	int closed;
+	struct fido_addr *from_addr = NULL;
+	char buffer[256];
+	char buffer2[256];
+
+	s_JamBase *jb;
+	s_JamMsgHeader jmh;
+	s_JamSubPacket* jsp;
+	s_JamSubfield jsf;
+	s_JamLastRead jlr;
+
+	if (user->sec_level < conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->write_sec_level) {
+		s_printf(get_string(113));
+		return;
+	}
+	if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NEWSGROUP_AREA) {
+		sprintf(buffer, "ALL");
+	} else {
+		s_printf(get_string(54));
+		s_readstring(buffer, 16);
+	}
+	if (strlen(buffer) == 0) {
+		strcpy(buffer, "ALL");
+	}
+
+	if (conf.mail_conferences[user->cur_mail_conf]->networked == 0 && strcasecmp(buffer, "ALL") != 0) {
+		if (check_user(buffer)) {
+			s_printf(get_string(55));
+			return;
+		}
+	}
+	if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NETMAIL_AREA) {
+		s_printf(get_string(121));
+		s_readstring(buffer2, 32);
+		if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_FIDO) {
+			from_addr = parse_fido_addr(buffer2);
+			if (!from_addr) {
+				s_printf(get_string(122));
+				return;
+			} else {
+				if (from_addr->zone == 0 && from_addr->net == 0 && from_addr->node == 0 && from_addr->point == 0) {
+					free(from_addr);
+					s_printf(get_string(122));
+					return;
+				}
+				s_printf(get_string(123), from_addr->zone, from_addr->net, from_addr->node, from_addr->point);
+			}
+		}
+	}
+	to = strdup(buffer);
+	s_printf(get_string(56));
+	s_readstring(buffer, 25);
+	if (strlen(buffer) == 0) {
+		s_printf(get_string(39));
+		free(to);
+		if (from_addr != NULL) {
+			free(from_addr);
+		}
+		return;
+	}
+	subject = strdup(buffer);
+
+	// post a message
+	if (conf.mail_conferences[user->cur_mail_conf]->realnames == 0) {
+		from = strdup(user->loginname);
+	} else {
+		from = (char *)malloc(strlen(user->firstname) + strlen(user->lastname) + 2);
+		sprintf(from, "%s %s", user->firstname, user->lastname);
+	}
+	msg = external_editor(user, to, from, NULL, 0, NULL, subject, 0);
+
+	free(from);
+
+	if (msg != NULL) {
+		jb = open_jam_base(conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
+		if (!jb) {
+			dolog("Error opening JAM base.. %s", conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
+			free(msg);
+			free(to);
+			free(subject);
+			return;
+		}
+
+		JAM_ClearMsgHeader( &jmh );
+		jmh.DateWritten = (uint32_t)time(NULL);
+		jmh.Attribute |= JAM_MSG_LOCAL;
+		if (conf.mail_conferences[user->cur_mail_conf]->realnames == 0) {
+			strcpy(buffer, user->loginname);
+		} else {
+			sprintf(buffer, "%s %s", user->firstname, user->lastname);
+		}
+
+		jsp = JAM_NewSubPacket();
+
+		jsf.LoID   = JAMSFLD_SENDERNAME;
+		jsf.HiID   = 0;
+		jsf.DatLen = strlen(buffer);
+		jsf.Buffer = (char *)buffer;
+		JAM_PutSubfield(jsp, &jsf);
+
+		jsf.LoID   = JAMSFLD_RECVRNAME;
+		jsf.HiID   = 0;
+		jsf.DatLen = strlen(to);
+		jsf.Buffer = (char *)to;
+		JAM_PutSubfield(jsp, &jsf);
+
+		jsf.LoID   = JAMSFLD_SUBJECT;
+		jsf.HiID   = 0;
+		jsf.DatLen = strlen(subject);
+		jsf.Buffer = (char *)subject;
+		JAM_PutSubfield(jsp, &jsf);
+
+		if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_ECHOMAIL_AREA || conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NEWSGROUP_AREA) {
+			jmh.Attribute |= JAM_MSG_TYPEECHO;
+
+			if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_FIDO) {
+				if (conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point) {
+					sprintf(buffer, "%d:%d/%d.%d", conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
+												conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
+												conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node,
+												conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point);
+				} else {
+					sprintf(buffer, "%d:%d/%d", conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
+												conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
+												conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node);
+				}
+				jsf.LoID   = JAMSFLD_OADDRESS;
+				jsf.HiID   = 0;
+				jsf.DatLen = strlen(buffer);
+				jsf.Buffer = (char *)buffer;
+				JAM_PutSubfield(jsp, &jsf);
+
+				sprintf(buffer, "%d:%d/%d.%d %08lx", conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
+												conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
+												conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node,
+												conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point,
+												generate_msgid());
+
+				jsf.LoID   = JAMSFLD_MSGID;
+				jsf.HiID   = 0;
+				jsf.DatLen = strlen(buffer);
+				jsf.Buffer = (char *)buffer;
+				JAM_PutSubfield(jsp, &jsf);
+				jmh.MsgIdCRC = JAM_Crc32(buffer, strlen(buffer));
+
+			}
+		} else
+		if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NETMAIL_AREA) {
+			jmh.Attribute |= JAM_MSG_TYPENET;
+			jmh.Attribute |= JAM_MSG_PRIVATE;
+			if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_FIDO) {
+				if (conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point) {
+					sprintf(buffer, "%d:%d/%d.%d", conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
+												conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
+												conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node,
+												conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point);
+				} else {
+					sprintf(buffer, "%d:%d/%d", conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
+												conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
+												conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node);
+				}
+				jsf.LoID   = JAMSFLD_OADDRESS;
+				jsf.HiID   = 0;
+				jsf.DatLen = strlen(buffer);
+				jsf.Buffer = (char *)buffer;
+				JAM_PutSubfield(jsp, &jsf);
+
+				if (from_addr != NULL) {
+					if (from_addr->point) {
+						sprintf(buffer, "%d:%d/%d.%d", from_addr->zone,
+														from_addr->net,
+														from_addr->node,
+														from_addr->point);
+					} else {
+						sprintf(buffer, "%d:%d/%d", from_addr->zone,
+													from_addr->net,
+													from_addr->node);
+					}
+					jsf.LoID   = JAMSFLD_DADDRESS;
+					jsf.HiID   = 0;
+					jsf.DatLen = strlen(buffer);
+					jsf.Buffer = (char *)buffer;
+					JAM_PutSubfield(jsp, &jsf);
+					free(from_addr);
+					from_addr = NULL;
+				}
+
+				sprintf(buffer, "%d:%d/%d.%d %08lx", conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
+													conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
+													conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node,
+													conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point,
+													generate_msgid());
+
+				jsf.LoID   = JAMSFLD_MSGID;
+				jsf.HiID   = 0;
+				jsf.DatLen = strlen(buffer);
+				jsf.Buffer = (char *)buffer;
+				JAM_PutSubfield(jsp, &jsf);
+				jmh.MsgIdCRC = JAM_Crc32(buffer, strlen(buffer));
+			} 
+		}
+
+		while (1) {
+			z = JAM_LockMB(jb, 100);
+			if (z == 0) {
+				break;
+			} else if (z == JAM_LOCK_FAILED) {
+				sleep(1);
+			} else {
+				free(msg);
+				free(to);
+				free(subject);
+				dolog("Failed to lock msg base!");
+				break;
+			}
+		}
+		if (z != 0) {
+			JAM_CloseMB(jb);
+			break;
+		}
+
+		if (JAM_AddMessage(jb, &jmh, jsp, (char *)msg, strlen(msg))) {
+			dolog("Failed to add message");
+		} else {
+			if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NETMAIL_AREA) {
+				if (conf.netmail_sem != NULL) {
+					sem_fd = open(conf.netmail_sem, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
+					close(sem_fd);
+				}
+			} else if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_ECHOMAIL_AREA || conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NEWSGROUP_AREA) {
+				if (conf.echomail_sem != NULL) {
+					sem_fd = open(conf.echomail_sem, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
+					close(sem_fd);
+				}
+			}
+		}
+
+		JAM_UnlockMB(jb);
+
+		JAM_DelSubPacket(jsp);
+		free(msg);
+		JAM_CloseMB(jb);
+	}
+	free(to);
+	free(subject);
+}
+
 int mail_menu(struct user_record *user) {
 	int doquit = 0;
 	int domail = 0;
@@ -1870,289 +2177,12 @@ int mail_menu(struct user_record *user) {
 				break;
 			case 'd':
 				{
-					s_printf("\r\n");
-					// list mail in message base
-					msghs = read_message_headers(user->cur_mail_conf, user->cur_mail_area, user);
-					if (msghs != NULL && msghs->msg_count > 0) {
-						jb = open_jam_base(conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
-						if (!jb) {
-							dolog("Error opening JAM base.. %s", conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
-							break;
-						} else {
-							all_unread = 0;
-							if (JAM_ReadLastRead(jb, user->id, &jlr) == JAM_NO_USER) {
-								jlr.LastReadMsg = 0;
-								jlr.HighReadMsg = 0;
-								all_unread = 1;
-							}
-							JAM_CloseMB(jb);
-							s_printf(get_string(120), msghs->msg_count);
-
-							s_readstring(buffer, 6);
-
-							if (tolower(buffer[0]) == 'n') {
-								if (all_unread == 0) {
-									k = jlr.HighReadMsg;
-									for (i=0;i<msghs->msg_count;i++) {
-										if (msghs->msgs[i]->msg_h->MsgNum == k) {
-											break;
-										}
-									}
-									i += 2;
-								} else {
-									i = 1;
-								}
-							} else {
-								i = atoi(buffer);
-							}
-
-							if (i > 0 && i <= msghs->msg_count) {
-								read_message(user, msghs, i - 1);
-							}
-						}
-					}
-					if (msghs != NULL) {
-						free_message_headers(msghs);
-					}
+					read_mail(user);
 				}
 				break;
 			case 'p':
 				{
-					if (user->sec_level < conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->write_sec_level) {
-						s_printf(get_string(113));
-						break;
-					}
-					if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NEWSGROUP_AREA) {
-						sprintf(buffer, "ALL");
-					} else {
-						s_printf(get_string(54));
-						s_readstring(buffer, 16);
-					}
-					if (strlen(buffer) == 0) {
-						strcpy(buffer, "ALL");
-					}
-
-					if (conf.mail_conferences[user->cur_mail_conf]->networked == 0 && strcasecmp(buffer, "ALL") != 0) {
-						if (check_user(buffer)) {
-							s_printf(get_string(55));
-							break;
-						}
-					}
-					if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NETMAIL_AREA) {
-						s_printf(get_string(121));
-						s_readstring(buffer2, 32);
-						if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_FIDO) {
-							from_addr = parse_fido_addr(buffer2);
-							if (!from_addr) {
-								s_printf(get_string(122));
-								break;
-							} else {
-								if (from_addr->zone == 0 && from_addr->net == 0 && from_addr->node == 0 && from_addr->point == 0) {
-									free(from_addr);
-									s_printf(get_string(122));
-									break;
-								}
-								s_printf(get_string(123), from_addr->zone, from_addr->net, from_addr->node, from_addr->point);
-							}
-						}
-					}
-					to = strdup(buffer);
-					s_printf(get_string(56));
-					s_readstring(buffer, 25);
-					if (strlen(buffer) == 0) {
-						s_printf(get_string(39));
-						free(to);
-						if (from_addr != NULL) {
-							free(from_addr);
-						}
-						break;
-					}
-					subject = strdup(buffer);
-
-					// post a message
-					if (conf.mail_conferences[user->cur_mail_conf]->realnames == 0) {
-						from = strdup(user->loginname);
-					} else {
-						from = (char *)malloc(strlen(user->firstname) + strlen(user->lastname) + 2);
-						sprintf(from, "%s %s", user->firstname, user->lastname);
-					}
-					msg = external_editor(user, to, from, NULL, 0, NULL, subject, 0);
-
-					free(from);
-
-					if (msg != NULL) {
-						jb = open_jam_base(conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
-						if (!jb) {
-							dolog("Error opening JAM base.. %s", conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
-							free(msg);
-							free(to);
-							free(subject);
-							break;
-						}
-
-						JAM_ClearMsgHeader( &jmh );
-						jmh.DateWritten = (uint32_t)time(NULL);
-						jmh.Attribute |= JAM_MSG_LOCAL;
-						if (conf.mail_conferences[user->cur_mail_conf]->realnames == 0) {
-							strcpy(buffer, user->loginname);
-						} else {
-							sprintf(buffer, "%s %s", user->firstname, user->lastname);
-						}
-
-						jsp = JAM_NewSubPacket();
-
-						jsf.LoID   = JAMSFLD_SENDERNAME;
-						jsf.HiID   = 0;
-						jsf.DatLen = strlen(buffer);
-						jsf.Buffer = (char *)buffer;
-						JAM_PutSubfield(jsp, &jsf);
-
-						jsf.LoID   = JAMSFLD_RECVRNAME;
-						jsf.HiID   = 0;
-						jsf.DatLen = strlen(to);
-						jsf.Buffer = (char *)to;
-						JAM_PutSubfield(jsp, &jsf);
-
-						jsf.LoID   = JAMSFLD_SUBJECT;
-						jsf.HiID   = 0;
-						jsf.DatLen = strlen(subject);
-						jsf.Buffer = (char *)subject;
-						JAM_PutSubfield(jsp, &jsf);
-
-						if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_ECHOMAIL_AREA || conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NEWSGROUP_AREA) {
-							jmh.Attribute |= JAM_MSG_TYPEECHO;
-
-							if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_FIDO) {
-								if (conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point) {
-									sprintf(buffer, "%d:%d/%d.%d", conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
-																conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
-																conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node,
-																conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point);
-								} else {
-									sprintf(buffer, "%d:%d/%d", conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
-																conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
-																conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node);
-								}
-								jsf.LoID   = JAMSFLD_OADDRESS;
-								jsf.HiID   = 0;
-								jsf.DatLen = strlen(buffer);
-								jsf.Buffer = (char *)buffer;
-								JAM_PutSubfield(jsp, &jsf);
-
-								sprintf(buffer, "%d:%d/%d.%d %08lx", conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
-																conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
-																conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node,
-																conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point,
-																generate_msgid());
-
-								jsf.LoID   = JAMSFLD_MSGID;
-								jsf.HiID   = 0;
-								jsf.DatLen = strlen(buffer);
-								jsf.Buffer = (char *)buffer;
-								JAM_PutSubfield(jsp, &jsf);
-								jmh.MsgIdCRC = JAM_Crc32(buffer, strlen(buffer));
-
-							}
-						} else
-						if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NETMAIL_AREA) {
-							jmh.Attribute |= JAM_MSG_TYPENET;
-							jmh.Attribute |= JAM_MSG_PRIVATE;
-							if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_FIDO) {
-								if (conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point) {
-									sprintf(buffer, "%d:%d/%d.%d", conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
-																conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
-																conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node,
-																conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point);
-								} else {
-									sprintf(buffer, "%d:%d/%d", conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
-																conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
-																conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node);
-
-								}
-								jsf.LoID   = JAMSFLD_OADDRESS;
-								jsf.HiID   = 0;
-								jsf.DatLen = strlen(buffer);
-								jsf.Buffer = (char *)buffer;
-								JAM_PutSubfield(jsp, &jsf);
-
-								if (from_addr != NULL) {
-									if (from_addr->point) {
-										sprintf(buffer, "%d:%d/%d.%d", from_addr->zone,
-																	from_addr->net,
-																	from_addr->node,
-																	from_addr->point);
-									} else {
-										sprintf(buffer, "%d:%d/%d", from_addr->zone,
-																	from_addr->net,
-																	from_addr->node);
-									}
-									jsf.LoID   = JAMSFLD_DADDRESS;
-									jsf.HiID   = 0;
-									jsf.DatLen = strlen(buffer);
-									jsf.Buffer = (char *)buffer;
-									JAM_PutSubfield(jsp, &jsf);
-									free(from_addr);
-									from_addr = NULL;
-								}
-
-								sprintf(buffer, "%d:%d/%d.%d %08lx", conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
-																conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
-																conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node,
-																conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point,
-																generate_msgid());
-
-								jsf.LoID   = JAMSFLD_MSGID;
-								jsf.HiID   = 0;
-								jsf.DatLen = strlen(buffer);
-								jsf.Buffer = (char *)buffer;
-								JAM_PutSubfield(jsp, &jsf);
-								jmh.MsgIdCRC = JAM_Crc32(buffer, strlen(buffer));
-							} 
-						}
-
-						while (1) {
-							z = JAM_LockMB(jb, 100);
-							if (z == 0) {
-								break;
-							} else if (z == JAM_LOCK_FAILED) {
-								sleep(1);
-							} else {
-								free(msg);
-								free(to);
-								free(subject);
-								dolog("Failed to lock msg base!");
-								break;
-							}
-						}
-						if (z != 0) {
-							JAM_CloseMB(jb);
-							break;
-						}
-
-						if (JAM_AddMessage(jb, &jmh, jsp, (char *)msg, strlen(msg))) {
-							dolog("Failed to add message");
-						} else {
-							if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NETMAIL_AREA) {
-								if (conf.netmail_sem != NULL) {
-									sem_fd = open(conf.netmail_sem, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
-									close(sem_fd);
-								}
-							} else if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_ECHOMAIL_AREA || conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NEWSGROUP_AREA) {
-								if (conf.echomail_sem != NULL) {
-									sem_fd = open(conf.echomail_sem, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
-									close(sem_fd);
-								}
-							}
-						}
-
-						JAM_UnlockMB(jb);
-
-						JAM_DelSubPacket(jsp);
-						free(msg);
-						JAM_CloseMB(jb);
-					}
-					free(to);
-					free(subject);
+					post_message(user);
 				}
 				break;
 			case 'l':

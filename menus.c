@@ -9,6 +9,10 @@
 #define MENU_BULLETINS          9
 #define MENU_LAST10             10
 #define MENU_SETTINGS           11
+#define MENU_DOOR               12
+#define MENU_MAILSCAN           13
+#define MENU_READMAIL           14
+#define MENU_POSTMESSAGE        15
 
 struct menu_item {
     char hotkey;
@@ -26,6 +30,7 @@ int menu_system(char *menufile) {
     char *ansi_file;
     fptr = fopen(menufile, "r");
     int i;
+    int j;
 
     if (!fptr) {
         s_printf("Error opening menu file! %s\r\n", menufile);
@@ -72,12 +77,26 @@ int menu_system(char *menufile) {
                 menu[menu_items-1]->command = MENU_LAST10;
             } else if (strncasecmp(&buffer[8], "SETTINGS", 8) == 0) {
                 menu[menu_items-1]->command = MENU_SETTINGS;
+            } else if (strncasecmp(&buffer[8], "RUNDOOR", 7) == 0) {
+                menu[menu_items-1]->command = MENU_DOOR;
+            } else if (strncasecmp(&buffer[8], "MAILSCAN", 8) == 0) {
+                menu[menu_items-1]->command = MENU_MAILSCAN;
+            } else if (strncasecmp(&buffer[8], "READMAIL", 8) == 0) {
+                menu[menu_items-1]->command = MENU_READMAIL;
+            } else if (strncasecmp(&buffer[8], "POSTMESSAGE", 11) == 0) {
+                menu[menu_items-1]->command = MENU_POSTMESSAGE;
             }
         } else if (strncasecmp(buffer, "DATA", 4) == 0) {
             menu[menu_items-1]->data = strdup(&buffer[5]);
         } else if (strncasecmp(buffer, "LUASCRIPT", 9) == 0) {
+            if (lua_script != NULL) {
+                free(lua_script);
+            }
             lua_script = strdup(&buffer[10]);
         } else if (strncasecmp(buffer, "ANSIFILE", 8) == 0) {
+            if (ansi_file != NULL) {
+                free(ansi_file);
+            }
             ansi_file = strdup(&buffer[9]);
         }
     }
@@ -217,6 +236,27 @@ int menu_system(char *menufile) {
                         break;
                     case MENU_SETTINGS:
                         settings_menu(user);
+                        break;
+                    case MENU_DOOR:
+				        {
+					        for (j=0;j<conf.door_count;j++) {
+						        if (strcasecmp(menu[i]->data, conf.doors[j]->name) == 0) {
+							        dolog("%s launched door %s, on node %d", user->loginname, conf.doors[j]->name, mynode);
+							        rundoor(user, conf.doors[j]->command, conf.doors[j]->stdio);
+							        dolog("%s returned from door %s, on node %d", user->loginname, conf.doors[j]->name, mynode);
+						        	break;
+				        		}
+		        			}
+        				}
+                        break;
+                    case MENU_MAILSCAN:
+                        mail_scan(user);
+                        break;
+                    case MENU_READMAIL:
+                        read_mail(user);
+                        break;
+                    case MENU_POSTMESSAGE:
+                        post_message(user);
                         break;
                 }
                 break;
