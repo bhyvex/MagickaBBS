@@ -42,6 +42,7 @@
 #define MENU_PREVFILEDIR        33
 #define MENU_NEXTFILESUB        34
 #define MENU_PREVFILESUB        35
+#define MENU_LISTMESSAGES       36
 
 extern struct bbs_config conf;
 extern struct user_record *gUser;
@@ -173,6 +174,8 @@ int menu_system(char *menufile) {
                 menu[menu_items-1]->command = MENU_NEXTFILESUB;
             } else if (strncasecmp(&buffer[8], "PREVFILESUB", 11) == 0) {
                 menu[menu_items-1]->command = MENU_PREVFILESUB;
+            } else if (strncasecmp(&buffer[8], "LISTMESSAGES", 12) == 0) {
+                menu[menu_items-1]->command = MENU_LISTMESSAGES;
             }
         } else if (strncasecmp(buffer, "DATA", 4) == 0) {
             menu[menu_items-1]->data = strdup(&buffer[5]);
@@ -413,7 +416,10 @@ int menu_system(char *menufile) {
                         break;
                     case MENU_PREVFILESUB:
                         prev_file_sub(gUser);
-                        break;                                
+                        break; 
+                    case MENU_LISTMESSAGES:
+                        list_messages(gUser);
+                        break;                              
                 }
                 break;
             }
