@@ -342,7 +342,9 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		
 		if (jmh.Attribute & JAM_MSG_PRIVATE) {
 			if (!msg_is_to(user, to, daddress, conf.mail_conferences[conference]->nettype, conf.mail_conferences[conference]->realnames, conference) &&
-				    !msg_is_from(user, from, oaddress, conf.mail_conferences[conference]->nettype, conf.mail_conferences[conference]->realnames, conference)) {
+				    !msg_is_from(user, from, oaddress, conf.mail_conferences[conference]->nettype, conf.mail_conferences[conference]->realnames, conference) &&
+					!msg_is_to(user, to, daddress, conf.mail_conferences[conference]->nettype, !conf.mail_conferences[conference]->realnames, conference) &&
+				    !msg_is_from(user, from, oaddress, conf.mail_conferences[conference]->nettype, !conf.mail_conferences[conference]->realnames, conference)) {
 
 				if (subject != NULL) {
 					free(subject);
