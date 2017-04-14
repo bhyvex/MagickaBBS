@@ -287,7 +287,9 @@ struct msg_headers *read_message_headers(int msgconf, int msgarea, struct user_r
 
 			if (jmh.Attribute & JAM_MSG_PRIVATE) {
 				if (!msg_is_to(user, jamm->to, jamm->daddress, conf.mail_conferences[msgconf]->nettype, conf.mail_conferences[msgconf]->realnames, msgconf) &&
-				    !msg_is_from(user, jamm->from, jamm->oaddress, conf.mail_conferences[msgconf]->nettype, conf.mail_conferences[msgconf]->realnames, msgconf)) {
+				    !msg_is_from(user, jamm->from, jamm->oaddress, conf.mail_conferences[msgconf]->nettype, conf.mail_conferences[msgconf]->realnames, msgconf) &&
+					!msg_is_to(user, jamm->to, jamm->daddress, conf.mail_conferences[msgconf]->nettype, !conf.mail_conferences[msgconf]->realnames, msgconf) &&
+				    !msg_is_from(user, jamm->from, jamm->oaddress, conf.mail_conferences[msgconf]->nettype, !conf.mail_conferences[msgconf]->realnames, msgconf)) {
 
 					if (jamm->subject != NULL) {
 						free(jamm->subject);
