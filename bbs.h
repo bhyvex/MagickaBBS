@@ -322,6 +322,8 @@ extern char *www_msgs_messageview(struct user_record *user, int conference, int 
 extern int www_send_msg(struct user_record *user, char *to, char *subj, int conference, int area, char *replyid, char *body);
 extern char *www_new_msg(struct user_record *user, int conference, int area);
 extern char *www_last10();
+
+extern int menu_system(char *menufile);
 #endif
 
 #endif
