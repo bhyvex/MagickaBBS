@@ -53,6 +53,7 @@ struct menu_item {
     char hotkey;
     int command;
     char *data;
+    int seclevel;
 };
 
 int menu_system(char *menufile) {
@@ -104,6 +105,7 @@ int menu_system(char *menufile) {
             menu[menu_items-1] = (struct menu_item *)malloc(sizeof(struct menu_item));
             menu[menu_items-1]->hotkey = buffer[7];
             menu[menu_items-1]->data = NULL;
+            menu[menu_items-1]->seclevel = 0;
         } else if (strncasecmp(buffer, "COMMAND", 7) == 0 && menu_items > 0) {
             if (strncasecmp(&buffer[8], "SUBMENU", 7) == 0) {
                 menu[menu_items-1]->command = MENU_SUBMENU;
@@ -180,6 +182,8 @@ int menu_system(char *menufile) {
             } else if (strncasecmp(&buffer[8], "DOSCRIPT", 8) == 0) {
                 menu[menu_items-1]->command = MENU_DOSCRIPT;
             }
+        } else if (strncasecmp(buffer, "SECLEVEL", 8) == 0) {
+            menu[menu_items-1]->seclevel = atoi(&buffer[9]);
         } else if (strncasecmp(buffer, "DATA", 4) == 0) {
             menu[menu_items-1]->data = strdup(&buffer[5]);
         } else if (strncasecmp(buffer, "LUASCRIPT", 9) == 0) {
@@ -251,14 +255,35 @@ int menu_system(char *menufile) {
 
         for (i=0;i<menu_items;i++) {
             if (tolower(menu[i]->hotkey) == tolower(c)) {
-                switch(menu[i]->command) {
-                    case MENU_SUBMENU:
-                        doquit = menu_system(menu[i]->data);
-                        if (doquit == 1) {
-                            // free menus
-	                        if (do_lua_menu) {
-		                        lua_close(L);
-	                        }
+                if (menu[i]->seclevel <= gUser->sec_level) {
+                    switch(menu[i]->command) {
+                        case MENU_SUBMENU:
+                            doquit = menu_system(menu[i]->data);
+                            if (doquit == 1) {
+                                // free menus
+                                if (do_lua_menu) {
+                                    lua_close(L);
+                                }
+                                if (lua_script != NULL) {
+                                    free(lua_script);
+                                }
+                                if (ansi_file != NULL) {
+                                    free(ansi_file);
+                                }
+                                for (i=0;i<menu_items;i++) {
+                                    if (menu[i]->data != NULL) {
+                                        free(menu[i]->data);
+                                    }
+                                    free(menu[i]);
+                                }
+                                free(menu);
+                                return doquit;
+                            }
+                            break;
+                        case MENU_LOGOFF:
+                            if (do_lua_menu) {
+                                lua_close(L);
+                            }              
                             if (lua_script != NULL) {
                                 free(lua_script);
                             }
@@ -271,163 +296,144 @@ int menu_system(char *menufile) {
                                 }
                                 free(menu[i]);
                             }
-                            free(menu);
-                            return doquit;
-                        }
-                        break;
-                    case MENU_LOGOFF:
-	                    if (do_lua_menu) {
-		                    lua_close(L);
-	                    }              
-                        if (lua_script != NULL) {
-                            free(lua_script);
-                        }
-                        if (ansi_file != NULL) {
-                            free(ansi_file);
-                        }
-                        for (i=0;i<menu_items;i++) {
-                            if (menu[i]->data != NULL) {
-                                free(menu[i]->data);
+                            free(menu);                              
+                            return 1;
+                        case MENU_PREVMENU:
+                            if (do_lua_menu) {
+                                lua_close(L);
+                            }                    
+                            if (lua_script != NULL) {
+                                free(lua_script);
                             }
-                            free(menu[i]);
-                        }
-                        free(menu);                              
-                        return 1;
-                    case MENU_PREVMENU:
-	                    if (do_lua_menu) {
-		                    lua_close(L);
-	                    }                    
-                        if (lua_script != NULL) {
-                            free(lua_script);
-                        }
-                        if (ansi_file != NULL) {
-                            free(ansi_file);
-                        }
-                        for (i=0;i<menu_items;i++) {
-                            if (menu[i]->data != NULL) {
-                                free(menu[i]->data);
+                            if (ansi_file != NULL) {
+                                free(ansi_file);
                             }
-                            free(menu[i]);
-                        }
-                        free(menu);                                                      
-                        return 0;
-                    case MENU_AUTOMESSAGEWRITE:
-                        automessage_write(gUser);
-                        break;
-                    case MENU_TEXTFILES:
-                        display_textfiles();
-                        break;
-                    case MENU_CHATSYSTEM:
-                        chat_system(gUser);
-                        break;
-                    case MENU_BBSLIST:
-                        bbs_list(gUser);
-                        break;
-                    case MENU_LISTUSERS:
-                        list_users(gUser);
-                        break;
-                    case MENU_BULLETINS:
-                        display_bulletins();
-                        break;
-                    case MENU_LAST10:
-                        display_last10_callers(gUser);
-                        break;
-                    case MENU_SETTINGS:
-                        settings_menu(gUser);
-                        break;
-                    case MENU_DOOR:
-				        {
-					        for (j=0;j<conf.door_count;j++) {
-						        if (strcasecmp(menu[i]->data, conf.doors[j]->name) == 0) {
-							        dolog("%s launched door %s, on node %d", gUser->loginname, conf.doors[j]->name, mynode);
-							        rundoor(gUser, conf.doors[j]->command, conf.doors[j]->stdio);
-							        dolog("%s returned from door %s, on node %d", gUser->loginname, conf.doors[j]->name, mynode);
-						        	break;
-				        		}
-		        			}
-        				}
-                        break;
-                    case MENU_MAILSCAN:
-                        mail_scan(gUser);
-                        break;
-                    case MENU_READMAIL:
-                        read_mail(gUser);
-                        break;
-                    case MENU_POSTMESSAGE:
-                        post_message(gUser);
-                        break;
-                    case MENU_CHOOSEMAILCONF:
-                        choose_conference(gUser);
-                        break;
-                    case MENU_CHOOSEMAILAREA:
-                        choose_area(gUser);
-                        break;
-                    case MENU_SENDEMAIL:
-                        send_email(gUser);
-                        break;
-                    case MENU_LISTEMAIL:
-                        list_emails(gUser);
-                        break;
-                    case MENU_NEXTMAILCONF:
-                        next_mail_conf(gUser);
-                        break;
-                    case MENU_PREVMAILCONF:
-                        prev_mail_conf(gUser);
-                        break;
-                    case MENU_NEXTMAILAREA:
-                        next_mail_area(gUser);
-                        break;
-                    case MENU_PREVMAILAREA:
-                        prev_mail_area(gUser);
-                        break;
-                    case MENU_BLUEWAVEDOWN:
-                        bwave_create_packet();
-                        break;
-                    case MENU_BLUEWAVEUP:
-                        bwave_upload_reply();
-                        break;
-                    case MENU_CHOOSEFILEDIR:
-                        choose_directory(gUser);
-                        break;
-                    case MENU_CHOOSEFILESUB:
-                        choose_subdir(gUser);
-                        break;
-                    case MENU_LISTFILES:
-                        list_files(gUser);
-                        break;
-                    case MENU_UPLOAD:
-                    	if (gUser->sec_level >= conf.file_directories[gUser->cur_file_dir]->file_subs[gUser->cur_file_sub]->upload_sec_level) {
-						    upload(gUser);
-					    } else {
-						    s_printf(get_string(84));
-					    }
-                        break;
-                    case MENU_DOWNLOAD:
-                        download(gUser);
-                        break;
-                    case MENU_CLEARTAGGEDFILES:
-                        clear_tagged_files();
-                        break;
-                    case MENU_NEXTFILEDIR:
-                        next_file_dir(gUser);
-                        break;
-                    case MENU_PREVFILEDIR:
-                        prev_file_dir(gUser);
-                        break;
-                    case MENU_NEXTFILESUB:
-                        next_file_sub(gUser);
-                        break;
-                    case MENU_PREVFILESUB:
-                        prev_file_sub(gUser);
-                        break; 
-                    case MENU_LISTMESSAGES:
-                        list_messages(gUser);
-                        break;
-                    case MENU_DOSCRIPT:
-                        do_lua_script(menu[i]->data);
-                        break;                       
+                            for (i=0;i<menu_items;i++) {
+                                if (menu[i]->data != NULL) {
+                                    free(menu[i]->data);
+                                }
+                                free(menu[i]);
+                            }
+                            free(menu);                                                      
+                            return 0;
+                        case MENU_AUTOMESSAGEWRITE:
+                            automessage_write(gUser);
+                            break;
+                        case MENU_TEXTFILES:
+                            display_textfiles();
+                            break;
+                        case MENU_CHATSYSTEM:
+                            chat_system(gUser);
+                            break;
+                        case MENU_BBSLIST:
+                            bbs_list(gUser);
+                            break;
+                        case MENU_LISTUSERS:
+                            list_users(gUser);
+                            break;
+                        case MENU_BULLETINS:
+                            display_bulletins();
+                            break;
+                        case MENU_LAST10:
+                            display_last10_callers(gUser);
+                            break;
+                        case MENU_SETTINGS:
+                            settings_menu(gUser);
+                            break;
+                        case MENU_DOOR:
+                            {
+                                for (j=0;j<conf.door_count;j++) {
+                                    if (strcasecmp(menu[i]->data, conf.doors[j]->name) == 0) {
+                                        dolog("%s launched door %s, on node %d", gUser->loginname, conf.doors[j]->name, mynode);
+                                        rundoor(gUser, conf.doors[j]->command, conf.doors[j]->stdio);
+                                        dolog("%s returned from door %s, on node %d", gUser->loginname, conf.doors[j]->name, mynode);
+                                        break;
+                                    }
+                                }
+                            }
+                            break;
+                        case MENU_MAILSCAN:
+                            mail_scan(gUser);
+                            break;
+                        case MENU_READMAIL:
+                            read_mail(gUser);
+                            break;
+                        case MENU_POSTMESSAGE:
+                            post_message(gUser);
+                            break;
+                        case MENU_CHOOSEMAILCONF:
+                            choose_conference(gUser);
+                            break;
+                        case MENU_CHOOSEMAILAREA:
+                            choose_area(gUser);
+                            break;
+                        case MENU_SENDEMAIL:
+                            send_email(gUser);
+                            break;
+                        case MENU_LISTEMAIL:
+                            list_emails(gUser);
+                            break;
+                        case MENU_NEXTMAILCONF:
+                            next_mail_conf(gUser);
+                            break;
+                        case MENU_PREVMAILCONF:
+                            prev_mail_conf(gUser);
+                            break;
+                        case MENU_NEXTMAILAREA:
+                            next_mail_area(gUser);
+                            break;
+                        case MENU_PREVMAILAREA:
+                            prev_mail_area(gUser);
+                            break;
+                        case MENU_BLUEWAVEDOWN:
+                            bwave_create_packet();
+                            break;
+                        case MENU_BLUEWAVEUP:
+                            bwave_upload_reply();
+                            break;
+                        case MENU_CHOOSEFILEDIR:
+                            choose_directory(gUser);
+                            break;
+                        case MENU_CHOOSEFILESUB:
+                            choose_subdir(gUser);
+                            break;
+                        case MENU_LISTFILES:
+                            list_files(gUser);
+                            break;
+                        case MENU_UPLOAD:
+                            if (gUser->sec_level >= conf.file_directories[gUser->cur_file_dir]->file_subs[gUser->cur_file_sub]->upload_sec_level) {
+                                upload(gUser);
+                            } else {
+                                s_printf(get_string(84));
+                            }
+                            break;
+                        case MENU_DOWNLOAD:
+                            download(gUser);
+                            break;
+                        case MENU_CLEARTAGGEDFILES:
+                            clear_tagged_files();
+                            break;
+                        case MENU_NEXTFILEDIR:
+                            next_file_dir(gUser);
+                            break;
+                        case MENU_PREVFILEDIR:
+                            prev_file_dir(gUser);
+                            break;
+                        case MENU_NEXTFILESUB:
+                            next_file_sub(gUser);
+                            break;
+                        case MENU_PREVFILESUB:
+                            prev_file_sub(gUser);
+                            break; 
+                        case MENU_LISTMESSAGES:
+                            list_messages(gUser);
+                            break;
+                        case MENU_DOSCRIPT:
+                            do_lua_script(menu[i]->data);
+                            break;                       
+                    }
+                    break;
                 }
-                break;
             }
         }
     }
