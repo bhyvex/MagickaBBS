@@ -297,6 +297,7 @@ extern void next_file_sub(struct user_record *user);
 extern void prev_file_sub(struct user_record *user);
 
 extern void lua_push_cfunctions(lua_State *L);
+extern void do_lua_script(char *script);
 
 extern void bwave_create_packet();
 extern void bwave_upload_reply();

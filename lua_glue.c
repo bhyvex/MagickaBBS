@@ -180,3 +180,24 @@ void lua_push_cfunctions(lua_State *L) {
 	lua_pushcfunction(L, l_getBBSInfo);
 	lua_setglobal(L, "bbs_get_info");
 }
+
+void do_lua_script(char *script) {
+	lua_State *L;
+	char buffer[PATH_MAX];
+
+	if (script == NULL) {
+		return;
+	}
+
+	if (script[0] == '/') {
+		snprintf(buffer, PATH_MAX, "%s.lua", script);
+	} else {
+		snprintf(buffer, PATH_MAX, "%s/%s.lua", conf.script_path, script);
+	}
+
+	L = luaL_newstate();
+	luaL_openlibs(L);
+	lua_push_cfunctions(L);
+	luaL_dofile(L, buffer);
+	lua_close(L);
+}
