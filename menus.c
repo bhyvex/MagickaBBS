@@ -72,6 +72,7 @@ int menu_system(char *menufile) {
     int result;
     int doquit = 0;
     char c;
+    struct stat s;
 
     if (menufile[0] == '/') {
         snprintf(buffer, PATH_MAX, "%s.mnu", menufile);
@@ -231,8 +232,25 @@ int menu_system(char *menufile) {
         }
     }
 
-	while (!doquit) {
 
+	while (!doquit) {
+        snprintf(buffer, PATH_MAX, "%s/node%d/nodemsg.txt", conf.bbs_path, mynode);
+
+        if (stat(buffer, &s) == 0) {
+            fptr = fopen(buffer, "r");
+            if (fptr) {
+                fgets(buffer, PATH_MAX, fptr);
+                while (!feof(fptr)) {
+                    s_printf("%s\r\n", buffer);
+                }
+                fclose(fptr);
+                snprintf(buffer, PATH_MAX, "%s/node%d/nodemsg.txt", conf.bbs_path, mynode);
+                unlink(buffer);
+
+                s_printf(get_string(6));
+                c = s_getc();
+            }
+        }
 		if (do_lua_menu == 0) {
             if (ansi_file != NULL) {
 			    s_displayansi(ansi_file);

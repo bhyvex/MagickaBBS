@@ -751,7 +751,11 @@ tryagain:
 	fputs(user->loginname, nodefile);
 	fclose(nodefile);
 
+	sprintf(buffer, "%s/node%d/nodemsg.txt", cond.bbs_path, mynode);
 
+	if (stat(buffer, &s) == 0) {
+		unlink(buffer);
+	}
 
 	// do post-login
 	dolog("%s logged in, on node %d", user->loginname, mynode);
