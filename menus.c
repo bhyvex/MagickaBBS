@@ -72,7 +72,6 @@ int menu_system(char *menufile) {
     int result;
     int doquit = 0;
     char c;
-    struct stat s;
 
     if (menufile[0] == '/') {
         snprintf(buffer, PATH_MAX, "%s.mnu", menufile);
