@@ -240,7 +240,8 @@ int menu_system(char *menufile) {
             if (fptr) {
                 fgets(buffer, PATH_MAX, fptr);
                 while (!feof(fptr)) {
-                    s_printf("%s\r\n", buffer);
+                    chomp(buffer);
+                    s_printf("\r\n%s\r\n", buffer);
                     fgets(buffer, PATH_MAX, fptr);
                 }
                 fclose(fptr);
