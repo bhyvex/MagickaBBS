@@ -241,6 +241,7 @@ int menu_system(char *menufile) {
                 fgets(buffer, PATH_MAX, fptr);
                 while (!feof(fptr)) {
                     s_printf("%s\r\n", buffer);
+                    fgets(buffer, PATH_MAX, fptr);
                 }
                 fclose(fptr);
                 snprintf(buffer, PATH_MAX, "%s/node%d/nodemsg.txt", conf.bbs_path, mynode);
