@@ -198,6 +198,7 @@ struct user_record {
 	int bwavepktno;
 	int defarchiver;
 	int defprotocol;
+	int nodemsgs;
 };
 
 struct jam_msg {

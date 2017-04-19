@@ -233,23 +233,25 @@ int menu_system(char *menufile) {
 
 
 	while (!doquit) {
-        snprintf(buffer, PATH_MAX, "%s/node%d/nodemsg.txt", conf.bbs_path, mynode);
+        if (gUser->nodemsgs) {
+            snprintf(buffer, PATH_MAX, "%s/node%d/nodemsg.txt", conf.bbs_path, mynode);
 
-        if (stat(buffer, &s) == 0) {
-            fptr = fopen(buffer, "r");
-            if (fptr) {
-                fgets(buffer, PATH_MAX, fptr);
-                while (!feof(fptr)) {
-                    chomp(buffer);
-                    s_printf("\r\n%s\r\n", buffer);
+            if (stat(buffer, &s) == 0) {
+                fptr = fopen(buffer, "r");
+                if (fptr) {
                     fgets(buffer, PATH_MAX, fptr);
-                }
-                fclose(fptr);
-                snprintf(buffer, PATH_MAX, "%s/node%d/nodemsg.txt", conf.bbs_path, mynode);
-                unlink(buffer);
+                    while (!feof(fptr)) {
+                        chomp(buffer);
+                        s_printf("\r\n%s\r\n", buffer);
+                        fgets(buffer, PATH_MAX, fptr);
+                    }
+                    fclose(fptr);
+                    snprintf(buffer, PATH_MAX, "%s/node%d/nodemsg.txt", conf.bbs_path, mynode);
+                    unlink(buffer);
 
-                s_printf(get_string(6));
-                c = s_getc();
+                    s_printf(get_string(6));
+                    c = s_getc();
+                }
             }
         }
 		if (do_lua_menu == 0) {

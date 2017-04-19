@@ -21,6 +21,7 @@ void settings_menu(struct user_record *user) {
 		s_printf(get_string(152), user->location);
 		s_printf(get_string(205), conf.archivers[user->defarchiver - 1]->name);
 		s_printf(get_string(213), conf.protocols[user->defprotocol - 1]->name);
+		s_printf(get_string(215), (user->nodemsgs ? "TRUE" : "FALSE"));
 		s_printf(get_string(153));
 		s_printf(get_string(154));
 
@@ -109,6 +110,12 @@ void settings_menu(struct user_record *user) {
 						user->defprotocol = new_arc;
 						save_user(user);
 					}
+				}
+				break;
+			case 'm':
+				{
+					user->nodemsgs = !user->nodemsgs;
+					save_user(user);
 				}
 				break;
 			case 'q':
