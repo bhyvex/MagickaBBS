@@ -196,7 +196,7 @@ char *www_msgs_messagelist(struct user_record *user, int conference, int area, i
 			
 	for (i=skip_f -1; i>=skip_t;i--) {
 		date = (time_t)mhrs->msgs[i]->msg_h->DateWritten;
-		localtime_r(&date, &msg_date);
+		gmtime_r(&date, &msg_date);
 		if (mhrs->msgs[i]->msg_h->MsgNum > jlr.HighReadMsg) {
 			sprintf(buffer, "<div class=\"msg-summary\"><div class=\"msg-summary-id\">%d</div><div class=\"msg-summary-subject\"><a href=\"/msgs/%d/%d/%d\">%s</a></div><div class=\"msg-summary-from\">%s</div><div class=\"msg-summary-to\">%s</div><div class=\"msg-summary-date\">%.2d:%.2d %.2d-%.2d-%.2d</div></div>\n", mhrs->msgs[i]->msg_no + 1, conference, area, mhrs->msgs[i]->msg_h->MsgNum, mhrs->msgs[i]->subject, mhrs->msgs[i]->from, mhrs->msgs[i]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 		} else {
@@ -441,7 +441,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		len += strlen(buffer);
 		
 		date = (time_t)jmh.DateWritten;
-		localtime_r(&date, &msg_date);
+		gmtime_r(&date, &msg_date);
 		
 		sprintf(buffer, "<div class=\"msg-view-date\">Date: %.2d:%.2d %.2d-%.2d-%.2d</div>\n", msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 		if (len + strlen(buffer) > max_len - 1) {
@@ -693,7 +693,7 @@ int www_send_msg(struct user_record *user, char *to, char *subj, int conference,
 		}
 		
 		JAM_ClearMsgHeader( &jmh );
-		jmh.DateWritten = (uint32_t)time(NULL);
+		jmh.DateWritten = (uint32_t)utc_to_local(time(NULL));
 		jmh.Attribute |= JAM_MSG_LOCAL;	
 		
 		if (conf.mail_conferences[conference]->realnames == 0) {

@@ -18,6 +18,18 @@ extern struct bbs_config conf;
 extern struct user_record *gUser;
 extern int mynode;
 
+time_t utc_to_local(time_t utc) {
+	time_t local;
+	struct tm date_time;
+
+	localtime_r(&utc, &date_time);
+
+	local = mktime(&date_time);
+
+	return local;
+}
+
+
 s_JamBase *open_jam_base(char *path) {
 	int ret;
 	s_JamBase *jb;
@@ -1360,7 +1372,7 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 		}
 		s_printf(get_string(107), msghs->msgs[mailno]->to, conf.mail_conferences[user->cur_mail_conf]->name);
 		s_printf(get_string(108), msghs->msgs[mailno]->subject, conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->name);
-		localtime_r((time_t *)&msghs->msgs[mailno]->msg_h->DateWritten, &msg_date);
+		gmtime_r((time_t *)&msghs->msgs[mailno]->msg_h->DateWritten, &msg_date);
 		sprintf(buffer, "%s", asctime(&msg_date));
 		buffer[strlen(buffer) - 1] = '\0';
 		s_printf(get_string(109), buffer, mailno + 1, msghs->msg_count);
@@ -1550,7 +1562,7 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 					}
 
 					JAM_ClearMsgHeader( &jmh );
-					jmh.DateWritten = time(NULL);
+					jmh.DateWritten = utc_to_local(time(NULL));
 					jmh.Attribute |= JAM_MSG_LOCAL;
 
 					jsp = JAM_NewSubPacket();
@@ -1925,7 +1937,7 @@ void post_message(struct user_record *user) {
 		}
 
 		JAM_ClearMsgHeader( &jmh );
-		jmh.DateWritten = (uint32_t)time(NULL);
+		jmh.DateWritten = (uint32_t)utc_to_local(time(NULL));
 		jmh.Attribute |= JAM_MSG_LOCAL;
 		if (conf.mail_conferences[user->cur_mail_conf]->realnames == 0) {
 			strcpy(buffer, user->loginname);
@@ -2154,7 +2166,7 @@ void list_messages(struct user_record *user) {
 				if (redraw) {
 					s_printf(get_string(126));
 					for (j=start;j<start + 22 && j<msghs->msg_count;j++) {
-						localtime_r((time_t *)&msghs->msgs[j]->msg_h->DateWritten, &msg_date);
+						gmtime_r((time_t *)&msghs->msgs[j]->msg_h->DateWritten, &msg_date);
 						if (j == i -1) {
 							if (msghs->msgs[j]->msg_h->MsgNum > jlr.HighReadMsg || all_unread) {
 								s_printf(get_string(188), j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
@@ -2195,14 +2207,14 @@ void list_messages(struct user_record *user) {
 								s_printf("\e[%d;5H", i - start + 1);
 							} else if (!redraw) {
 								s_printf("\e[%d;1H", i - start);
-								localtime_r((time_t *)&msghs->msgs[i-2]->msg_h->DateWritten, &msg_date);
+								gmtime_r((time_t *)&msghs->msgs[i-2]->msg_h->DateWritten, &msg_date);
 								if (msghs->msgs[i-2]->msg_h->MsgNum > jlr.HighReadMsg || all_unread) {
 									s_printf(get_string(127), i - 1, msghs->msgs[i-2]->subject, msghs->msgs[i-2]->from, msghs->msgs[i-2]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 								} else {
 									s_printf(get_string(128), i - 1, msghs->msgs[i-2]->subject, msghs->msgs[i-2]->from, msghs->msgs[i-2]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 								}												
 								s_printf("\e[%d;1H", i - start + 1);
-								localtime_r((time_t *)&msghs->msgs[i-1]->msg_h->DateWritten, &msg_date);
+								gmtime_r((time_t *)&msghs->msgs[i-1]->msg_h->DateWritten, &msg_date);
 								if (msghs->msgs[i-1]->msg_h->MsgNum > jlr.HighReadMsg || all_unread) {
 									s_printf(get_string(188), i, msghs->msgs[i-1]->subject, msghs->msgs[i-1]->from, msghs->msgs[i-1]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 								} else {
@@ -2226,14 +2238,14 @@ void list_messages(struct user_record *user) {
 								redraw = 1;
 							} else if (!redraw) {
 								s_printf("\e[%d;1H", i - start + 2);
-								localtime_r((time_t *)&msghs->msgs[i]->msg_h->DateWritten, &msg_date);
+								gmtime_r((time_t *)&msghs->msgs[i]->msg_h->DateWritten, &msg_date);
 								if (msghs->msgs[i]->msg_h->MsgNum > jlr.HighReadMsg || all_unread) {
 									s_printf(get_string(127), i + 1, msghs->msgs[i]->subject, msghs->msgs[i]->from, msghs->msgs[i]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 								} else {
 									s_printf(get_string(128), i + 1, msghs->msgs[i]->subject, msghs->msgs[i]->from, msghs->msgs[i]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 								}												
 								s_printf("\e[%d;1H", i - start + 1);
-								localtime_r((time_t *)&msghs->msgs[i-1]->msg_h->DateWritten, &msg_date);
+								gmtime_r((time_t *)&msghs->msgs[i-1]->msg_h->DateWritten, &msg_date);
 								if (msghs->msgs[i-1]->msg_h->MsgNum > jlr.HighReadMsg || all_unread) {
 									s_printf(get_string(188), i, msghs->msgs[i-1]->subject, msghs->msgs[i-1]->from, msghs->msgs[i-1]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 								} else {
