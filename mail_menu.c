@@ -24,7 +24,11 @@ time_t utc_to_local(time_t utc) {
 
 	localtime_r(&utc, &date_time);
 
-	local = mktime(&date_time);
+	local = utc + date_time.tm_gmtoff;
+
+	if (date_time.tm_isdst) {
+		local += 3600;
+	}
 
 	return local;
 }
