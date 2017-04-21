@@ -250,6 +250,7 @@ extern void list_users(struct user_record *user);
 extern void display_bulletins();
 extern void display_textfiles();
 
+extern time_t utc_to_local(time_t utc);
 extern s_JamBase *open_jam_base(char *path);
 extern void free_message_headers(struct msg_headers *msghs);
 extern struct msg_headers *read_message_headers(int msgconf, int msgarea, struct user_record *user);
