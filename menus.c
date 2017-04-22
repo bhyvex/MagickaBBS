@@ -105,6 +105,7 @@ int menu_system(char *menufile) {
             }
             menu[menu_items-1] = (struct menu_item *)malloc(sizeof(struct menu_item));
             menu[menu_items-1]->hotkey = buffer[7];
+            menu[menu_items-1]->command = 0;
             menu[menu_items-1]->data = NULL;
             menu[menu_items-1]->seclevel = 0;
         } else if (strncasecmp(buffer, "COMMAND", 7) == 0 && menu_items > 0) {
@@ -457,7 +458,9 @@ int menu_system(char *menufile) {
                             break;
                         case MENU_SENDNODEMSG:
                             send_node_msg();
-                            break;                 
+                            break;
+                        default:
+                            break;     
                     }
                     break;
                 }
