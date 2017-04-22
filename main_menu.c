@@ -9,6 +9,8 @@
 #include "lua/lauxlib.h"
 
 extern struct bbs_config conf;
+extern struct user_record *gUser;
+extern int mynode;
 
 void display_bulletins() {
 	int i;
@@ -25,6 +27,61 @@ void display_bulletins() {
 		s_getc();
 		i++;
 		sprintf(buffer, "%s/bulletin%d.ans", conf.ansi_path, i);
+	}
+}
+
+void active_nodes() {
+	int i;
+	struct stat s;
+	char buffer[PATH_MAX];
+	FILE *fptr;
+
+	for (i=0;i<conf.nodes;i++) {
+		snprintf(buffer, PATH_MAX, "%s/nodeinuse.%d", conf.bbs_path, i+1);
+		if (stat(buffer, &s) == 0) {
+			fptr = fopen(buffer, "r");
+			if (fptr) {	
+				fgets(buffer, PATH_MAX, fptr);
+				fclose(fptr);
+				chomp(buffer);
+				s_printf(get_string(216), i+1, buffer);
+			}
+		}
+	}
+}
+
+void send_node_msg() {
+	char buffer[PATH_MAX];
+	char msg[257];
+	int nodetomsg = 0;
+	struct stat s;
+	FILE *fptr;
+
+	s_printf(get_string(216));
+	active_nodes();
+
+	s_readstring(buffer, 4);
+	nodetomsg = atoi(buffer);
+
+	if (nodetomsg < 1 || nodetomsg > conf.nodes) {
+		s_printf(get_string(218));
+		return;
+	}
+	s_printf(get_string(219));
+
+	s_readstring(msg, 256);
+
+	snprintf(buffer, PATH_MAX, "%s/node%d", conf.bbs_path, nodetomsg);
+
+	if (stat(buffer, &s) != 0) {
+		mkdir(buffer, 0755);
+	}
+	snprintf(buffer, PATH_MAX, "%s/node%d/nodemsg.txt", conf.bbs_path, nodetomsg);
+
+	fptr = fopen(buffer, "a");
+	if (fptr) {
+		fprintf(fptr, get_string(220), gUser->loginname, mynode, msg);
+		fclose(fptr);
 	}
 }
 

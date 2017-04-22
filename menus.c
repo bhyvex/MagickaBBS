@@ -44,6 +44,7 @@
 #define MENU_PREVFILESUB        35
 #define MENU_LISTMESSAGES       36
 #define MENU_DOSCRIPT           37
+#define MENU_SENDNODEMSG        38
 
 extern struct bbs_config conf;
 extern struct user_record *gUser;
@@ -181,6 +182,8 @@ int menu_system(char *menufile) {
                 menu[menu_items-1]->command = MENU_LISTMESSAGES;
             } else if (strncasecmp(&buffer[8], "DOSCRIPT", 8) == 0) {
                 menu[menu_items-1]->command = MENU_DOSCRIPT;
+            } else if (strncasecmp(&buffer[8], "SENDNODEMSG", 11) == 0) {
+                menu[menu_items-1]->command = MENU_SENDNODEMSG;
             }
         } else if (strncasecmp(buffer, "SECLEVEL", 8) == 0) {
             menu[menu_items-1]->seclevel = atoi(&buffer[9]);
@@ -451,7 +454,10 @@ int menu_system(char *menufile) {
                             break;
                         case MENU_DOSCRIPT:
                             do_lua_script(menu[i]->data);
-                            break;                       
+                            break;
+                        case MENU_SENDNODEMSG:
+                            send_node_msg();
+                            break;                 
                     }
                     break;
                 }
