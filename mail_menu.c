@@ -89,12 +89,12 @@ unsigned long generate_msgid() {
 			flock(fileno(fptr), LOCK_UN);
 			fclose(fptr);
 		} else {
+			lastid = unixtime;
 			dolog("Unable to open message id log");
-			return 0;
 		}
 	}
-	
-	return lastid;
+	sprintf(buffer, "%X", lastid);
+	return strtoul(&buffer[strlen(buffer) - 8], NULL, 16);
 }
 
 void free_message_headers(struct msg_headers *msghs) {
