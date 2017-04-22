@@ -57,7 +57,7 @@ void send_node_msg() {
 	struct stat s;
 	FILE *fptr;
 
-	s_printf(get_string(216));
+	s_printf(get_string(217));
 	active_nodes();
 
 	s_readstring(buffer, 4);
