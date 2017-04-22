@@ -93,7 +93,7 @@ unsigned long generate_msgid() {
 			dolog("Unable to open message id log");
 		}
 	}
-	sprintf(buffer, "%X", lastid);
+	sprintf(buffer, "%lX", lastid);
 	return strtoul(&buffer[strlen(buffer) - 8], NULL, 16);
 }
 
