@@ -26,10 +26,6 @@ time_t utc_to_local(time_t utc) {
 
 	local = utc + date_time.tm_gmtoff;
 
-	if (date_time.tm_isdst) {
-		local += 3600;
-	}
-
 	return local;
 }
 
