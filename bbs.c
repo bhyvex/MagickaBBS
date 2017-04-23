@@ -210,6 +210,9 @@ void s_printf(char *fmt, ...) {
 }
 
 int should_convert_utf8() {
+	if (gUser != NULL) {
+		return gUser->codepage;
+	} 
 	return conf.codepage;
 }
 

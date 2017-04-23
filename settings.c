@@ -22,6 +22,7 @@ void settings_menu(struct user_record *user) {
 		s_printf(get_string(205), conf.archivers[user->defarchiver - 1]->name);
 		s_printf(get_string(213), conf.protocols[user->defprotocol - 1]->name);
 		s_printf(get_string(215), (user->nodemsgs ? "TRUE" : "FALSE"));
+		s_printf(get_string(221), (user->codepage ? "UTF-8" : "CP437"));
 		s_printf(get_string(153));
 		s_printf(get_string(154));
 
@@ -118,6 +119,12 @@ void settings_menu(struct user_record *user) {
 					save_user(user);
 				}
 				break;
+			case 'c':
+				{
+					user->codepage = !user->codepage;
+					save_user(user);
+				}
+				break;				
 			case 'q':
 				dosettings = 1;
 				break;

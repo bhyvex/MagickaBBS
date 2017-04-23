@@ -202,6 +202,7 @@ struct user_record {
 	int defarchiver;
 	int defprotocol;
 	int nodemsgs;
+	int codepage;
 };
 
 struct jam_msg {
