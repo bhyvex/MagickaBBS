@@ -326,7 +326,7 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 									ouc = g * 2;
 
 									iconv(ic, &ptr1, &inc, &ptr2, &ouc);
-									write(master, ptr2p, ptr2p - ptr2);
+									write(master, ptr2p, ptr2 - ptr2p);
 
 									free(ptr2p);
 									iconv_close(ic);
@@ -361,7 +361,7 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 									ouc = g * 2;
 
 									iconv(ic, &ptr1, &inc, &ptr2, &ouc);
-									write(door_out, ptr2p, ptr2p - ptr2);
+									write(door_out, ptr2p, ptr2 - ptr2p);
 
 									free(ptr2p);	
 									iconv_close(ic);
