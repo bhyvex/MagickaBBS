@@ -309,10 +309,10 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 										}
 									}
 								}
-								if (codepage == NULL || (strcmp(codepage, "CP437") == 0 && gUser->codepage == 0) || (strcmp(codepage, "UTF-8") == 0 && gUser->codepage == 1)) {
+								if (codepage == NULL || (strcmp(codepage, "CP437") == 0 && user->codepage == 0) || (strcmp(codepage, "UTF-8") == 0 && user->codepage == 1)) {
 									write(master, outbuf, g);
 								} else {
-									if (gUser->codepage == 0) {
+									if (user->codepage == 0) {
 										ic = iconv_open("CP437", codepage);
 									} else {
 										ic = iconv_open("UTF-8", codepage);
@@ -344,10 +344,10 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 									}
 									outbuf[g++]	= c;
 								}
-								if (codepage == NULL || (strcmp(codepage, "CP437") == 0 && gUser->codepage == 0) || (strcmp(codepage, "UTF-8") == 0 && gUser->codepage == 1)) {
+								if (codepage == NULL || (strcmp(codepage, "CP437") == 0 && user->codepage == 0) || (strcmp(codepage, "UTF-8") == 0 && user->codepage == 1)) {
 									write(door_out, outbuf, g);
 								} else {
-									if (gUser->codepage == 0) {
+									if (user->codepage == 0) {
 										ic = iconv_open(codepage, "CP437");
 									} else {
 										ic = iconv_open(codepage, "UTF-8");
