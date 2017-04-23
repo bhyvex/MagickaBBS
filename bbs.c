@@ -234,12 +234,12 @@ void s_putchar(char c) {
 		}
 	} else {
 		ic = iconv_open("UTF-8", "CP437");
-		inbuf = (char *)malloc(3);
-		outbuf = (char *)malloc(3);
-		memset(outbuf, 0, 3);
+		inbuf = (char *)malloc(4);
+		outbuf = (char *)malloc(4);
+		memset(outbuf, 0, 4);
 		sprintf(inbuf, "%c", c);
 		inc = 1;
-		ouc = 3;
+		ouc = 4;
 		ptr1 = outbuf;
 		ptr2 = inbuf;
 		sz = iconv(ic, &inbuf, &inc, &outbuf, &ouc);
@@ -273,11 +273,11 @@ void s_putstring(char *c) {
 		ic = iconv_open("UTF-8", "CP437");
 		inc = strlen(c);
 		inbuf = strdup(c);
-		outbuf = (char *)malloc(inc * 2);
-		memset(outbuf, 0, inc *2);
+		outbuf = (char *)malloc(inc * 4);
+		memset(outbuf, 0, inc * 4);
 		ptr1 = outbuf;
 		ptr2 = inbuf;		
-		ouc = inc * 2;
+		ouc = inc * 4;
 		sz = iconv(ic, &inbuf, &inc, &outbuf, &ouc);
 		if (sshBBS) {
 			fprintf(stdout, "%s", ptr1);
