@@ -423,7 +423,7 @@ char *external_editor(struct user_record *user, char *to, char *from, char *quot
 			}
 			fclose(fptr);
 
-			rundoor(user, conf.external_editor_cmd, conf.external_editor_stdio);
+			rundoor(user, conf.external_editor_cmd, conf.external_editor_stdio, conf.external_editor_codepage);
 
 			// readin msgtmp
 			sprintf(buffer, "%s/node%d/MSGTMP", conf.bbs_path, mynode);

@@ -210,6 +210,8 @@ static int door_config_handler(void* user, const char* section, const char* name
 				} else {
 					conf->doors[i]->stdio = 0;
 				}
+			} else if (strcasecmp(name, "codepage") == 0) {
+				conf->doors[i]->codepage = strdup(value);
 			}
 			return 1;
 		}
@@ -224,6 +226,7 @@ static int door_config_handler(void* user, const char* section, const char* name
 	conf->doors[conf->door_count] = (struct door_config *)malloc(sizeof(struct door_config));
 
 	conf->doors[conf->door_count]->name = strdup(section);
+	conf->doors[conf->door_count]->codepage = NULL;
 
 	if (strcasecmp(name, "command") == 0) {
 		conf->doors[conf->door_count]->command = strdup(value);
@@ -233,6 +236,8 @@ static int door_config_handler(void* user, const char* section, const char* name
 		} else {
 			conf->doors[conf->door_count]->stdio = 0;
 		}
+	} else if (strcasecmp(name, "codepage") == 0) {
+		conf->doors[conf->door_count]->codepage = strdup(value);
 	}
 	conf->door_count++;
 
@@ -434,6 +439,8 @@ static int handler(void* user, const char* section, const char* name,
 			conf->default_tagline = strdup(value);
 		} else if (strcasecmp(name, "external editor cmd") == 0) {
 			conf->external_editor_cmd = strdup(value);
+		} else if (strcasecmp(name, "external editor codepage") == 0) {
+			conf->external_editor_codepage = strdup(value);
 		} else if (strcasecmp(name, "external editor stdio") == 0) {
 			if (strcasecmp(value, "true") == 0) {
 				conf->external_editor_stdio = 1;
@@ -479,6 +486,12 @@ static int handler(void* user, const char* section, const char* name,
 			conf->ipguard_tries = atoi(value);
 		} else if (strcasecmp(name, "root menu") == 0) {
 			conf->root_menu = strdup(value);
+		} else if (strcasecmp(name, "codepage") == 0) {
+			if (strcasecmp(value, "cp437") == 0) {
+				conf->codepage = 0;
+			} else if (strcasecmp(value, "utf-8") == 0) {
+				conf->codepage = 1;
+			}
 		}
 	} else if (strcasecmp(section, "paths") == 0){
 		if (strcasecmp(name, "ansi path") == 0) {
@@ -1137,6 +1150,7 @@ int main(int argc, char **argv) {
 	conf.mgchat_bbstag = NULL;
 	conf.text_file_count = 0;
 	conf.external_editor_cmd = NULL;
+	conf.external_editor_codepage = NULL;
 	conf.log_path = NULL;
 	conf.script_path = NULL;
 	conf.automsgwritelvl = 10;
@@ -1154,6 +1168,7 @@ int main(int argc, char **argv) {
 	conf.ipguard_tries = 4;
 	conf.ipguard_timeout = 120;
 	conf.protocol_count = 0;	
+	conf.codepage = 0;
 	
 	// Load BBS data
 	if (ini_parse(argv[1], handler, &conf) <0) {

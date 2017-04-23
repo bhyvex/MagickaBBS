@@ -439,11 +439,11 @@ int do_download(struct user_record *user, char *file) {
 		
 		arguments[0] = download_command;
 
-		runexternal(user, download_command, conf.protocols[user->defprotocol - 1]->stdio, arguments, conf.bbs_path, 1);
+		runexternal(user, download_command, conf.protocols[user->defprotocol - 1]->stdio, arguments, conf.bbs_path, 1, NULL);
 		
 		free(arguments);		
 	}
-	
+	return 1;
 }
 
 int do_upload(struct user_record *user, char *final_path) {
@@ -540,7 +540,7 @@ int do_upload(struct user_record *user, char *final_path) {
 		
 		mkdir(upload_path, 0755);
 		
-		runexternal(user, upload_command, conf.protocols[user->defprotocol - 1]->stdio, arguments, upload_path, 1);
+		runexternal(user, upload_command, conf.protocols[user->defprotocol - 1]->stdio, arguments, upload_path, 1, NULL);
 		
 		free(arguments);
 		
@@ -571,7 +571,7 @@ int do_upload(struct user_record *user, char *final_path) {
 			}
 			while ((dent = readdir(inb)) != NULL) {
 				if (dent->d_type == DT_REG) {
-					snprintf(upload_command, 1-24, "%s%s", upload_path, dent->d_name);
+					snprintf(upload_command, 1024, "%s%s", upload_path, dent->d_name);
 					snprintf(upload_filename, 1024, "%s/%s", final_path, dent->d_name);
 					
 					if (stat(upload_filename, &s) == 0) {

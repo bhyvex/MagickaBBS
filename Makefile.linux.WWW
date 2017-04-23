@@ -39,7 +39,7 @@ OBJ =  deps/aha/aha.o inih/ini.o bbs.o main.o users.o main_menu.o mail_menu.o do
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 magicka: $(OBJ) ${LUA} ${JAMLIB} ${ZMODEM} ${B64} ${JSMN}
-	$(CC) -o magicka -o $@ $^ $(CFLAGS) -L/usr/local/lib -lsqlite3 -lutil -lm -ldl -lssl -lcrypto -lssh  $(MICROHTTPD)
+	$(CC) -o magicka -o $@ $^ $(CFLAGS) -L/usr/local/lib -lsqlite3 -lutil -lm -ldl -lssl -lcrypto -lssh $(MICROHTTPD)
 
 magimail: $(JAMLIB)
 	cd utils/magimail && $(MAKE) linux

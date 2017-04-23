@@ -9,6 +9,7 @@
 #include <sys/wait.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
+#include <iconv.h>
 #if defined(linux)
 #  include <pty.h>
 #elif defined(__OpenBSD__) || defined(__NetBSD__) || defined(__APPLE__)
@@ -130,7 +131,7 @@ int write_door32sys(struct user_record *user) {
 
 
 
-void rundoor(struct user_record *user, char *cmd, int stdio) {
+void rundoor(struct user_record *user, char *cmd, int stdio, char *codepage) {
 	char *arguments[4];
 	int door_out;
 	char buffer[10];
@@ -147,14 +148,14 @@ void rundoor(struct user_record *user, char *cmd, int stdio) {
 	arguments[2] = strdup(buffer);
 	arguments[3] = NULL;	
 	
-	runexternal(user, cmd, stdio, arguments, NULL, 0);
+	runexternal(user, cmd, stdio, arguments, NULL, 0, codepage);
 	
 	free(arguments[0]);
 	free(arguments[1]);
 	free(arguments[2]);
 }
 
-void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], char *cwd, int raw) {
+void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], char *cwd, int raw, char *codepage) {
 	
 	char buffer[1024];
 	int pid;
@@ -172,7 +173,8 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 	int i;
 	int gotiac;
 	int flush;
-	
+	iconv_t ic;
+
 	struct timeval thetimeout;
 	struct termios oldit;
 	struct termios oldot;
@@ -182,6 +184,13 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 	char outbuf[512];
 	int h;
 	int g;
+	char *ptr1;
+	char *ptr2;
+	char *ptr2p;
+	size_t ouc;
+	size_t inc;
+	size_t sz;
+
 	timeoutpaused = 1;
 
 	if (write_door32sys(user) != 0) {
@@ -302,7 +311,27 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 										}
 									}
 								}
-								write(master, outbuf, g);
+								if (codepage == NULL || (strcmp(codepage, "CP437") == 0 && user->codepage == 0) || (strcmp(codepage, "UTF-8") == 0 && user->codepage == 1)) {
+									write(master, outbuf, g);
+								} else {
+									if (user->codepage == 0) {
+										ic = iconv_open(codepage, "CP437");
+									} else {
+										ic = iconv_open(codepage, "UTF-8");
+									}
+									ptr1 = outbuf;
+									ptr2 = (char *)malloc((g + 1) * 4);
+									ptr2p = ptr2;
+									memset(ptr2, 0, (g + 1) * 4);
+									inc = g;
+									ouc = (g + 1) * 4;
+
+									iconv(ic, &ptr1, &inc, &ptr2, &ouc);
+									write(master, ptr2p, ptr2 - ptr2p);
+
+									free(ptr2p);
+									iconv_close(ic);
+								}
 							} else if (FD_ISSET(master, &fdset)) {
 								len = read(master, inbuf, 256);
 								if (len == 0) {
@@ -317,7 +346,30 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 									}
 									outbuf[g++]	= c;
 								}
-								write(door_out, outbuf, g);
+								if (codepage == NULL || (strcmp(codepage, "CP437") == 0 && user->codepage == 0) || (strcmp(codepage, "UTF-8") == 0 && user->codepage == 1)) {
+									write(door_out, outbuf, g);
+								} else {
+									if (user->codepage == 0) {
+										ic = iconv_open("CP437", codepage);
+									} else {
+										ic = iconv_open("UTF-8", codepage);
+									}
+									ptr1 = outbuf;
+									ptr2 = (char *)malloc((g + 1) * 4);
+									ptr2p = ptr2;
+									memset(ptr2, 0, (g + 1) * 4);
+									inc = g;
+									ouc = (g + 1) * 4;
+
+									sz = iconv(ic, &ptr1, &inc, &ptr2, &ouc);
+									if (sz == -1) {
+										perror("Iconv");
+									}
+									write(door_out, ptr2p, ptr2 - ptr2p);
+
+									free(ptr2p);	
+									iconv_close(ic);
+								}
 							}
 						} else {
 							if (!running_door) {

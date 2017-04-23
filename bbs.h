@@ -45,6 +45,7 @@ struct door_config {
 	char *name;
 	char *command;
 	int stdio;
+	char *codepage;
 };
 
 struct mail_area {
@@ -113,6 +114,7 @@ struct ip_address_guard {
 };
 
 struct bbs_config {
+	int codepage;
 	char *bbs_name;
 	char *bwave_name;
 	char *sysop_name;
@@ -143,6 +145,7 @@ struct bbs_config {
 	char *menu_path;
 	char *external_editor_cmd;
 	int external_editor_stdio;
+	char *external_editor_codepage;
 	int fork;
 	
 	int nodes;
@@ -199,6 +202,7 @@ struct user_record {
 	int defarchiver;
 	int defprotocol;
 	int nodemsgs;
+	int codepage;
 };
 
 struct jam_msg {
@@ -272,8 +276,8 @@ extern void next_mail_area(struct user_record *user);
 extern void prev_mail_area(struct user_record *user);
 extern void post_message(struct user_record *user);
 
-extern void rundoor(struct user_record *user, char *cmd, int stdio);
-extern void runexternal(struct user_record *user, char *cmd, int stdio, char **argv, char *cwd, int raw);
+extern void rundoor(struct user_record *user, char *cmd, int stdio, char *codepage);
+extern void runexternal(struct user_record *user, char *cmd, int stdio, char **argv, char *cwd, int raw, char *codepage);
 
 extern void bbs_list(struct user_record *user);
 

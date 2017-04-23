@@ -14,6 +14,7 @@
 #include <fts.h>
 #include <errno.h>
 #include <sys/socket.h>
+#include <iconv.h>
 #include "bbs.h"
 #include "lua/lua.h"
 #include "lua/lualib.h"
@@ -200,27 +201,92 @@ void timer_handler(int signum) {
 void s_printf(char *fmt, ...) {
 	char buffer[512];
 
-  va_list ap;
-  va_start(ap, fmt);
-  vsnprintf(buffer, 512, fmt, ap);
-  va_end(ap);
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(buffer, 512, fmt, ap);
+	va_end(ap);
 
 	s_putstring(buffer);
 }
 
+int should_convert_utf8() {
+	if (gUser != NULL) {
+		return gUser->codepage;
+	} 
+	return conf.codepage;
+}
+
 void s_putchar(char c) {
-	if (sshBBS) {
-		putchar(c);
+	iconv_t ic;
+	char *inbuf;
+	char *outbuf;
+	char *ptr1;
+	char *ptr2;
+	size_t inc;
+	size_t ouc;
+	size_t sz;
+
+	if (!should_convert_utf8()) {
+		if (sshBBS) {
+			putchar(c);
+		} else {
+			write(gSocket, &c, 1);
+		}
 	} else {
-		write(gSocket, &c, 1);
+		ic = iconv_open("UTF-8", "CP437");
+		inbuf = (char *)malloc(4);
+		outbuf = (char *)malloc(4);
+		memset(outbuf, 0, 4);
+		sprintf(inbuf, "%c", c);
+		inc = 1;
+		ouc = 4;
+		ptr1 = outbuf;
+		ptr2 = inbuf;
+		sz = iconv(ic, &inbuf, &inc, &outbuf, &ouc);
+		if (sshBBS) {
+			fprintf(stdout, "%s", ptr1);
+		} else {
+			write(gSocket, ptr1, outbuf - ptr1);
+		}
+		iconv_close(ic);
+		free(ptr1);
+		free(ptr2);
 	}
 }
 
 void s_putstring(char *c) {
-	if (sshBBS) {
-		printf("%s", c);
+	iconv_t ic;	
+	char *inbuf;
+	char *outbuf;
+	size_t inc;
+	size_t ouc;
+	size_t sz;
+	char *ptr1;
+	char *ptr2;
+	if (!should_convert_utf8()) {
+		if (sshBBS) {
+			puts(c);
+		} else {
+			write(gSocket, c, strlen(c));
+		}
 	} else {
-		write(gSocket, c, strlen(c));
+		ic = iconv_open("UTF-8", "CP437");
+		inc = strlen(c);
+		inbuf = strdup(c);
+		outbuf = (char *)malloc(inc * 4);
+		memset(outbuf, 0, inc * 4);
+		ptr1 = outbuf;
+		ptr2 = inbuf;		
+		ouc = inc * 4;
+		sz = iconv(ic, &inbuf, &inc, &outbuf, &ouc);
+		if (sshBBS) {
+			fprintf(stdout, "%s", ptr1);
+		} else {
+			write(gSocket, ptr1, outbuf - ptr1);
+		}
+		iconv_close(ic);
+		free(ptr1);
+		free(ptr2);
 	}
 }
 

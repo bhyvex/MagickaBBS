@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include "bbs.h"
 #include "lua/lua.h"
 #include "lua/lualib.h"
@@ -370,7 +371,7 @@ int menu_system(char *menufile) {
                                 for (j=0;j<conf.door_count;j++) {
                                     if (strcasecmp(menu[i]->data, conf.doors[j]->name) == 0) {
                                         dolog("%s launched door %s, on node %d", gUser->loginname, conf.doors[j]->name, mynode);
-                                        rundoor(gUser, conf.doors[j]->command, conf.doors[j]->stdio);
+                                        rundoor(gUser, conf.doors[j]->command, conf.doors[j]->stdio, conf.doors[j]->codepage);
                                         dolog("%s returned from door %s, on node %d", gUser->loginname, conf.doors[j]->name, mynode);
                                         break;
                                     }
