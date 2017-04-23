@@ -314,9 +314,9 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 									write(master, outbuf, g);
 								} else {
 									if (user->codepage == 0) {
-										ic = iconv_open("CP437", codepage);
+										ic = iconv_open(codepage, "CP437");
 									} else {
-										ic = iconv_open("UTF-8", codepage);
+										ic = iconv_open(codepage, "UTF-8");
 									}
 									ptr1 = outbuf;
 									ptr2 = (char *)malloc((g + 1) * 2);
@@ -349,9 +349,9 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 									write(door_out, outbuf, g);
 								} else {
 									if (user->codepage == 0) {
-										ic = iconv_open(codepage, "CP437");
+										ic = iconv_open("CP437", codepage);
 									} else {
-										ic = iconv_open(codepage, "UTF-8");
+										ic = iconv_open("UTF-8", codepage);
 									}
 									ptr1 = outbuf;
 									ptr2 = (char *)malloc((g + 1) * 2);
