@@ -479,6 +479,12 @@ static int handler(void* user, const char* section, const char* name,
 			conf->ipguard_tries = atoi(value);
 		} else if (strcasecmp(name, "root menu") == 0) {
 			conf->root_menu = strdup(value);
+		} else if (strcasecmp(name, "codepage") == 0) {
+			if (strcasecmp(value, "cp437") == 0) {
+				conf->codepage = 0;
+			} else if (strcasecmp(value, "utf8") == 0) {
+				conf->codepage = 1;
+			}
 		}
 	} else if (strcasecmp(section, "paths") == 0){
 		if (strcasecmp(name, "ansi path") == 0) {
@@ -1154,6 +1160,7 @@ int main(int argc, char **argv) {
 	conf.ipguard_tries = 4;
 	conf.ipguard_timeout = 120;
 	conf.protocol_count = 0;	
+	conf.codepage = 0;
 	
 	// Load BBS data
 	if (ini_parse(argv[1], handler, &conf) <0) {
