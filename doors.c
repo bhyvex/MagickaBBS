@@ -189,6 +189,7 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 	char *ptr2p;
 	size_t ouc;
 	size_t inc;
+	size_t sz;
 
 	timeoutpaused = 1;
 
@@ -360,7 +361,10 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 									inc = g;
 									ouc = g * 2;
 
-									iconv(ic, &ptr1, &inc, &ptr2, &ouc);
+									sz = iconv(ic, &ptr1, &inc, &ptr2, &ouc);
+									if (sz == -1) {
+										perror("Iconv");
+									}
 									write(door_out, ptr2p, ptr2 - ptr2p);
 
 									free(ptr2p);	
