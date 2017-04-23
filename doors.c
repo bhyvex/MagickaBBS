@@ -324,7 +324,7 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 									ptr2p = ptr2;
 									memset(ptr2, 0, (g + 1) * 2);
 									inc = g;
-									ouc = g * 2;
+									ouc = (g + 1) * 2;
 
 									iconv(ic, &ptr1, &inc, &ptr2, &ouc);
 									write(master, ptr2p, ptr2 - ptr2p);
@@ -359,7 +359,7 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 									ptr2p = ptr2;
 									memset(ptr2, 0, (g + 1) * 2);
 									inc = g;
-									ouc = g * 2;
+									ouc = (g + 1) * 2;
 
 									sz = iconv(ic, &ptr1, &inc, &ptr2, &ouc);
 									if (sz == -1) {
