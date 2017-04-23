@@ -439,7 +439,7 @@ int do_download(struct user_record *user, char *file) {
 		
 		arguments[0] = download_command;
 
-		runexternal(user, download_command, conf.protocols[user->defprotocol - 1]->stdio, arguments, conf.bbs_path, 1);
+		runexternal(user, download_command, conf.protocols[user->defprotocol - 1]->stdio, arguments, conf.bbs_path, 1, NULL);
 		
 		free(arguments);		
 	}
@@ -540,7 +540,7 @@ int do_upload(struct user_record *user, char *final_path) {
 		
 		mkdir(upload_path, 0755);
 		
-		runexternal(user, upload_command, conf.protocols[user->defprotocol - 1]->stdio, arguments, upload_path, 1);
+		runexternal(user, upload_command, conf.protocols[user->defprotocol - 1]->stdio, arguments, upload_path, 1, NULL);
 		
 		free(arguments);
 		

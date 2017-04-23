@@ -34,7 +34,7 @@ OBJ =  inih/ini.o bbs.o main.o users.o main_menu.o mail_menu.o doors.o bbs_list.
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 magicka: $(OBJ) ${LUA} ${JAMLIB} ${ZMODEM} ${JSMN}
-	$(CC) -o magicka -o $@ $^ $(CFLAGS) -L/usr/local/lib -lsqlite3 -lutil -lm -lssl -lcrypto -lssh
+	$(CC) -o magicka -o $@ $^ $(CFLAGS) -L/usr/local/lib -lsqlite3 -lutil -lm -lssl -lcrypto -lssh -liconv
 
 magimail: $(JAMLIB)
 	cd utils/magimail && $(MAKE) freebsd

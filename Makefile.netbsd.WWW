@@ -39,7 +39,7 @@ OBJ =  deps/aha/aha.o inih/ini.o bbs.o main.o users.o main_menu.o mail_menu.o do
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 magicka: $(OBJ) ${LUA} ${ZMODEM} ${JAMLIB} ${B64} ${JSMN}
-	$(CC) -o magicka -o $@ $^ $(CFLAGS) -L/usr/pkg/lib -lsqlite3 -lutil -lm -lssl -lcrypto -lssh $(MICROHTTPD)
+	$(CC) -o magicka -o $@ $^ $(CFLAGS) -L/usr/pkg/lib -lsqlite3 -lutil -lm -lssl -lcrypto -lssh -liconv $(MICROHTTPD)
 
 magiedit: $(ODOORS)
 	cd utils/magiedit && $(MAKE)
