@@ -320,11 +320,11 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 										ic = iconv_open(codepage, "UTF-8");
 									}
 									ptr1 = outbuf;
-									ptr2 = (char *)malloc((g + 1) * 2);
+									ptr2 = (char *)malloc((g + 1) * 4);
 									ptr2p = ptr2;
-									memset(ptr2, 0, (g + 1) * 2);
+									memset(ptr2, 0, (g + 1) * 4);
 									inc = g;
-									ouc = (g + 1) * 2;
+									ouc = (g + 1) * 4;
 
 									iconv(ic, &ptr1, &inc, &ptr2, &ouc);
 									write(master, ptr2p, ptr2 - ptr2p);
@@ -355,11 +355,11 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 										ic = iconv_open("UTF-8", codepage);
 									}
 									ptr1 = outbuf;
-									ptr2 = (char *)malloc((g + 1) * 2);
+									ptr2 = (char *)malloc((g + 1) * 4);
 									ptr2p = ptr2;
-									memset(ptr2, 0, (g + 1) * 2);
+									memset(ptr2, 0, (g + 1) * 4);
 									inc = g;
-									ouc = (g + 1) * 2;
+									ouc = (g + 1) * 4;
 
 									sz = iconv(ic, &ptr1, &inc, &ptr2, &ouc);
 									if (sz == -1) {
