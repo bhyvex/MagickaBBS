@@ -246,7 +246,7 @@ void s_putchar(char c) {
 		if (sshBBS) {
 			fprintf(stdout, "%s", ptr1);
 		} else {
-			write(gSocket, ptr1, strlen(ptr1));
+			write(gSocket, ptr1, outbuf - ptr1);
 		}
 		iconv_close(ic);
 		free(ptr1);
@@ -282,7 +282,7 @@ void s_putstring(char *c) {
 		if (sshBBS) {
 			fprintf(stdout, "%s", ptr1);
 		} else {
-			write(gSocket, ptr1, strlen(ptr1));
+			write(gSocket, ptr1, outbuf - ptr1);
 		}
 		iconv_close(ic);
 		free(ptr1);
