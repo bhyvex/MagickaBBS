@@ -186,6 +186,7 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 	int g;
 	char *ptr1;
 	char *ptr2;
+	char *ptr2p;
 	size_t ouc;
 	size_t inc;
 
@@ -319,15 +320,15 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 									}
 									ptr1 = outbuf;
 									ptr2 = (char *)malloc((g + 1) * 2);
+									ptr2p = ptr2;
 									memset(ptr2, 0, (g + 1) * 2);
 									inc = g;
 									ouc = g * 2;
 
 									iconv(ic, &ptr1, &inc, &ptr2, &ouc);
-									ptr2 = ptr2 - (g * 2 - ouc);
-									write(master, ptr2, strlen(ptr2));
+									write(master, ptr2p, ptr2p - ptr2);
 
-									free(ptr2);
+									free(ptr2p);
 									iconv_close(ic);
 								}
 							} else if (FD_ISSET(master, &fdset)) {
@@ -354,15 +355,15 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 									}
 									ptr1 = outbuf;
 									ptr2 = (char *)malloc((g + 1) * 2);
+									ptr2p = ptr2;
 									memset(ptr2, 0, (g + 1) * 2);
 									inc = g;
 									ouc = g * 2;
 
 									iconv(ic, &ptr1, &inc, &ptr2, &ouc);
-									ptr2 = ptr2 - (g * 2 - ouc);
-									write(door_out, ptr2, strlen(ptr2));
+									write(door_out, ptr2p, ptr2p - ptr2);
 
-									free(ptr2);	
+									free(ptr2p);	
 									iconv_close(ic);
 								}
 							}
