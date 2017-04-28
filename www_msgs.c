@@ -82,7 +82,7 @@ static char *www_sanitize(char *inp) {
 	}
 
 	result = (char *)malloc(len + 1);
-	memset(result, 0, len);
+	memset(result, 0, len + 1);
 	len = 0;
 	for (i=0;i<strlen(inp);i++) {
 		if (inp[i] == '<')  {
