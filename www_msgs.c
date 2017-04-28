@@ -67,6 +67,48 @@ static int new_messages(struct user_record *user, int conference, int area) {
 	return count;
 }
 
+static char *www_sanitize(char *inp) {
+	int i;
+	char *result;
+	int len = 0;
+	for (i=0;i<strlen(inp);i++) {
+		if ((inp[i] == '<') || (inp[i] == '>')) {
+			len += 4;
+		} else if (inp[i] == '&') {
+			len += 5;
+		} else {
+			len++;
+		}
+	}
+
+	result = (char *)malloc(len + 1);
+	memset(result, 0, len);
+	len = 0;
+	for (i=0;i<strlen(inp);i++) {
+		if (inp[i] == '<')  {
+			result[len++] = '&';
+			result[len++] = 'l';
+			result[len++] = 't';
+			result[len++] = ';';
+		} else if (inp[i] == '>') {
+			result[len++] = '&';
+			result[len++] = 'g';
+			result[len++] = 't';
+			result[len++] = ';';			
+		} else if (inp[i] == '&') {
+			result[len++] = '&';
+			result[len++] = 'a';
+			result[len++] = 'm';
+			result[len++] = 'p';
+			result[len++] = ';';
+		} else {
+			result[len++] = inp[i];
+		}
+	}
+
+	return result;
+}
+
 char *www_msgs_arealist(struct user_record *user) {
 	char *page;
 	int max_len;
@@ -131,6 +173,10 @@ char *www_msgs_messagelist(struct user_record *user, int conference, int area, i
 	s_JamLastRead jlr;
 	int skip_f;
 	int skip_t;
+	char *to;
+	char *from;
+	char *subject;
+
 	if (conference < 0 || conference >= conf.mail_conference_count || area < 0 || area >= conf.mail_conferences[conference]->mail_area_count) {
 		return NULL;
 	}
@@ -197,11 +243,19 @@ char *www_msgs_messagelist(struct user_record *user, int conference, int area, i
 	for (i=skip_f -1; i>=skip_t;i--) {
 		date = (time_t)mhrs->msgs[i]->msg_h->DateWritten;
 		gmtime_r(&date, &msg_date);
+		to = www_sanitize(mhrs->msgs[i]->to);
+		from = www_sanitize(mhrs->msgs[i]->from);
+		subject = www_sanitize(mhrs->msgs[i]->subject);
 		if (mhrs->msgs[i]->msg_h->MsgNum > jlr.HighReadMsg) {
-			sprintf(buffer, "<div class=\"msg-summary\"><div class=\"msg-summary-id\">%d</div><div class=\"msg-summary-subject\"><a href=\"/msgs/%d/%d/%d\">%s</a></div><div class=\"msg-summary-from\">%s</div><div class=\"msg-summary-to\">%s</div><div class=\"msg-summary-date\">%.2d:%.2d %.2d-%.2d-%.2d</div></div>\n", mhrs->msgs[i]->msg_no + 1, conference, area, mhrs->msgs[i]->msg_h->MsgNum, mhrs->msgs[i]->subject, mhrs->msgs[i]->from, mhrs->msgs[i]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+			sprintf(buffer, "<div class=\"msg-summary\"><div class=\"msg-summary-id\">%d</div><div class=\"msg-summary-subject\"><a href=\"/msgs/%d/%d/%d\">%s</a></div><div class=\"msg-summary-from\">%s</div><div class=\"msg-summary-to\">%s</div><div class=\"msg-summary-date\">%.2d:%.2d %.2d-%.2d-%.2d</div></div>\n", mhrs->msgs[i]->msg_no + 1, conference, area, mhrs->msgs[i]->msg_h->MsgNum, subject, from, to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 		} else {
-			sprintf(buffer, "<div class=\"msg-summary-seen\"><div class=\"msg-summary-id\">%d</div><div class=\"msg-summary-subject\"><a href=\"/msgs/%d/%d/%d\">%s</a></div><div class=\"msg-summary-from\">%s</div><div class=\"msg-summary-to\">%s</div><div class=\"msg-summary-date\">%.2d:%.2d %.2d-%.2d-%.2d</div></div>\n", mhrs->msgs[i]->msg_no + 1, conference, area, mhrs->msgs[i]->msg_h->MsgNum, mhrs->msgs[i]->subject, mhrs->msgs[i]->from, mhrs->msgs[i]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+			sprintf(buffer, "<div class=\"msg-summary-seen\"><div class=\"msg-summary-id\">%d</div><div class=\"msg-summary-subject\"><a href=\"/msgs/%d/%d/%d\">%s</a></div><div class=\"msg-summary-from\">%s</div><div class=\"msg-summary-to\">%s</div><div class=\"msg-summary-date\">%.2d:%.2d %.2d-%.2d-%.2d</div></div>\n", mhrs->msgs[i]->msg_no + 1, conference, area, mhrs->msgs[i]->msg_h->MsgNum, subject, from, to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 		}
+
+		free(to);
+		free(from);
+		free(subject);
+
 		if (len + strlen(buffer) > max_len - 1) {
 			max_len += 4096;
 			page = (char *)realloc(page, max_len);
@@ -269,6 +323,9 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 	char buffer[4096];	
 	int chars;
 	int i;
+	char *from_s;
+	char *subject_s;
+	char *to_s;
 
 	char *aha_text;
 	char *aha_out;
@@ -411,32 +468,37 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		}	
 		strcat(page, buffer);
 		len += strlen(buffer);
-	
-		sprintf(buffer, "<div class=\"msg-view-subject\">%s</div>\n", subject);
+		subject_s = www_sanitize(subject);
+		sprintf(buffer, "<div class=\"msg-view-subject\">%s</div>\n", subject_s);
 		if (len + strlen(buffer) > max_len - 1) {
 			max_len += 4096;
 			page = (char *)realloc(page, max_len);
 		}	
-		strcat(page, buffer);
-		len += strlen(buffer);
-	
-		if (conf.mail_conferences[conference]->mail_areas[area]->type != TYPE_LOCAL_AREA) {
-			sprintf(buffer, "<div class=\"msg-view-from\">From: %s (%s)</div>\n", from, oaddress);
-		} else {
-			sprintf(buffer, "<div class=\"msg-view-from\">From: %s</div>\n", from);
-		}
-		if (len + strlen(buffer) > max_len - 1) {
-			max_len += 4096;
-			page = (char *)realloc(page, max_len);
-		}	
+		free(subject_s);
 		strcat(page, buffer);
 		len += strlen(buffer);
 
-		sprintf(buffer, "<div class=\"msg-view-to\">To: %s</div>\n", to);
+		from_s = www_sanitize(from);
+		if (conf.mail_conferences[conference]->mail_areas[area]->type != TYPE_LOCAL_AREA) {
+			sprintf(buffer, "<div class=\"msg-view-from\">From: %s (%s)</div>\n", from_s, oaddress);
+		} else {
+			sprintf(buffer, "<div class=\"msg-view-from\">From: %s</div>\n", from_s);
+		}
+		free(from_s);
+
 		if (len + strlen(buffer) > max_len - 1) {
 			max_len += 4096;
 			page = (char *)realloc(page, max_len);
 		}	
+		strcat(page, buffer);
+		len += strlen(buffer);
+		to_s = www_sanitize(to);
+		sprintf(buffer, "<div class=\"msg-view-to\">To: %s</div>\n", to_s);
+		if (len + strlen(buffer) > max_len - 1) {
+			max_len += 4096;
+			page = (char *)realloc(page, max_len);
+		}	
+		free(to_s);
 		strcat(page, buffer);
 		len += strlen(buffer);
 		
