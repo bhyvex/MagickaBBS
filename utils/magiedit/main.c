@@ -500,7 +500,7 @@ char *message_editor() {
                                         }
                                         position_x = 0;
                                         q_done = 1;                                    
-                                    } else if (ch.chKeyPress == 24 || ch.chKeyPress == 27) {
+                                    } else if (ch.chKeyPress == 27) {
                                         if (q_line_count) {
                                             free(q_lines);
                                         }
