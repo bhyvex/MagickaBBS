@@ -499,7 +499,7 @@ char *message_editor() {
                                         }
                                         position_x = 0;
                                         q_done = 1;                                    
-                                    } else if (ch.chKeyPress == 24) {
+                                    } else if (ch.chKeyPress == 24 || ch.chKeyPress == 27) {
                                         if (q_line_count) {
                                             free(q_lines);
                                         }
@@ -514,6 +514,17 @@ char *message_editor() {
 
                                         q_lines[q_line_count] = q_position;
                                         q_line_count++;
+
+                                        q_position++;
+                                        if (q_position >= quote_lines_count) {
+                                            q_position = quote_lines_count - 1;
+                                        }
+                                        if (q_position >= q_start + 7) {
+                                            q_start = q_start + 7;
+                                            if (q_start + 7 >= quote_line_count) {
+                                                q_start = quote_line_count - 7;
+                                            }
+                                        }                                      
                                         redraw = 1;                        
                                     }
                                 }
