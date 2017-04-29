@@ -52,6 +52,7 @@ char *message_editor() {
     body_line_count = 0;
     done = 0;
     q_position = 0;
+    q_start = 0;
 
     memset(line, 0, 81);
     memset(line_cpy, 0, 81);
@@ -377,7 +378,7 @@ char *message_editor() {
                             od_printf("%-26.26s", msgarea);
                             od_set_cursor(5, 1);
                             
-                            q_start = 0;
+                            
                             q_line_count = 0;
                             q_done = 0;
                             redraw = 1;
