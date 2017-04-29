@@ -529,6 +529,7 @@ char *message_editor() {
                                     }
                                 }
                             }
+                            od_set_color(D_GREY, D_BLACK);
                             // restore screen
                             od_clr_scr();
                             od_set_cursor(1, 1);
