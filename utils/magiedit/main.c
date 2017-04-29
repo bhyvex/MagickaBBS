@@ -516,8 +516,8 @@ char *message_editor() {
                                         q_line_count++;
 
                                         q_position++;
-                                        if (q_position >= quote_lines_count) {
-                                            q_position = quote_lines_count - 1;
+                                        if (q_position >= quote_line_count) {
+                                            q_position = quote_line_count - 1;
                                         }
                                         if (q_position >= q_start + 7) {
                                             q_start = q_start + 7;
