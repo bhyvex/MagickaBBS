@@ -1747,9 +1747,9 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 					free(replybody);
 					JAM_CloseMB(jb);
 					doquit = 1;
-				} /*else {
-					doquit = 1;
-				}*/
+				} else {
+					jb = open_jam_base(conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
+				}
 			}
 			free(body);
 
