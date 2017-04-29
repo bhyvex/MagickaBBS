@@ -1747,9 +1747,9 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 					free(replybody);
 					JAM_CloseMB(jb);
 					doquit = 1;
-				} else {
+				} /*else {
 					doquit = 1;
-				}
+				}*/
 			}
 			free(body);
 
