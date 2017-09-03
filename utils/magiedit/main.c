@@ -579,13 +579,13 @@ char *message_editor() {
 								body_lines[i] = body_lines[i+1];
 							}
 							body_line_count--;
-							body_lines = (char **)realloc(body_lines, sizeof(char *) * (body_line_count));
+							body_lines = (char **)realloc(body_lines, sizeof(char *) * (body_line_count + 1));
 						} else {
 							if (body_line_count > 0) {
 								memcpy(line, body_lines[body_line_count -1], 81);
 								free(body_lines[body_line_count - 1]);
 								body_line_count--;
-								body_lines = (char **)realloc(body_lines, sizeof(char *) * (body_line_count));							
+								body_lines = (char **)realloc(body_lines, sizeof(char *) * (body_line_count + 1));							
 								position_y--;
 							} else {
 								memset(line, 0, 81);
@@ -594,13 +594,18 @@ char *message_editor() {
 						
 						// refresh screen;
 						position_x = 0;
-						
-                        for (i = body_line_count;i < top_of_screen + 17;i++) {
-							od_set_cursor(i - top_of_screen + 6, 1);
-                            od_clr_line();							
+						if (position_y < body_line_count) {
+							for (i=position_y; i<= body_line_count && i < top_of_screen + 17;i++) {
+								od_set_cursor(i - top_of_screen + 5, 1);
+								od_printf("%s", body_lines[i]);
+								od_clr_line();
+							}
 						}
-						
-						
+						for (;i< top_of_screen + 17;i++) {
+							od_set_cursor(i - top_of_screen + 5, 1);
+							od_clr_line();
+						}
+
                     } else if (ch.chKeyPress == 26) {
                         // save
                         // save message
