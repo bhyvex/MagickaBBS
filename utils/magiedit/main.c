@@ -418,7 +418,7 @@ char *message_editor() {
                                     for (i=q_start;i<q_start + 7 && i<quote_line_count;i++) {
                                         od_set_cursor(16 + (i - q_start), 1);
                                         if (i == q_position) {
-                                            od_set_color(D_BLACK, D_GREEN);
+                                            od_set_color(D_BLACK, D_MAGENTA);
                                         } else {
                                             od_set_color(D_GREY, D_BLACK);
                                         }
@@ -443,12 +443,12 @@ char *message_editor() {
                                             
                                         if (!redraw) {
                                             od_set_cursor(q_position - q_start + 16, 1);
-                                            od_set_color(D_BLACK, D_GREEN);
+                                            od_set_color(D_BLACK, D_MAGENTA);
                                             od_printf("%s", quote_lines[q_position]);
                                             od_clr_line();
                                             
                                             od_set_cursor(q_position + 1 - q_start + 16, 1);
-                                            od_set_color(D_BLACK, D_GREEN);
+                                            od_set_color(D_BLACK, D_MAGENTA);
                                             od_printf("%s", quote_lines[q_position + 1]);
                                             od_clr_line();     
                                         }                                   
@@ -468,11 +468,11 @@ char *message_editor() {
                                         }
                                         if (!redraw) {
                                             od_set_cursor(q_position - q_start + 16, 1);
-                                            od_set_color(D_BLACK, D_GREEN);
+                                            od_set_color(D_BLACK, D_MAGENTA);
                                             od_printf("%s", quote_lines[q_position]);
                                             od_clr_line();
                                             od_set_cursor(q_position - 1 - q_start + 16, 1);
-                                            od_set_color(D_BLACK, D_GREEN);
+                                            od_set_color(D_BLACK, D_MAGENTA);
                                             od_printf("%s", quote_lines[q_position - 1]);
                                             od_clr_line();                                            
                                         }                                   
@@ -569,7 +569,38 @@ char *message_editor() {
                             }
                             free(body_lines);
                         }
-                        return NULL;                        
+                        return NULL; 
+					} else if (ch.chKeyPress == 25) {
+						// ctrl-y delete current line
+						if (position_y < body_line_count) {
+							strcpy(line, body_lines[position_y]);
+							free(body_lines[position_y]);
+							for (i=position_y;i<body_line_count-1;i++) {
+								body_lines[i] = body_lines[i+1];
+							}
+							body_line_count--;
+							body_lines = (char **)realloc(body_lines, sizeof(char *) * (body_line_count));
+						} else {
+							if (body_line_count > 0) {
+								memcpy(line, body_lines[body_line_count -1], 81);
+								free(body_lines[body_line_count - 1]);
+								body_line_count--;
+								body_lines = (char **)realloc(body_lines, sizeof(char *) * (body_line_count));							
+								position_y--;
+							} else {
+								memset(line, 0, 81);
+							}
+						}
+						
+						// refresh screen;
+						position_x = 0;
+						
+                        for (i = body_line_count;i < top_of_screen + 17;i++) {
+							od_set_cursor(i - top_of_screen + 6, 1);
+                            od_clr_line();							
+						}
+						
+						
                     } else if (ch.chKeyPress == 26) {
                         // save
                         // save message
