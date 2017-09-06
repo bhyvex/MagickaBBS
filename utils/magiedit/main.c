@@ -585,13 +585,21 @@ char *message_editor() {
 								body_lines[i] = body_lines[i+1];
 							}
 							body_line_count--;
-							body_lines = (char **)realloc(body_lines, sizeof(char *) * (body_line_count + 1));
+							if (body_line_count == 0) {
+								free(body_lines);
+							} else {
+								body_lines = (char **)realloc(body_lines, sizeof(char *) * (body_line_count));
+							}
 						} else {
 							if (body_line_count > 0) {
 								memcpy(line, body_lines[body_line_count -1], 81);
 								free(body_lines[body_line_count - 1]);
 								body_line_count--;
-								body_lines = (char **)realloc(body_lines, sizeof(char *) * (body_line_count + 1));							
+								if (body_line_count == 0) {
+									free(body_lines);
+								} else {
+									body_lines = (char **)realloc(body_lines, sizeof(char *) * (body_line_count));
+								}
 								position_y--;
 							} else {
 								memset(line, 0, 81);
