@@ -157,9 +157,15 @@ char *message_editor() {
                         position_x++;
                         od_set_cursor(position_y - top_of_screen + 5, position_x + 1);
                     }
-                }
+                } else if (ch.chKeyPress == OD_KEY_END) {
+					position_x = strlen(line);
+					od_set_cursor(position_y - top_of_screen + 5, position_x + 1);
+				} else if (ch.chKeyPress == OD_KEY_HOME) {
+					position_x = 0;
+					od_set_cursor(position_y - top_of_screen + 5, position_x + 1);
+				}
             } else if (ch.EventType == EVENT_CHARACTER) {
-                if (stage == 1 && ch.chKeyPress == '[') {
+               /* if (stage == 1 && ch.chKeyPress == '[') {
                     stage = 2;
                     continue;
                 } else if (stage != 0) {
@@ -170,7 +176,7 @@ char *message_editor() {
                 if (ch.chKeyPress == 27) {
                     // got an escape that i shouldnt have
                     stage = 1;
-                } else if (ch.chKeyPress == '\r' || strlen(line) >= 73) {
+                } else */if (ch.chKeyPress == '\r' || strlen(line) >= 73) {
                     if (strlen(line) >= 73 && ch.chKeyPress != '\r') {
                         if (position_x == strlen(line)) {
                             strncat(line, &ch.chKeyPress, 1);
