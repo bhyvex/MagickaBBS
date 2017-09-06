@@ -914,12 +914,23 @@ void server(int port) {
 	int i;
 	int on = 1;
 	char str[INET6_ADDRSTRLEN];
+	struct stat s;
 #if defined(ENABLE_WWW)
 	www_daemon = NULL;
 #endif
 
 	if (!conf.fork) {
 		printf("Magicka BBS Server Starting....\n");
+	}
+
+	for (i=1;i<=conf.nodes;i++) {
+		snprintf(buffer, 1024, "%s/nodeinuse.%d", conf.bbs_path, i);
+		if (stat(buffer, &s) == 0) {
+			if (!conf.fork) {
+				printf(" - Removing stale file: nodeinuse.%d\n", i);
+			}
+			unlink(buffer);
+		}
 	}
 
 	if (conf.ipguard_enable) {
