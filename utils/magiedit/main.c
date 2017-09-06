@@ -176,7 +176,7 @@ char *message_editor() {
                 if (ch.chKeyPress == 27) {
                     // got an escape that i shouldnt have
                     stage = 1;
-                } else */if (ch.chKeyPress == '\r' || strlen(line) >= 73) {
+                } else */if (ch.chKeyPress == '\r' || (strlen(line) >= 73 && ch.chKeyPress != '\b')) {
                     if (strlen(line) >= 73 && ch.chKeyPress != '\r') {
                         if (position_x == strlen(line)) {
                             strncat(line, &ch.chKeyPress, 1);
