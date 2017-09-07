@@ -2257,7 +2257,7 @@ void list_messages(struct user_record *user) {
 						}
 					}
 				} else if (c == 13) {
-					closed = 1;
+					redraw = 1;
 					read_message(user, msghs, i - 1);
 				}
 			}
