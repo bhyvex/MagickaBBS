@@ -1152,6 +1152,10 @@ void unmangle_ansi(char *body, int len, char **body_out, int *body_len) {
 					}
 					state = 0;
 					break;
+				default:
+					// bad ansi
+					state = 0;
+					break;
 			}
 		}
 	}
