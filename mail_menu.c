@@ -881,6 +881,7 @@ void unmangle_ansi(char *body, int len, char **body_out, int *body_len) {
 	char_at = 1;
 	
 	for (i=0;i<len;i++) {
+
 		if (state == 0) {
 			if (body[i] == 27) {
 				state = 1;
@@ -942,6 +943,9 @@ void unmangle_ansi(char *body, int len, char **body_out, int *body_len) {
 						line_at = line_at - params[0];
 					} else {
 						line_at--;
+					}
+					if (line_at < 1) {
+						line_at = 1;
 					}
 					state = 0;
 					break;
