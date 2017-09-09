@@ -2262,6 +2262,19 @@ void list_messages(struct user_record *user) {
 								s_printf("\e[%d;5H", i - start + 1);			
 									
 							}											
+						} else if (c == 70) {
+							// END KEY
+							i = msghs->msg_count;
+							start = i - 22;
+							if (start < 0) {
+								start = 0;
+							}
+							redraw = 1;
+						} else if (c == 72) {
+							// HOME KEY
+							i = 1;
+							start = 0;
+							redraw = 1;
 						}
 					}
 				} else if (c == 13) {
