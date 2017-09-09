@@ -290,9 +290,11 @@ void s_putstring(char *c) {
 	}
 }
 
-void s_displayansi_p(char *file) {
+void s_displayansi_pause(char *file, int pause) {
 	FILE *fptr;
 	char c;
+
+	int lines = 0;
 
 	fptr = fopen(file, "r");
 	if (!fptr) {
@@ -301,9 +303,24 @@ void s_displayansi_p(char *file) {
 	c = fgetc(fptr);
 	while (!feof(fptr) && c != 0x1a) {
 		s_putchar(c);
+		
+		if (pause) {
+			if (c == '\n') {
+				lines++;
+				if (lines == 24) {
+					s_printf(get_string(6));
+					s_getchar();
+					lines = 0;
+				}
+			}
+		}
 		c = fgetc(fptr);
 	}
 	fclose(fptr);
+}
+
+void s_displayansi_p(char *file) {
+	s_displayansi_pause(file, 0);
 }
 
 
@@ -315,16 +332,7 @@ void s_displayansi(char *file) {
 
 	sprintf(buffer, "%s/%s.ans", conf.ansi_path, file);
 
-	fptr = fopen(buffer, "r");
-	if (!fptr) {
-		return;
-	}
-	c = fgetc(fptr);
-	while (!feof(fptr) && c != 0x1a) {
-		s_putchar(c);
-		c = fgetc(fptr);
-	}
-	fclose(fptr);
+	s_displayansi_pause(buffer, 0);
 }
 
 char s_getchar() {

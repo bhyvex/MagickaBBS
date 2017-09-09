@@ -232,6 +232,7 @@ extern struct fido_addr *parse_fido_addr(const char *str);
 extern void s_putchar(char c);
 extern void s_printf(char *fmt, ...);
 extern void s_putstring(char *c);
+extern void s_displayansi_pause(char *file, int pause);
 extern void s_displayansi_p(char *file);
 extern void s_displayansi(char *file);
 extern char s_getchar();
@@ -330,8 +331,6 @@ extern char *www_msgs_messageview(struct user_record *user, int conference, int 
 extern int www_send_msg(struct user_record *user, char *to, char *subj, int conference, int area, char *replyid, char *body);
 extern char *www_new_msg(struct user_record *user, int conference, int area);
 extern char *www_last10();
-
-extern int menu_system(char *menufile);
 #endif
-
+extern int menu_system(char *menufile);
 #endif
