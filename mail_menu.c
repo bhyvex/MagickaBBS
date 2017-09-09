@@ -2270,7 +2270,7 @@ void list_messages(struct user_record *user) {
 								start = 0;
 							}
 							redraw = 1;
-						} else if (c == 72) {
+						} else if (c == 75) {
 							// HOME KEY
 							i = 1;
 							start = 0;
