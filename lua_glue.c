@@ -41,6 +41,17 @@ int l_bbsRChar(lua_State *L) {
 	return 1;
 }
 
+int l_bbsDisplayAnsiPause(lua_State *L) {
+	char *str = (char *)lua_tostring(L, -1);
+	char buffer[256];
+
+	sprintf(buffer, "%s/%s.ans", conf.ansi_path, str);
+	
+	s_displayansi_pause(buffer, 1);
+
+	return 0;
+}
+
 int l_bbsDisplayAnsi(lua_State *L) {
 	char *str = (char *)lua_tostring(L, -1);
 
@@ -153,6 +164,8 @@ void lua_push_cfunctions(lua_State *L) {
 	lua_setglobal(L, "bbs_write_string");
 	lua_pushcfunction(L, l_bbsRString);
 	lua_setglobal(L, "bbs_read_string");
+	lua_pushcfunction(L, l_bbsDisplayAnsiPause);
+	lua_setglobal(L, "bbs_display_ansi_pause");	
 	lua_pushcfunction(L, l_bbsDisplayAnsi);
 	lua_setglobal(L, "bbs_display_ansi");
 	lua_pushcfunction(L, l_bbsRChar);
