@@ -806,66 +806,139 @@ void unmangle_ansi(char *body, int len, char **body_out, int *body_len) {
 	struct character_t ***fake_screen;
 	int ansi;
 	
+	
+	line_at = 1;
+	char_at = 1;
+	
 	for (i=0;i<len;i++) {
-		if (body[i] == '\r') {
-			line_count++;
-			line_at++;
-		} else if (body[i] != 27){
-			char_at ++;
-			if (char_at == 80) {
-				char_at = 0;
-				line_at++;
+
+		if (state == 0) {
+			if (body[i] == 27) {
+				state = 1;
+				continue;
+			} else {
+				if (body[i] == '\r') {
+					char_at = 1;
+					line_at++;
+				} else {
+					char_at++;
+					while (char_at > 80) {
+						line_at++;
+						char_at -= 80;
+					}
+				}
+				
 				if (line_at > line_count) {
 					line_count = line_at;
 				}
+			}
+		} else if (state == 1) {
+			if (body[i] == '[') {
+				state = 2;
+				continue;
+			}
+		} else if (state == 2) {
+			param_count = 0;
+			for (j=0;j<16;j++) {
+				params[j] = 0;
+			}
+			state = 3;
+		}
+		if (state == 3) {
+			if (body[i] == ';') {
+				if (param_count < 15) {
+					param_count++;
+				}
+				continue;
+			} else if (body[i] >= '0' && body[i] <= '9') {
+				if (!param_count) param_count = 1;
+				params[param_count-1] = params[param_count-1] * 10 + (body[i] - '0');
+				continue;
+			} else {
+				state = 4;
 			}
 		}
 		
-		if (body[i] == 27) {
-			ansi = i;
-            while (strchr("ABCDEFGHIGJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", body[i]) == NULL)
-				i++;
-            if (body[i] == 'A') {
-				if (i == ansi + 1) {
-					line_at--;
-				} else {
-					line_at -= atoi(&body[ansi + 1]);
-				}
-			} else if (body[i] == 'B') {
-				if (i == ansi + 1) {
-					line_at++;
-				} else {
-					line_at += atoi(&body[ansi + 1]);
-				}
-				if (line_at > line_count) {
-					line_count = line_at;
-				}
-			} else if (body[i] == 'C') {
-				if (i == ansi + 1) {
-					char_at++;
-				} else {
-					char_at += atoi(&body[ansi + 1]);
-				}
-				while (char_at >= 80) {
-					line_count++;
-					char_at -= 80;
-				}
-				
-			} else if (body[i] == 'D') {
-				if (i == ansi + 1) {
-					char_at--;
-				} else {
-					char_at -= atoi(&body[ansi + 1]);
-				}
-				while (char_at < 0) {
-					char_at = 0;
-				}
-				
+		if (state == 4) {
+			switch(body[i]) {
+				case 'H':
+				case 'f':
+					if (params[0]) params[0]--;
+					if (params[1]) params[1]--;
+					line_at = params[0] + 1;
+					char_at = params[1] + 1;
+					
+					if (char_at > 80) {
+						char_at = 80;
+					}
+					
+					if (line_at > line_count) {
+						line_count = line_at;
+					}
+					
+					state = 0;
+					break;
+				case 'A':
+					if (param_count > 0) {
+						line_at = line_at - params[0];
+					} else {
+						line_at--;
+					}
+					if (line_at < 1) {
+						line_at = 1;
+					}
+					state = 0;
+					break;
+				case 'B':
+					if (param_count > 0) {
+						line_at = line_at + params[0];
+					} else {
+						line_at++;
+					}
+					if (line_at > line_count) {
+						line_count = line_at;
+					}
+					state = 0;
+					break;
+				case 'C':
+					if (param_count > 0) {
+						char_at = char_at + params[0];
+					} else {
+						char_at ++;
+					}
+					if (char_at > 80) {
+						char_at = 80;
+					}
+					state = 0;
+					break;
+				case 'D':
+					if (param_count > 0) {
+						char_at = char_at - params[0];
+					} else {
+						char_at --;
+					}
+					if (char_at < 1) {
+						char_at = 1;
+					}
+					state = 0;
+					break;
+				case 's':
+					save_char_at = char_at;
+					save_line_at = line_at;
+					state = 0;
+					break;
+				case 'u':
+					char_at = save_char_at;
+					line_at = save_line_at;
+					state = 0;
+					break;
+				default:
+					state = 0;
+					break;
 			}
 		}
-	}
+	}	
 	
-
 	fake_screen = (struct character_t ***)malloc(sizeof(struct character_t **) * line_count);
 	for (i=0;i<line_count;i++) {
 		fake_screen[i] = (struct character_t **)malloc(sizeof(struct character_t*) * 80);
@@ -891,6 +964,7 @@ void unmangle_ansi(char *body, int len, char **body_out, int *body_len) {
 					char_at = 1;
 					line_at++;
 				} else {
+					if (line_at > line_count) line_at = line_count;
 					fake_screen[line_at -1][char_at - 1]->c = body[i];
 					fake_screen[line_at -1][char_at - 1]->fg = fg;
 					fake_screen[line_at -1][char_at - 1]->bg = bg;
@@ -954,6 +1028,9 @@ void unmangle_ansi(char *body, int len, char **body_out, int *body_len) {
 						line_at = line_at + params[0];
 					} else {
 						line_at++;
+					}
+					if (line_at > line_count) {
+						line_at = line_count;
 					}
 					state = 0;
 					break;
