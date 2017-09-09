@@ -866,17 +866,7 @@ tryagain:
 
 	if (do_internal_login == 1) {
 		// bulletins
-		i = 0;
-		sprintf(buffer, "%s/bulletin%d.ans", conf.ansi_path, i);
-
-		while (stat(buffer, &s) == 0) {
-			sprintf(buffer, "bulletin%d", i);
-			s_displayansi(buffer);
-			s_printf(get_string(6));
-			s_getc();
-			i++;
-			sprintf(buffer, "%s/bulletin%d.ans", conf.ansi_path, i);
-		}
+		display_bulletins();
 
 		// external login cmd
 
