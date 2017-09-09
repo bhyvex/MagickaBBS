@@ -2267,6 +2267,24 @@ void list_messages(struct user_record *user) {
 				} else if (c == 13) {
 					redraw = 1;
 					read_message(user, msghs, i - 1);
+					free_message_headers(msghs);
+					msghs = read_message_headers(user->cur_mail_conf, user->cur_mail_area, user);
+					jb = open_jam_base(conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
+					if (!jb) {
+						dolog("Error opening JAM base.. %s", conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
+						if (msghs != NULL) {
+							free_message_headers(msghs);
+						}						
+						return;
+					} else {
+						all_unread = 0;
+						if (JAM_ReadLastRead(jb, user->id, &jlr) == JAM_NO_USER) {
+							jlr.LastReadMsg = 0;
+							jlr.HighReadMsg = 0;
+							all_unread = 1;
+						}
+						JAM_CloseMB(jb);
+					}
 				}
 			}
 		}
