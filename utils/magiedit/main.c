@@ -992,7 +992,7 @@ int main(int argc, char **argv)
 				if (unwrapped_quote[i] == '\r' || unwrapped_quote[i] == ' ' || i - last_space > 71) {
 					quote_lines[quote_line_count] = (char *)malloc(i - start_line + 1);
 					memset(buffer, 0, 256);
-					strncpy(buffer, &unwrapped_quote[start_line], 73);
+					strncpy(buffer, &unwrapped_quote[start_line], 74);
 				    sprintf(quote_lines[quote_line_count], " %c> %s", msgto[0], buffer);
 					j = 0;
 					start_line = i+1;
