@@ -961,12 +961,12 @@ int main(int argc, char **argv)
 		for (i=0;i<unwrapped_quote_len;i++) {
 			if (unwrapped_quote[i] == '\r') {
 				if (i > 0) {
-					if (unwrapped_quote[i-1] == ' ') {
+					if (unwrapped_quote[i-1] == ' ' || unwrapped_quote[i-1] == '\r') {
 						continue;
 					}
 				}
 				if (i < unwrapped_quote_len - 1) {
-					if (unwrapped_quote[i+1] == ' ') {
+					if (unwrapped_quote[i+1] == ' ' || unwrapped_quote[i+1] == '\r') {
 						continue;
 					}					
 				}
