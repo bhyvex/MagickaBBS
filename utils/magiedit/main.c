@@ -606,6 +606,10 @@ char *message_editor() {
 							}
 						}
 						
+						if (position_y < top_of_screen) {
+							top_of_screen--;
+						}
+						
 						// refresh screen;
 						position_x = 0;
 						if (position_y <= body_line_count) {
