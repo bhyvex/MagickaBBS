@@ -940,10 +940,7 @@ int main(int argc, char **argv)
 				buffer[strlen(buffer) - 1] = '\0';
 			} else if (buffer[strlen(buffer) - 1] == '\n') {
 				buffer[strlen(buffer) - 1] = '\r';
-			} else {
-				buffer[strlen(buffer)+1] = '\0';
-				buffer[strlen(buffer)] = '\r';
-			}
+			} 
 			if (unwrapped_quote_len == 0) {
 				unwrapped_quote = (char *)malloc(strlen(buffer) + 1);
 				strcpy(unwrapped_quote, buffer);
@@ -1027,34 +1024,18 @@ int main(int argc, char **argv)
 				j++;
 			}
 		}
-		
-		/*
-        fgets(buffer, 73, fptr);
-        while (!feof(fptr)) {
-            for (i=strlen(buffer) - 1; i >= 0; i--) {
-                if (buffer[i] != '\r' && buffer[i] != '\n') {
-                    break;
-                } else {
-                    buffer[i] = '\0';
-                }
-            }
-
-            if (quote_line_count == 0) {
-                quote_lines = (char **)malloc(sizeof(char *));
-            } else {
-                quote_lines = (char **)realloc(quote_lines, sizeof(char *) * (quote_line_count + 1));
-            }
-
-            quote_lines[quote_line_count] = (char *)malloc(strlen(buffer) + 5);
-
-            sprintf(quote_lines[quote_line_count], " %c> %s", msgto[0], buffer);
-
-            quote_line_count++;
-
-            fgets(buffer, 73, fptr);
-        }
-        */
-
+		if (j > 0) {
+			if (quote_line_count == 0) {
+				quote_lines = (char **)malloc(sizeof(char *));
+			} else {
+				quote_lines = (char **)realloc(quote_lines, sizeof(char *) * (quote_line_count + 1));
+			}				
+			quote_lines[quote_line_count] = (char *)malloc(i - start_line + 6);
+			memset(buffer, 0, 256);
+			strncpy(buffer, &unwrapped_quote[start_line], j);
+			sprintf(quote_lines[quote_line_count], " %c> %s", msgto[0], buffer);
+			quote_line_count++;			
+		}
     }
 
     body = message_editor();
