@@ -784,8 +784,11 @@ int main(int argc, char **argv)
     char buffer[256];
     FILE *fptr;
     char *body;
-    int i;
-    
+    char *unwrapped_quote;
+    int unwrapped_quote_len;
+    int i, j;
+    int last_space;
+    int start_line;
     msgpath = NULL;
     
 #if _MSC_VER
@@ -930,6 +933,84 @@ int main(int argc, char **argv)
     }
     quote_line_count = 0;
     if (!noquote) {
+		unwrapped_quote_len = 0;
+		fgets(buffer, 80, fptr);
+		while (!feof(fptr)) {
+			if (buffer[strlen(buffer) - 2] == '\r') {
+				buffer[strlen(buffer) - 1] = '\0';
+			} else if (buffer[strlen(buffer) - 1] == '\n') {
+				buffer[strlen(buffer) - 1] = '\r';
+			}
+
+			if (unwrapped_quote_len == 0) {
+				unwrapped_quote = (char *)malloc(strlen(buffer) + 1);
+				strcpy(unwrapped_quote, buffer);
+				unwrapped_quote_len = strlen(unwrapped_quote);
+			} else {
+				unwrapped_quote = (char *)realloc(unwrapped_quote, unwrapped_quote_len + strlen(buffer) + 1);
+				strcat(unwrapped_quote, buffer);
+				unwrapped_quote_len = strlen(unwrapped_quote);
+			}
+
+			fgets(buffer, 80, fptr);
+		}
+        fclose(fptr);
+        unlink(msgtmp);
+
+		// remove unneeded CRs
+		for (i=0;i<unwrapped_quote_len;i++) {
+			if (unwrapped_quote[i] == '\r') {
+				if (i > 0) {
+					if (unwrapped_quote[i-1] == ' ') {
+						continue;
+					}
+				}
+				if (i < unwrapped_quote_len - 1) {
+					if (unwrapped_quote[i+1] == ' ') {
+						continue;
+					}					
+				}
+				
+				unwrapped_quote[i] = ' ';
+			}
+		}
+        
+        // now wrap the quotes at 73 columns
+        start_line = 0;
+        j = 0;
+		for (i=0;i<unwrapped_quote_len;i++) {
+			if (unwrapped_quote[i] == ' ') {
+				last_space = i;
+			}
+			if (j == 73) {
+				if (quote_line_count == 0) {
+					quote_lines = (char **)malloc(sizeof(char *));
+				} else {
+					quote_lines = (char **)realloc(quote_lines, sizeof(char *) * (quote_line_count + 1));
+				}
+				if (unwrapped_quote[i] == '\r' || unwrapped_quote[i] == ' ' || i - last_space > 71) {
+					quote_lines[quote_line_count] = (char *)malloc(i - start_line + 1);
+					memset(buffer, 0, 256);
+					strncpy(buffer, &unwrapped_quote[start_line], 73);
+				    sprintf(quote_lines[quote_line_count], " %c> %s", msgto[0], buffer);
+					j = 0;
+					start_line = i+1;
+				} else {
+					quote_lines[quote_line_count] = (char *)malloc(last_space - start_line + 5);
+					memset(buffer, 0, 256);
+					strncpy(buffer, &unwrapped_quote[start_line], start_line - last_space + 1);
+					sprintf(quote_lines[quote_line_count], " %c> %s", msgto[0], buffer);
+					j = 0;
+					start_line = last_space+1;					
+					i = last_space + 1;
+				}
+				quote_line_count++;
+			} else {
+				j++;
+			}
+		}
+		
+		/*
         fgets(buffer, 73, fptr);
         while (!feof(fptr)) {
             for (i=strlen(buffer) - 1; i >= 0; i--) {
@@ -954,8 +1035,8 @@ int main(int argc, char **argv)
 
             fgets(buffer, 73, fptr);
         }
-        fclose(fptr);
-        unlink(msgtmp);
+        */
+
     }
 
     body = message_editor();
