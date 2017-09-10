@@ -356,7 +356,7 @@ char *message_editor() {
 									}
 									
 									position_y--;
-									position_x = strlen(line) - 1;
+									position_x = strlen(line);
 								} else {
 									memcpy(line, body_lines[body_line_count -1], 81);
 									free(body_lines[body_line_count - 1]);
@@ -367,7 +367,7 @@ char *message_editor() {
 										body_lines = (char **)realloc(body_lines, sizeof(char *) * (body_line_count));
 									}
 									position_y--;
-									position_x = strlen(line) - 1;
+									position_x = strlen(line);
 								}								
 								
 							} else {
@@ -393,7 +393,7 @@ char *message_editor() {
 									}
 									
 									position_y--;
-									position_x = j - 1;									
+									position_x = j;									
 									
 								} else {
 									// it doesn't fit move cursor to end of previous line
