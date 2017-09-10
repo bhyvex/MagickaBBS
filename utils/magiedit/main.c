@@ -410,8 +410,8 @@ char *message_editor() {
 								top_of_screen--;
 							}
 							
-							if (position_y <= body_line_count) {
-								for (i=position_y; i< body_line_count && i < top_of_screen + 17;i++) {
+							if (position_y - 1 <= body_line_count) {
+								for (i=position_y-1; i< body_line_count && i < top_of_screen + 17;i++) {
 									od_set_cursor(i - top_of_screen + 5, 1);
 									od_printf("%s", body_lines[i]);
 									od_clr_line();
