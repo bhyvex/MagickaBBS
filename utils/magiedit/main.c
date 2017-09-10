@@ -165,18 +165,7 @@ char *message_editor() {
 					od_set_cursor(position_y - top_of_screen + 5, position_x + 1);
 				}
             } else if (ch.EventType == EVENT_CHARACTER) {
-               /* if (stage == 1 && ch.chKeyPress == '[') {
-                    stage = 2;
-                    continue;
-                } else if (stage != 0) {
-                    stage = 0;
-                    continue;
-                }
-                
-                if (ch.chKeyPress == 27) {
-                    // got an escape that i shouldnt have
-                    stage = 1;
-                } else */if (ch.chKeyPress == '\r' || (strlen(line) >= 73 && ch.chKeyPress > 31 && ch.chKeyPress != 127)) {
+               if (ch.chKeyPress == '\r' || (strlen(line) >= 73 && ch.chKeyPress > 31 && ch.chKeyPress != 127)) {
                     if (strlen(line) >= 73 && ch.chKeyPress != '\r') {
                         if (position_x == strlen(line)) {
                             strncat(line, &ch.chKeyPress, 1);
@@ -349,8 +338,77 @@ char *message_editor() {
                     od_set_cursor(position_y - top_of_screen + 5, position_x + 1);                            
                 } else {
                     if (ch.chKeyPress == '\b') {
-                        if (position_x == 0) {
+                        if (position_x == 0 && position_y > 0) {
                             // TODO
+                            if (strlen(line) == 0) {
+								// delete line move cursor to end of previous line
+								if (position_y < body_line_count) {
+									strcpy(line, body_lines[position_y - 1]);
+									free(body_lines[position_y - 1]);
+									for (i=position_y - 1;i<body_line_count-1;i++) {
+										body_lines[i] = body_lines[i+1];
+									}
+									body_line_count--;
+									if (body_line_count == 0) {
+										free(body_lines);
+									} else {
+										body_lines = (char **)realloc(body_lines, sizeof(char *) * (body_line_count));
+									}
+									
+									position_y--;
+									position_x = strlen(line) - 1;
+								} else {
+									memcpy(line, body_lines[body_line_count -1], 81);
+									free(body_lines[body_line_count - 1]);
+									body_line_count--;
+									if (body_line_count == 0) {
+										free(body_lines);
+									} else {
+										body_lines = (char **)realloc(body_lines, sizeof(char *) * (body_line_count));
+									}
+									position_y--;
+									position_x = strlen(line) - 1;
+								}								
+								
+							} else {
+								// check if current line fits 
+								if (73 - strlen(body_lines[position_y - 1]) > strlen(line)) {
+									// it fits, move it up to the previous line
+									
+									j = strlen(body_lines[position_y - 1]);
+									
+									strcpy(line_cpy, body_lines[position_y - 1]);
+									strcat(line_cpy, line);
+									strcpy(line, line_cpy);
+									
+									free(body_lines[position_y - 1]);
+									for (i=position_y - 1;i<body_line_count-1;i++) {
+										body_lines[i] = body_lines[i+1];
+									}
+									body_line_count--;
+									if (body_line_count == 0) {
+										free(body_lines);
+									} else {
+										body_lines = (char **)realloc(body_lines, sizeof(char *) * (body_line_count));
+									}
+									
+									position_y--;
+									position_x = j - 1;									
+									
+								} else {
+									// it doesn't fit move cursor to end of previous line
+									strcpy(line_cpy, body_lines[position_y - 1]);
+									free(body_lines[position_y - 1]);
+									body_lines[position_y - 1] = strdup(line);
+									strcpy(line, line_cpy);
+									position_y--;
+									position_x = strlen(line);
+								}
+							}
+							redraw = 1;
+							if (position_y < top_of_screen) {
+								top_of_screen--;
+							}
                         } else {
                             if (position_x >= strlen(line)) {
                                 strncpy(line_cpy, line, strlen(line) - 1);
