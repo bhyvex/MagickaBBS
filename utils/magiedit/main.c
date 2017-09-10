@@ -940,7 +940,9 @@ int main(int argc, char **argv)
 				buffer[strlen(buffer) - 1] = '\0';
 			} else if (buffer[strlen(buffer) - 1] == '\n') {
 				buffer[strlen(buffer) - 1] = '\r';
-			}
+			} else {
+				buffer[strlen(buffer)+1] = '\0';
+				buffer[strlen(buffer)] = '\r';
 
 			if (unwrapped_quote_len == 0) {
 				unwrapped_quote = (char *)malloc(strlen(buffer) + 1);
@@ -1007,7 +1009,7 @@ int main(int argc, char **argv)
 					i = last_space + 1;
 				}
 				quote_line_count++;
-			} else if (unwrapped_quote[i] == '\r') {
+			} else if (unwrapped_quote[i] == '\r' ) {
 				if (quote_line_count == 0) {
 					quote_lines = (char **)malloc(sizeof(char *));
 				} else {
