@@ -421,7 +421,7 @@ char *message_editor() {
 								od_set_cursor(i - top_of_screen + 5, 1);
 								od_clr_line();
 							}							
-                        } else {
+                        } else if (position_x > 0) {
                             if (position_x >= strlen(line)) {
                                 strncpy(line_cpy, line, strlen(line) - 1);
                                 line_cpy[strlen(line) - 1] = '\0';
