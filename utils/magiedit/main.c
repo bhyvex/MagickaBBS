@@ -978,6 +978,7 @@ int main(int argc, char **argv)
         // now wrap the quotes at 73 columns
         start_line = 0;
         j = 0;
+        last_space = 0;
 		for (i=0;i<unwrapped_quote_len;i++) {
 			if (unwrapped_quote[i] == ' ') {
 				last_space = i;
@@ -995,15 +996,30 @@ int main(int argc, char **argv)
 				    sprintf(quote_lines[quote_line_count], " %c> %s", msgto[0], buffer);
 					j = 0;
 					start_line = i+1;
+					last_space = i+1;
 				} else {
 					quote_lines[quote_line_count] = (char *)malloc(last_space - start_line + 5);
 					memset(buffer, 0, 256);
-					strncpy(buffer, &unwrapped_quote[start_line], start_line - last_space + 1);
+					strncpy(buffer, &unwrapped_quote[start_line], last_space - start_line + 1);
 					sprintf(quote_lines[quote_line_count], " %c> %s", msgto[0], buffer);
 					j = 0;
 					start_line = last_space+1;					
 					i = last_space + 1;
 				}
+				quote_line_count++;
+			} else if (unwrapped_quote[i] == '\r') {
+				if (quote_line_count == 0) {
+					quote_lines = (char **)malloc(sizeof(char *));
+				} else {
+					quote_lines = (char **)realloc(quote_lines, sizeof(char *) * (quote_line_count + 1));
+				}				
+				quote_lines[quote_line_count] = (char *)malloc(i - start_line + 1);
+				memset(buffer, 0, 256);
+				strncpy(buffer, &unwrapped_quote[start_line], j);
+				sprintf(quote_lines[quote_line_count], " %c> %s", msgto[0], buffer);
+				j = 0;
+				start_line = i+1;
+				last_space = i+1;
 				quote_line_count++;
 			} else {
 				j++;
