@@ -943,7 +943,7 @@ int main(int argc, char **argv)
 			} else {
 				buffer[strlen(buffer)+1] = '\0';
 				buffer[strlen(buffer)] = '\r';
-
+			}
 			if (unwrapped_quote_len == 0) {
 				unwrapped_quote = (char *)malloc(strlen(buffer) + 1);
 				strcpy(unwrapped_quote, buffer);
