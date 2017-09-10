@@ -1015,7 +1015,7 @@ int main(int argc, char **argv)
 				}				
 				quote_lines[quote_line_count] = (char *)malloc(i - start_line + 6);
 				memset(buffer, 0, 256);
-				strncpy(buffer, &unwrapped_quote[start_line], j + 1);
+				strncpy(buffer, &unwrapped_quote[start_line], j);
 				sprintf(quote_lines[quote_line_count], " %c> %s", msgto[0], buffer);
 				j = 0;
 				start_line = i+1;
