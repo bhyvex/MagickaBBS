@@ -990,7 +990,7 @@ int main(int argc, char **argv)
 					quote_lines = (char **)realloc(quote_lines, sizeof(char *) * (quote_line_count + 1));
 				}
 				if (unwrapped_quote[i] == '\r' || unwrapped_quote[i] == ' ' || i - last_space > 71) {
-					quote_lines[quote_line_count] = (char *)malloc(/*i - start_line + 1*/ 80);
+					quote_lines[quote_line_count] = (char *)malloc(i - start_line + 5);
 					memset(buffer, 0, 256);
 					strncpy(buffer, &unwrapped_quote[start_line], 74);
 				    sprintf(quote_lines[quote_line_count], " %c> %s", msgto[0], buffer);
@@ -998,7 +998,7 @@ int main(int argc, char **argv)
 					start_line = i+1;
 					last_space = i+1;
 				} else {
-					quote_lines[quote_line_count] = (char *)malloc(/*last_space - start_line + 5*/ 80);
+					quote_lines[quote_line_count] = (char *)malloc(last_space - start_line + 5);
 					memset(buffer, 0, 256);
 					strncpy(buffer, &unwrapped_quote[start_line], last_space - start_line + 1);
 					sprintf(quote_lines[quote_line_count], " %c> %s", msgto[0], buffer);
@@ -1013,7 +1013,7 @@ int main(int argc, char **argv)
 				} else {
 					quote_lines = (char **)realloc(quote_lines, sizeof(char *) * (quote_line_count + 1));
 				}				
-				quote_lines[quote_line_count] = (char *)malloc(i - start_line + 1);
+				quote_lines[quote_line_count] = (char *)malloc(i - start_line + 5);
 				memset(buffer, 0, 256);
 				strncpy(buffer, &unwrapped_quote[start_line], j);
 				sprintf(quote_lines[quote_line_count], " %c> %s", msgto[0], buffer);
