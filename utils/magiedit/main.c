@@ -405,10 +405,22 @@ char *message_editor() {
 									position_x = strlen(line);
 								}
 							}
-							redraw = 1;
+
 							if (position_y < top_of_screen) {
 								top_of_screen--;
 							}
+							
+							if (position_y <= body_line_count) {
+								for (i=position_y; i< body_line_count && i < top_of_screen + 17;i++) {
+									od_set_cursor(i - top_of_screen + 5, 1);
+									od_printf("%s", body_lines[i]);
+									od_clr_line();
+								}
+							}
+							for (;i< top_of_screen + 17;i++) {
+								od_set_cursor(i - top_of_screen + 5, 1);
+								od_clr_line();
+							}							
                         } else {
                             if (position_x >= strlen(line)) {
                                 strncpy(line_cpy, line, strlen(line) - 1);
