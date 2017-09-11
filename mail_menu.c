@@ -366,9 +366,13 @@ char *external_editor(struct user_record *user, char *to, char *from, char *quot
 
 
 
-	if (conf.external_editor_cmd != NULL) {
-		s_printf(get_string(85));
-		c = s_getc();
+	if (conf.external_editor_cmd != NULL && user->exteditor != 0) {
+		if (user->exteditor == 2) {
+			s_printf(get_string(85));
+			c = s_getc();
+		} else {
+			c = 'y';
+		}
 		if (tolower(c) == 'y') {
 
 			sprintf(buffer, "%s/node%d", conf.bbs_path, mynode);

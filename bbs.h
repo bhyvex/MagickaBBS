@@ -203,6 +203,7 @@ struct user_record {
 	int defprotocol;
 	int nodemsgs;
 	int codepage;
+	int exteditor;
 };
 
 struct jam_msg {
