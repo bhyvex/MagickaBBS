@@ -950,12 +950,13 @@ int main(int argc, char **argv)
 				strcat(unwrapped_quote, buffer);
 				unwrapped_quote_len = strlen(unwrapped_quote);
 			}
+			
 
 			fgets(buffer, 80, fptr);
 		}
         fclose(fptr);
         unlink(msgtmp);
-
+		
 		// remove unneeded CRs
 		for (i=0;i<unwrapped_quote_len;i++) {
 			if (unwrapped_quote[i] == '\r') {
@@ -964,6 +965,7 @@ int main(int argc, char **argv)
 						continue;
 					}
 				}
+				
 				if (i < unwrapped_quote_len - 1) {
 					if (unwrapped_quote[i+1] == ' ' || unwrapped_quote[i+1] == '\r') {
 						continue;
@@ -991,7 +993,7 @@ int main(int argc, char **argv)
 				if (unwrapped_quote[i] == '\r' || unwrapped_quote[i] == ' ' || i - last_space > 71) {
 					quote_lines[quote_line_count] = (char *)malloc(i - start_line + 6);
 					memset(buffer, 0, 256);
-					strncpy(buffer, &unwrapped_quote[start_line], 74);
+					strncpy(buffer, &unwrapped_quote[start_line], (i - last_space > 71 ? 74 : 73));
 				    sprintf(quote_lines[quote_line_count], " %c> %s", msgto[0], buffer);
 					j = 0;
 					start_line = i+1;
