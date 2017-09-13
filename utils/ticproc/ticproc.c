@@ -393,7 +393,7 @@ int process_tic_file(char *ticfilen) {
 		free(ticfile.file);
 	}
 	if (ticfile.lname != NULL) {
-		free(ticfile.file);
+		free(ticfile.lname);
 	}
 	if (ticfile.desc_lines > 0) {
 		for (i=0;i<ticfile.desc_lines;i++) {
