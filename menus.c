@@ -74,6 +74,7 @@ int menu_system(char *menufile) {
     int result;
     int doquit = 0;
     char c;
+    int clearscreen = 0;
 
     if (menufile[0] == '/') {
         snprintf(buffer, PATH_MAX, "%s.mnu", menufile);
@@ -201,7 +202,9 @@ int menu_system(char *menufile) {
                 free(ansi_file);
             }
             ansi_file = strdup(&buffer[9]);
-        }
+        } else if (strncasecmp(buffer, "CLEARSCREEN", 11) == 0) {
+			clearscreen = 1;
+		}
 
         fgets(buffer, 256, fptr);
     }
@@ -259,6 +262,11 @@ int menu_system(char *menufile) {
                 }
             }
         }
+        
+        if (clearscreen) {
+			s_printf("\e[2J\e[1;1H");
+		}
+        
 		if (do_lua_menu == 0) {
             if (ansi_file != NULL) {
 			    s_displayansi(ansi_file);
