@@ -461,14 +461,19 @@ void s_readpass(char *buffer, int max) {
 	}
 }
 
+void exit_bbs() {
+	char buffer[1024];	
+	snprintf(buffer, 1024, "%s/nodeinuse.%d", conf.bbs_path, mynode);
+	remove(buffer);
+}
+
 void disconnect(char *calledby) {
-	char buffer[1024];
+
 	if (gUser != NULL) {
 		save_user(gUser);
 	}
 	dolog("Node %d disconnected (%s)", mynode, calledby);
-	sprintf(buffer, "%s/nodeinuse.%d", conf.bbs_path, mynode);
-	remove(buffer);
+
 	if (!sshBBS) {
 		close(gSocket);
 	} 
@@ -651,6 +656,7 @@ void runbbs_real(int socket, char *ip, int ssh) {
 	int usernotfound;
 	int tries;
 	
+	atexit(exit_bbs);
 	
 	ipaddress = ip;
 
