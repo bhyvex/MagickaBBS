@@ -854,6 +854,9 @@ void serverssh(int port) {
 						tios.c_iflag &= INLCR;
 						tcsetattr(STDIN_FILENO, TCSAFLUSH, &tios);
 						runbbs_ssh(ip);
+						while (1) {
+							sleep(100);
+						}
 						exit(0);
 					}
 					free(ip);
