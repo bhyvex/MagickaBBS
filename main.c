@@ -661,7 +661,7 @@ static void ssh_chan_close(ssh_session session, ssh_channel channel, void *userd
   (void)session;
   (void)channel;
 	kill(bbs_pid, SIGTERM);
-	waitpid(bbs_pid, &status, 0);
+	//waitpid(bbs_pid, &status, 0);
   close(fd);
 }
 
@@ -854,9 +854,6 @@ void serverssh(int port) {
 						tios.c_iflag &= INLCR;
 						tcsetattr(STDIN_FILENO, TCSAFLUSH, &tios);
 						runbbs_ssh(ip);
-						while (1) {
-							sleep(100);
-						}
 						exit(0);
 					}
 					free(ip);

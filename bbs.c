@@ -471,7 +471,7 @@ void disconnect(char *calledby) {
 	remove(buffer);
 	if (!sshBBS) {
 		close(gSocket);
-	}
+	} 
 	exit(0);
 }
 
