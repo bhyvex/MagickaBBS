@@ -42,7 +42,7 @@ void doorchld_handler(int s)
 
 int write_door32sys(struct user_record *user) {
 	struct stat s;
-	char buffer[256];
+	char buffer[1024];
 	FILE *fptr;
 	char *ptr;
 	int i;
@@ -53,7 +53,7 @@ int write_door32sys(struct user_record *user) {
 		mkdir(buffer, 0755);
 	}
 
-	sprintf(buffer, "%s/node%d/door32.sys", conf.bbs_path, mynode);
+	snprintf(buffer, 1024, "%s/node%d/door32.sys", conf.bbs_path, mynode);
 
 	fptr = fopen(buffer, "w");
 
@@ -78,7 +78,7 @@ int write_door32sys(struct user_record *user) {
 
 	// create dorinfo1.def
 
-	sprintf(buffer, "%s/node%d", conf.bbs_path, mynode);
+	snprintf(buffer, 1024, "%s/node%d", conf.bbs_path, mynode);
 
 	if (stat(buffer, &s) != 0) {
 		mkdir(buffer, 0755);

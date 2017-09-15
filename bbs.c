@@ -265,7 +265,7 @@ void s_putstring(char *c) {
 	char *ptr2;
 	if (!should_convert_utf8()) {
 		if (sshBBS) {
-			puts(c);
+			fprintf(stdout, "%s", c);
 		} else {
 			write(gSocket, c, strlen(c));
 		}
