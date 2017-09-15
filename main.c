@@ -703,11 +703,6 @@ void serverssh(int port) {
 		fprintf(stderr, "Error starting SSH server.\n");
 		exit(-1);
 	}
-	p_ssh_session = ssh_new();
-	if (p_ssh_session == NULL) {
-		fprintf(stderr, "Error starting SSH server.\n");
-		exit(-1);
-	}
 
 	p_ssh_bind = ssh_bind_new();
 	if (p_ssh_bind == NULL) {
@@ -746,6 +741,12 @@ void serverssh(int port) {
 	listen(ssh_sock, 3);
 	c = sizeof(struct sockaddr_in6);
 	while ((csock = accept(ssh_sock, (struct sockaddr *)&client, (socklen_t *)&c))) {
+		p_ssh_session = ssh_new();
+		if (p_ssh_session == NULL) {
+			fprintf(stderr, "Error starting SSH session.\n");
+			close(csock);
+			continue;
+		}		
 		if (ssh_bind_accept_fd(p_ssh_bind, p_ssh_session, csock) == SSH_OK) {
 			ip = strdup(inet_ntop(AF_INET6, &client.sin6_addr, str, sizeof(str)));
 			
@@ -891,6 +892,7 @@ void serverssh(int port) {
 				close(csock);
 				exit(0);
 			} else if (pid > 0) {
+				ssh_free(p_ssh_session);
 				close(csock);
 				free(ip);
 			} else {
