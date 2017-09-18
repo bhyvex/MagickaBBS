@@ -809,7 +809,7 @@ void unmangle_ansi(char *body, int len, char **body_out, int *body_len) {
 	int i, j, k;
 	struct character_t ***fake_screen;
 	int ansi;
-	
+	int tab;
 	
 	line_at = 1;
 	char_at = 1;
@@ -824,6 +824,12 @@ void unmangle_ansi(char *body, int len, char **body_out, int *body_len) {
 				if (body[i] == '\r') {
 					char_at = 1;
 					line_at++;
+				} else if (body[i] == '\t') {
+					char_at += 8;
+					while (char_at > 80) {
+						line_at++;
+						char_at -= 80;
+					}					
 				} else {
 					char_at++;
 					while (char_at > 80) {
@@ -967,6 +973,18 @@ void unmangle_ansi(char *body, int len, char **body_out, int *body_len) {
 				if (body[i] == '\r') {
 					char_at = 1;
 					line_at++;
+				} else if (body[i] == '\t') {
+					for (tab = 0; tab < 8; tab++) {
+						if (line_at > line_count) line_at = line_count;
+						fake_screen[line_at -1][char_at - 1]->c = ' ';
+						fake_screen[line_at -1][char_at - 1]->fg = fg;
+						fake_screen[line_at -1][char_at - 1]->bg = bg;
+						char_at++;
+						while (char_at > 80) {
+							line_at++;
+							char_at -= 80;
+						}						
+					}
 				} else {
 					if (line_at > line_count) line_at = line_count;
 					fake_screen[line_at -1][char_at - 1]->c = body[i];
