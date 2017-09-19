@@ -293,9 +293,9 @@ void s_putstring(char *c) {
 void s_displayansi_pause(char *file, int pause) {
 	FILE *fptr;
 	char c;
-
+	char ch;
 	int lines = 0;
-
+	
 	fptr = fopen(file, "r");
 	if (!fptr) {
 		return;
@@ -308,8 +308,19 @@ void s_displayansi_pause(char *file, int pause) {
 			if (c == '\n') {
 				lines++;
 				if (lines == 24) {
-					s_printf(get_string(6));
-					s_getchar();
+					s_printf(get_string(223));
+					ch = s_getchar();
+					s_printf("\r\n");
+					switch(tolower(ch)) {
+						case 'c':
+							pause = 0;
+							break;
+						case 'n':
+							fclose(fptr);
+							return;
+						default:
+							break;
+					}
 					lines = 0;
 				}
 			}
