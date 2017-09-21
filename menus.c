@@ -47,6 +47,8 @@
 #define MENU_DOSCRIPT           37
 #define MENU_SENDNODEMSG        38
 #define MENU_SUBUNSUBCONF		39
+#define MENU_RESETPOINTERS      40
+#define MENU_RESETALLPOINTERS   41
 
 extern struct bbs_config conf;
 extern struct user_record *gUser;
@@ -190,6 +192,10 @@ int menu_system(char *menufile) {
                 menu[menu_items-1]->command = MENU_SENDNODEMSG;
             } else if (strncasecmp(&buffer[8], "SUBUNSUBCONF", 12) == 0) {
 				menu[menu_items-1]->command = MENU_SUBUNSUBCONF;
+			} else if (strncasecmp(&buffer[8], "RESETMSGPTRS", 12) == 0) {
+				menu[menu_items-1]->command = MENU_RESETPOINTERS;
+			} else if (strncasecmp(&buffer[8], "RESETALLMSGPTRS", 15) == 0) {
+				menu[menu_items-1]->command = MENU_RESETALLPOINTERS;
 			}
         } else if (strncasecmp(buffer, "SECLEVEL", 8) == 0) {
             menu[menu_items-1]->seclevel = atoi(&buffer[9]);
@@ -473,6 +479,12 @@ int menu_system(char *menufile) {
                             break;
                         case MENU_SUBUNSUBCONF:
 							msg_conf_sub_bases();
+							break;
+						case MENU_RESETPOINTERS:
+							msgbase_reset_pointers(gUser->cur_mail_conf, gUser->cur_mail_area);
+							break;
+						case MENU_RESETALLPOINTERS:
+							msgbase_reset_all_pointers();
 							break;
                         default:
                             break;     

@@ -2680,3 +2680,31 @@ void msg_conf_sub_bases() {
 		}
 	} while (!done);
 }
+
+void msgbase_reset_pointers(int conference, int msgarea) {
+	s_JamBase *jb;
+	s_JamBaseHeader jbh;
+	s_JamLastRead jlr;
+	
+	jb = open_jam_base(conf.mail_conferences[conference]->mail_areas[msgarea]->path);
+	if (!jb) {
+		dolog("Unable to open message base");
+		return;
+	}
+	if (JAM_ReadLastRead(jb, gUser->id, &jlr) != JAM_NO_USER) {
+		jlr.LastReadMsg = 0;
+		jlr.HighReadMsg = 0;
+		JAM_WriteLastRead(jb, gUser->id, &jlr);
+	}
+	JAM_CloseMB(jb);
+}
+
+void msgbase_reset_all_pointers() {
+	int i, j;
+	
+	for (i=0;i<conf.mail_conference_count;i++) {
+		for (j=0;j<conf.mail_conferences[i]->mail_area_count;j++) {
+			msgbase_reset_pointers(i, j);
+		}
+	}
+}

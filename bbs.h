@@ -280,6 +280,8 @@ extern void next_mail_area(struct user_record *user);
 extern void prev_mail_area(struct user_record *user);
 extern void post_message(struct user_record *user);
 extern void msg_conf_sub_bases();
+extern void msgbase_reset_pointers(int conference, int msgarea);
+extern void msgbase_reset_all_pointers();
 
 extern void rundoor(struct user_record *user, char *cmd, int stdio, char *codepage);
 extern void runexternal(struct user_record *user, char *cmd, int stdio, char **argv, char *cwd, int raw, char *codepage);
