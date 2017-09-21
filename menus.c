@@ -78,7 +78,8 @@ int menu_system(char *menufile) {
     int doquit = 0;
     char c;
     int clearscreen = 0;
-
+	char confirm;
+	
     if (menufile[0] == '/') {
         snprintf(buffer, PATH_MAX, "%s.mnu", menufile);
     } else {
@@ -481,10 +482,18 @@ int menu_system(char *menufile) {
 							msg_conf_sub_bases();
 							break;
 						case MENU_RESETPOINTERS:
-							msgbase_reset_pointers(gUser->cur_mail_conf, gUser->cur_mail_area);
+							s_printf(get_string(229), conf.mail_conferences[gUser->cur_mail_conf]->mail_areas[gUser->cur_mail_area]->name);
+							confirm = s_getc();
+							if (confirm == 'y' || confirm == 'Y') {
+								msgbase_reset_pointers(gUser->cur_mail_conf, gUser->cur_mail_area);
+							}
 							break;
 						case MENU_RESETALLPOINTERS:
-							msgbase_reset_all_pointers();
+							s_printf(get_string(230));
+							confirm = s_getc();
+							if (confirm == 'y' || confirm == 'Y') {
+								msgbase_reset_all_pointers();
+							}
 							break;
                         default:
                             break;     

@@ -227,3 +227,5 @@ File exists!\r\n
 \e[1;30m[\e[1;37m%3d\e[1;30m] [%s\e[1;30m] \e[1;37m%s\e[0m\r\n
 \e[1;32mSUB\e[0m
 \e[1;31mUNSUB\e[0m
+\r\n\e[1;37mAre you sure you want to reset all messages in %s to unread? \e[0m
+\r\n\e[1;37mAre you sure you want to reset \e[1;31mall messages \e[1;37min all bases to unread? \e[0m
