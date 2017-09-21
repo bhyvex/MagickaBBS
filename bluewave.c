@@ -217,8 +217,23 @@ void bwave_create_packet() {
 	FILE *fti_file;
 	FILE *dat_file;
 	FILE *inf_file;
-	
+	int tot_areas = 0;
 	int totmsgs = 0;
+	
+	for (i=0;i<conf.mail_conference_count;i++) {
+		for (j=0;j<conf.mail_conferences[i]->mail_area_count;j++) {
+			if (msgbase_is_subscribed(i, j)) {
+				tot_areas++;
+			}
+		}
+	}
+	
+	if (tot_areas == 0) {
+		s_printf(get_string(224));
+		s_printf(get_string(6));
+		s_getchar();
+		return;
+	}
 	
 	area_count = 0;
 	
@@ -270,7 +285,7 @@ void bwave_create_packet() {
 	
 	for (i=0;i<conf.mail_conference_count;i++) {
 		for (j=0;j<conf.mail_conferences[i]->mail_area_count;j++) {
-			if (conf.mail_conferences[i]->mail_areas[j]->read_sec_level <= gUser->sec_level && conf.mail_conferences[i]->mail_areas[j]->qwkname != NULL) {
+			if (conf.mail_conferences[i]->mail_areas[j]->read_sec_level <= gUser->sec_level && conf.mail_conferences[i]->mail_areas[j]->qwkname != NULL && msgbase_is_subscribed(i, j)) {
 				lasttot = totmsgs;
 				totmsgs = bwave_scan_area(i, j, area_count+1, totmsgs, fti_file, mix_file, dat_file, &last_ptr);
 				s_printf(get_string(195), conf.mail_conferences[i]->name, conf.mail_conferences[i]->mail_areas[j]->name, totmsgs - lasttot); 

@@ -8,6 +8,7 @@
 #include "inih/ini.h"
 
 extern struct bbs_config conf;
+extern struct user_record *gUser;
 
 char *hash_sha256(char *pass, char *salt) {
 	char *buffer = (char *)malloc(strlen(pass) + strlen(salt) + 1);
@@ -93,7 +94,7 @@ int save_user(struct user_record *user) {
 
         exit(1);
     }
-sqlite3_busy_timeout(db, 5000);
+	sqlite3_busy_timeout(db, 5000);
     rc = sqlite3_prepare_v2(db, update_sql, -1, &res, 0);
 
     if (rc == SQLITE_OK) {
@@ -136,8 +137,101 @@ sqlite3_busy_timeout(db, 5000);
 
 }
 
+int msgbase_sub_unsub(int conference, int msgbase) {
+	sqlite3 *db;
+    sqlite3_stmt *res;
+	int rc;
+	char buffer[PATH_MAX];
+	char *create_sql = "CREATE TABLE IF NOT EXISTS msg_subs (conference INTEGER, msgbase INTEGER, uid INTEGER);";
+	char *sub_buf = "INSERT INTO msg_subs (conference, msgbase, uid) VALUES(?, ?, ?)";
+	char *unsub_buf = "DELETE FROM msg_subs WHERE conference=? AND msgbase=? AND uid=?";
+ 	char *err_msg = 0;
+ 	int subunsub = 0;
+ 	
+ 	
+ 	subunsub = msgbase_is_subscribed(conference, msgbase);
+ 	
+ 	snprintf(buffer, PATH_MAX, "%s/users.sq3", conf.bbs_path);
+
+	rc = sqlite3_open(buffer, &db);
+
+	if (rc != SQLITE_OK) {
+        dolog("Cannot open database: %s", sqlite3_errmsg(db));
+        sqlite3_close(db);
+
+        return 0;
+    }	
+	sqlite3_busy_timeout(db, 5000);
+    rc = sqlite3_exec(db, create_sql, 0, 0, &err_msg);
+    if (rc != SQLITE_OK ) {
+
+        dolog("SQL error: %s", err_msg);
+
+        sqlite3_free(err_msg);
+        sqlite3_close(db);
+
+        return 0;
+    }
+    if (subunsub == 1) {
+		rc = sqlite3_prepare_v2(db, unsub_buf, -1, &res, 0);
+	} else {
+		rc = sqlite3_prepare_v2(db, sub_buf, -1, &res, 0);
+	}
+
+    sqlite3_bind_int(res, 1, conference);
+    sqlite3_bind_int(res, 2, msgbase);
+    sqlite3_bind_int(res, 3, gUser->id);
+    
+    sqlite3_step(res);
+    
+    sqlite3_finalize(res);
+    sqlite3_close(db);  
+    
+	return 1;
+}
+
+int msgbase_is_subscribed(int conference, int msgbase) {
+	sqlite3 *db;
+    sqlite3_stmt *res;
+	int rc;
+	char buffer[PATH_MAX];
+	
+	char *sql_buf = "SELECT * FROM msg_subs WHERE conference=? AND msgbase=? AND uid=?";
+	
+	
+	
+	snprintf(buffer, PATH_MAX, "%s/users.sq3", conf.bbs_path);
+	if (rc != SQLITE_OK) {
+        dolog("Cannot open database: %s", sqlite3_errmsg(db));
+        sqlite3_close(db);
+
+        exit(1);
+    }
+	sqlite3_busy_timeout(db, 5000);
+	
+	rc = sqlite3_prepare_v2(db, sql_buf, -1, &res, 0);
+
+	if (rc != SQLITE_OK) {
+		sqlite3_close(db);
+		return 0;
+	}
+
+    sqlite3_bind_int(res, 1, conference);
+    sqlite3_bind_int(res, 2, msgbase);
+    sqlite3_bind_int(res, 3, gUser->id);
+        
+	if (sqlite3_step(res) != SQLITE_ROW) {
+		sqlite3_finalize(res);
+		sqlite3_close(db);
+		return 0;
+	} 
+	sqlite3_finalize(res);
+	sqlite3_close(db);
+	return 1;
+}
+
 int inst_user(struct user_record *user) {
-	char buffer[256];
+	char buffer[PATH_MAX];
 	sqlite3 *db;
     sqlite3_stmt *res;
 	int rc;
@@ -169,7 +263,7 @@ int inst_user(struct user_record *user) {
 					   "lastname, email, location, sec_level, last_on, time_left, cur_mail_conf, cur_mail_area, cur_file_dir, cur_file_sub, times_on, bwavepktno, archiver, protocol, nodemsgs, codepage, exteditor) VALUES(?,?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     char *err_msg = 0;
 
- 	sprintf(buffer, "%s/users.sq3", conf.bbs_path);
+ 	snprintf(buffer, PATH_MAX, "%s/users.sq3", conf.bbs_path);
 
 	rc = sqlite3_open(buffer, &db);
 
@@ -179,7 +273,7 @@ int inst_user(struct user_record *user) {
 
         exit(1);
     }
-sqlite3_busy_timeout(db, 5000);
+	sqlite3_busy_timeout(db, 5000);
     rc = sqlite3_exec(db, create_sql, 0, 0, &err_msg);
     if (rc != SQLITE_OK ) {
 
@@ -188,7 +282,7 @@ sqlite3_busy_timeout(db, 5000);
         sqlite3_free(err_msg);
         sqlite3_close(db);
 
-        return 1;
+        exit(1);
     }
 
     rc = sqlite3_prepare_v2(db, insert_sql, -1, &res, 0);
@@ -217,6 +311,8 @@ sqlite3_busy_timeout(db, 5000);
 		sqlite3_bind_int(res, 21, user->exteditor);
     } else {
         dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
+        sqlite3_close(db);
+        exit(1);
     }
 
 
@@ -224,8 +320,8 @@ sqlite3_busy_timeout(db, 5000);
 
     if (rc != SQLITE_DONE) {
         dolog("execution failed: %s", sqlite3_errmsg(db));
-				sqlite3_close(db);
-				exit(1);
+		sqlite3_close(db);
+		exit(1);
     }
 
     user->id = sqlite3_last_insert_rowid(db);

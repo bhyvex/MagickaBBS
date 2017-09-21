@@ -2630,3 +2630,50 @@ void mail_scan(struct user_record *user) {
 		s_getc();
 	}
 }
+
+
+void msg_conf_sub_bases() {
+	int i;
+	int lines = 0;
+	char buffer[10];
+	int toggle_area;
+	int done = 0;
+	
+	do {
+		for (i=0;i<conf.mail_conferences[gUser->cur_mail_conf]->mail_area_count;i++) {
+			if (conf.mail_conferences[gUser->cur_mail_conf]->mail_areas[i]->read_sec_level <= gUser->sec_level) {
+				s_printf(get_string(226), i, (msgbase_is_subscribed(gUser->cur_mail_conf, i) ? get_string(227) : get_string(228)), conf.mail_conferences[gUser->cur_mail_conf]->mail_areas[i]->name);
+				lines++;
+			}
+			
+			if (lines == 23) {
+				s_printf(get_string(225));
+				s_readstring(buffer, 9);
+				s_printf("\r\n");
+				if (strlen(buffer) > 0) {
+					toggle_area = atoi(buffer);
+					msgbase_sub_unsub(gUser->cur_mail_conf, i);
+					lines = 0;
+					
+					break;
+				}
+				lines = 0;
+			}
+		}
+		
+		if (lines > 0) {
+			s_printf(get_string(225));
+			s_readstring(buffer, 9);
+			s_printf("\r\n");
+			if (strlen(buffer) > 0) {
+				toggle_area = atoi(buffer);
+				msgbase_sub_unsub(gUser->cur_mail_conf, i);
+				lines = 0;
+			} else {
+				done = 1;
+			}
+		} else {
+			done = 1;
+		}
+	} while (!done);
+}

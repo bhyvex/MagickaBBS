@@ -46,6 +46,7 @@
 #define MENU_LISTMESSAGES       36
 #define MENU_DOSCRIPT           37
 #define MENU_SENDNODEMSG        38
+#define MENU_SUBUNSUBCONF		39
 
 extern struct bbs_config conf;
 extern struct user_record *gUser;
@@ -187,7 +188,9 @@ int menu_system(char *menufile) {
                 menu[menu_items-1]->command = MENU_DOSCRIPT;
             } else if (strncasecmp(&buffer[8], "SENDNODEMSG", 11) == 0) {
                 menu[menu_items-1]->command = MENU_SENDNODEMSG;
-            }
+            } else if (strncasecmp(&buffer[8], "SUBUNSUBCONF", 12) == 0) {
+				menu[menu_items-1]->command = MENU_SUBUNSUBCONF;
+			}
         } else if (strncasecmp(buffer, "SECLEVEL", 8) == 0) {
             menu[menu_items-1]->seclevel = atoi(&buffer[9]);
         } else if (strncasecmp(buffer, "DATA", 4) == 0) {
@@ -468,6 +471,9 @@ int menu_system(char *menufile) {
                         case MENU_SENDNODEMSG:
                             send_node_msg();
                             break;
+                        case MENU_SUBUNSUBCONF:
+							msg_conf_sub_bases();
+							break;
                         default:
                             break;     
                     }

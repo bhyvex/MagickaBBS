@@ -252,6 +252,8 @@ extern int check_user(char *loginname);
 extern struct user_record *new_user();
 extern struct user_record *check_user_pass(char *loginname, char *password);
 extern void list_users(struct user_record *user);
+extern int msgbase_sub_unsub(int conference, int msgbase);
+extern int msgbase_is_subscribed(int conference, int msgbase);
 
 extern void active_nodes();
 extern void send_node_msg();
@@ -277,6 +279,7 @@ extern void prev_mail_conf(struct user_record *user);
 extern void next_mail_area(struct user_record *user);
 extern void prev_mail_area(struct user_record *user);
 extern void post_message(struct user_record *user);
+extern void msg_conf_sub_bases();
 
 extern void rundoor(struct user_record *user, char *cmd, int stdio, char *codepage);
 extern void runexternal(struct user_record *user, char *cmd, int stdio, char **argv, char *cwd, int raw, char *codepage);
