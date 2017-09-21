@@ -81,7 +81,7 @@ int bwave_scan_area(int confr, int area, int areano, int totmsgs, FILE *fti_file
 			jlr.HighReadMsg = 0;
 			all_unread = 1;
 		} else if (jlr.LastReadMsg == 0 && jlr.HighReadMsg == 0) {
-				all_unread = 1;
+			all_unread = 1;
 		}
 
 	}
@@ -180,7 +180,7 @@ int bwave_scan_area(int confr, int area, int areano, int totmsgs, FILE *fti_file
 		totmsgs++;
 	}
 	
-	if (area_msgs) {
+	//if (area_msgs) {
 	
 		memset(&mix, 0, sizeof(MIX_REC));
 		
@@ -189,7 +189,7 @@ int bwave_scan_area(int confr, int area, int areano, int totmsgs, FILE *fti_file
 		mix.numpers = converts(personal_msgs);
 		mix.msghptr = convertl(mixptr);
 		fwrite(&mix, sizeof(MIX_REC), 1, mix_file);
-	}
+	//}
 	JAM_CloseMB(jb);
 	free_message_headers(msghs);
 	return totmsgs;
@@ -291,9 +291,9 @@ void bwave_create_packet() {
 				lasttot = totmsgs;
 				totmsgs = bwave_scan_area(i, j, area_count+1, totmsgs, fti_file, mix_file, dat_file, &last_ptr);
 				s_printf(get_string(195), conf.mail_conferences[i]->name, conf.mail_conferences[i]->mail_areas[j]->name, totmsgs - lasttot); 
-				if (lasttot == totmsgs) {
-					continue;
-				}
+				//if (lasttot == totmsgs) {
+				//	continue;
+				//}
 				
 				if (area_count == 0) {
 					areas = (INF_AREA_INFO **)malloc(sizeof(INF_AREA_INFO *));
@@ -708,11 +708,11 @@ void bwave_upload_reply() {
 		return;		
 	}
 	
-	confr = -1;
-	area = -1;
-	
 	while (fread(&upl_rec, sizeof(UPL_REC), 1, upl_file)) {
 		// find area
+		confr = -1;
+		area = -1;
+			
 		for (i=0;i<conf.mail_conference_count;i++) {
 			for (j=0;j<conf.mail_conferences[i]->mail_area_count;j++) {
 				if (strcmp(conf.mail_conferences[i]->mail_areas[j]->qwkname, upl_rec.echotag) == 0) {
