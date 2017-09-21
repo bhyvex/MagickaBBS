@@ -2639,7 +2639,10 @@ void msg_conf_sub_bases() {
 	int toggle_area;
 	int done = 0;
 	
+	s_printf("\e[1;1H\e[2J");
+	
 	do {
+		
 		for (i=0;i<conf.mail_conferences[gUser->cur_mail_conf]->mail_area_count;i++) {
 			if (conf.mail_conferences[gUser->cur_mail_conf]->mail_areas[i]->read_sec_level <= gUser->sec_level) {
 				s_printf(get_string(226), i, (msgbase_is_subscribed(gUser->cur_mail_conf, i) ? get_string(227) : get_string(228)), conf.mail_conferences[gUser->cur_mail_conf]->mail_areas[i]->name);
