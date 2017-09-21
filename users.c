@@ -182,7 +182,7 @@ int msgbase_sub_unsub(int conference, int msgbase) {
     sqlite3_bind_int(res, 2, msgbase);
     sqlite3_bind_int(res, 3, gUser->id);
     
-    sqlite3_step(res);
+    rc = sqlite3_step(res);
     
     sqlite3_finalize(res);
     sqlite3_close(db);  

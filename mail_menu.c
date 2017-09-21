@@ -2652,7 +2652,7 @@ void msg_conf_sub_bases() {
 				s_printf("\r\n");
 				if (strlen(buffer) > 0) {
 					toggle_area = atoi(buffer);
-					msgbase_sub_unsub(gUser->cur_mail_conf, i);
+					msgbase_sub_unsub(gUser->cur_mail_conf, toggle_area);
 					lines = 0;
 					
 					break;
@@ -2667,7 +2667,7 @@ void msg_conf_sub_bases() {
 			s_printf("\r\n");
 			if (strlen(buffer) > 0) {
 				toggle_area = atoi(buffer);
-				msgbase_sub_unsub(gUser->cur_mail_conf, i);
+				msgbase_sub_unsub(gUser->cur_mail_conf, toggle_area);
 				lines = 0;
 			} else {
 				done = 1;
