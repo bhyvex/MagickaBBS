@@ -80,6 +80,8 @@ int bwave_scan_area(int confr, int area, int areano, int totmsgs, FILE *fti_file
 			jlr.LastReadMsg = 0;
 			jlr.HighReadMsg = 0;
 			all_unread = 1;
+		} else if (jlr.LastReadMsg == 0 && jlr.HighReadMsg == 0) {
+				all_unread = 1;
 		}
 
 	}
