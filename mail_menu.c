@@ -1922,6 +1922,8 @@ void read_mail(struct user_record *user) {
 				jlr.LastReadMsg = 0;
 				jlr.HighReadMsg = 0;
 				all_unread = 1;
+			} else if (jlr.LastReadMsg == 0 && jlr.HighReadMsg == 0) {
+				all_unread = 1;
 			}
 			JAM_CloseMB(jb);
 			s_printf(get_string(120), msghs->msg_count);
@@ -2236,6 +2238,8 @@ void list_messages(struct user_record *user) {
 			if (JAM_ReadLastRead(jb, user->id, &jlr) == JAM_NO_USER) {
 				jlr.LastReadMsg = 0;
 				jlr.HighReadMsg = 0;
+				all_unread = 1;
+			} else if (jlr.LastReadMsg == 0 && jlr.HighReadMsg == 0) {
 				all_unread = 1;
 			}
 			JAM_CloseMB(jb);
