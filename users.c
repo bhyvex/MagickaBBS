@@ -201,6 +201,9 @@ int msgbase_is_subscribed(int conference, int msgbase) {
 	
 	
 	snprintf(buffer, PATH_MAX, "%s/users.sq3", conf.bbs_path);
+	
+	rc = sqlite3_open(buffer, &db);
+		
 	if (rc != SQLITE_OK) {
         dolog("Cannot open database: %s", sqlite3_errmsg(db));
         sqlite3_close(db);
