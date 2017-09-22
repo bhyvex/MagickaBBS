@@ -78,12 +78,6 @@ int write_door32sys(struct user_record *user) {
 
 	// create dorinfo1.def
 
-	snprintf(buffer, 1024, "%s/node%d", conf.bbs_path, mynode);
-
-	if (stat(buffer, &s) != 0) {
-		mkdir(buffer, 0755);
-	}
-
 	sprintf(buffer, "%s/node%d/dorinfo1.def", conf.bbs_path, mynode);
 
 	fptr = fopen(buffer, "w");
@@ -125,6 +119,71 @@ int write_door32sys(struct user_record *user) {
 	
 	fclose(fptr);
 
+	// create door.sys
+
+	sprintf(buffer, "%s/node%d/door.sys", conf.bbs_path, mynode);
+
+	fptr = fopen(buffer, "w");
+
+	if (!fptr) {
+		dolog("Unable to open %s for writing!", buffer);
+		return 1;
+	}
+
+	fprintf(fptr, "COM1:\r\n");
+	fprintf(fptr, "38400\r\n");
+	fprintf(fptr, "8\r\n");
+	fprintf(fptr, "%d\r\n", mynode);
+	fprintf(fptr, "38400\r\n");
+	fprintf(fptr, "Y\r\n");
+	fprintf(fptr, "N\r\n");
+	fprintf(fptr, "Y\r\n");
+	fprintf(fptr, "Y\r\n");
+	fprintf(fptr, "%s %s\r\n", user->firstname, user->lastname);
+	fprintf(fptr, "%s\r\n", user->location);
+	fprintf(fptr, "00-0000-0000\r\n");
+	fprintf(fptr, "00-0000-0000\r\n");
+	fprintf(fptr, "SECRET\r\n");
+	fprintf(fptr, "%d\r\n", user->sec_level);
+	fprintf(fptr, "%d\r\n", user->timeson);
+	fprintf(fptr, "01-01-1971\r\n");
+	fprintf(fptr, "%d\r\n", user->timeleft * 60);
+	fprintf(fptr, "%d\r\n", user->timeleft);
+	fprintf(fptr, "GR\r\n");
+	fprintf(fptr, "25\r\n");
+	fprintf(fptr, "N\r\n");
+	fprintf(fptr, "\r\n");
+	fprintf(fptr, "\r\n");
+	fprintf(fptr, "\r\n");
+	fprintf(fptr, "%d\r\n", user->id);
+	fprintf(fptr, "\r\n");
+	fprintf(fptr, "0\r\n");
+	fprintf(fptr, "0\r\n");
+	fprintf(fptr, "0\r\n");
+	fprintf(fptr, "99999\r\n");
+	fprintf(fptr, "01-01-1971\r\n");
+	fprintf(fptr, "\r\n");
+	fprintf(fptr, "\r\n");
+	fprintf(fptr, "%s\r\n", conf.sysop_name);
+	fprintf(fptr, "%s\r\n", user->loginname);
+	fprintf(fptr, "none\r\n");
+	fprintf(fptr, "Y\r\n");
+	fprintf(fptr, "N\r\n");
+	fprintf(fptr, "Y\r\n");		
+	fprintf(fptr, "7\r\n");
+	fprintf(fptr, "0\r\n");
+	fprintf(fptr, "01-01-1971\r\n");
+	fprintf(fptr, "00:00\r\n");
+	fprintf(fptr, "00:00\r\n");
+	fprintf(fptr, "32768\r\n");
+	fprintf(fptr, "0\r\n");
+	fprintf(fptr, "0\r\n");
+	fprintf(fptr, "0\r\n");
+	fprintf(fptr, "None.\r\n");
+	fprintf(fptr, "0\r\n");
+	fprintf(fptr, "0\r\n");
+
+	fclose(fptr);
 
 	return 0;
 }
