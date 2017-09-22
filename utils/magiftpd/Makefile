@@ -8,7 +8,7 @@ endif
 ifeq ($(OS), NetBSD)
   CC=cc
   CFLAGS=-I/usr/pkg/include
-  LDFLAGS=-L/usr/pkg/lib
+  LDFLAGS=-R/usr/pkg/lib -L/usr/pkg/lib
 endif
 ifeq ($(OS), Linux)
   CC=gcc

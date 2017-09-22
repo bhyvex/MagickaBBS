@@ -7,7 +7,7 @@ Linux/FreeBSD bulletin board system (Should also work on NetBSD and Mac OS X, if
 As I lost the code to my initial BBS flea, I've decided to start over from scratch and this time I'm using git hub so I dont
 lose it again!
 
-Magicka is meant to be a modern (haha) BBS system, using modern technologies, like Sqlite3, IRC, long filenames (gasp!) etc
+Magicka is meant to be a modern (haha) BBS system, using modern technologies, like Sqlite3, long filenames (gasp!) etc
 while still retaining the classic BBS feel. ANSI & Telnet, and good old ZModem.
 
 If you want to install Magicka BBS, follow these steps.
@@ -76,3 +76,10 @@ or `make -f Makefile.freebsd.WWW` be sure to do this from a clean source tree.
 
 The webserver will use templates in the www/ folder to create internal webpages on the fly, anything in www/static/ is served up as is.
 
+# Misc Notes:
+
+* FreeBSD requires libiconv to be installed from ports in addition to other dependencies. It also requires `ipv6_ipv4mapping="YES"` to be set in rc.conf
+
+* macOS makefiles are intended to be built with dependencies provided by macports, homebrew support will require significant changes.
+
+* NetBSD requires libiconv to be installed from pkgsrc in addition to other dependencies. It also requires `net.inet6.ip6.v6only=0` to be set in sysctl.conf

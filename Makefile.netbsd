@@ -34,7 +34,7 @@ OBJ = inih/ini.o bbs.o main.o users.o main_menu.o mail_menu.o doors.o bbs_list.o
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 magicka: $(OBJ) ${LUA} ${ZMODEM} ${JAMLIB} ${JSMN}
-	$(CC) -o magicka -o $@ $^ $(CFLAGS) -L/usr/pkg/lib -lsqlite3 -lutil -lm -lssl -lcrypto -lssh -liconv
+	$(CC) -o magicka -o $@ $^ $(CFLAGS) -R/usr/pkg/lib -L/usr/pkg/lib -lsqlite3 -lutil -lm -lssl -lcrypto -lssh -liconv
 
 magiedit: $(ODOORS)
 	cd utils/magiedit && $(MAKE)
