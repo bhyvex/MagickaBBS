@@ -21,7 +21,7 @@ If you want to install Magicka BBS, follow these steps.
 
 3. Build the BBS (You may have to adjust the Makefile for your system)
 
-   `make -f Makefile.linux` (Linux) `gmake -f Makefile.freebsd` (FreeBSD) `make -f Makefile.osx` (macOS) `gmake -f Makefile.netbsd` (NetBSD)
+   `make`
 
 4. Make a directory for logs.
 
@@ -71,8 +71,8 @@ For information on how to configure your BBS, check the wiki https://github.com/
 # About the webserver
 
 Magicka now includes a built in webserver based on libmicrohttpd. It is not built by default, if you'd like to build it you will
-need a recent version of libmicrohttpd. Once you have these prerequisites, you can build magicka with `make -f Makefile.linux.WWW` 
-or `make -f Makefile.freebsd.WWW` be sure to do this from a clean source tree.
+need a recent version of libmicrohttpd. Once you have these prerequisites, you can build magicka with `make www`
+be sure to do this from a clean source tree.
 
 The webserver will use templates in the www/ folder to create internal webpages on the fly, anything in www/static/ is served up as is.
 
