@@ -7,7 +7,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include "deps/jsmn/jsmn.h"
+#include "../deps/jsmn/jsmn.h"
 #include "bbs.h"
 
 extern struct bbs_config conf;

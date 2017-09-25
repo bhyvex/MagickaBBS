@@ -6,7 +6,7 @@
 #include <dirent.h>
 #include <libgen.h>
 #include <ctype.h>
-#include "../../inih/ini.h"
+#include "../../src/inih/ini.h"
 #include "ticproc.h"
 #include "crc32.h"
 

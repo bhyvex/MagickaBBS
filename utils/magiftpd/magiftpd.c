@@ -17,7 +17,7 @@
 #include <time.h>
 #include <sys/wait.h>
 #include "magiftpd.h"
-#include "../../inih/ini.h"
+#include "../../src/inih/ini.h"
 
 static struct ftpclient **clients;
 static int client_count = 0;

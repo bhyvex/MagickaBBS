@@ -2,7 +2,7 @@ CC=cc
 CFLAGS=-I/usr/local/include
 DEPS = mgpost.c
 JAMLIB = ../../deps/jamlib/jamlib.a
-OBJ = mgpost.o ../../inih/ini.o
+OBJ = mgpost.o ../../src/inih/ini.o
 
 all: mgpost
 

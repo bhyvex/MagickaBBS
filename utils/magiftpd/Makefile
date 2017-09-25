@@ -24,7 +24,7 @@ endif
 
 DEPS = magiftpd.c
 
-OBJ = magiftpd.o ../../inih/ini.o
+OBJ = magiftpd.o ../../src/inih/ini.o
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 

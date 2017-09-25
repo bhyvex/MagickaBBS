@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <sys/file.h>
 #include "../../deps/jamlib/jam.h"
-#include "../../inih/ini.h"
+#include "../../src/inih/ini.h"
 
 s_JamBase *open_jam_base(char *path) {
 	int ret;
