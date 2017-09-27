@@ -689,13 +689,13 @@ char *message_editor() {
 						// refresh screen;
 						position_x = 0;
 						if (position_y <= body_line_count) {
-							for (i=position_y; i< body_line_count && i < top_of_screen + 17;i++) {
+							for (i=position_y; i< body_line_count && i < top_of_screen + 18;i++) {
 								od_set_cursor(i - top_of_screen + 5, 1);
 								od_printf("%s", body_lines[i]);
 								od_clr_line();
 							}
 						}
-						for (;i< top_of_screen + 17;i++) {
+						for (;i< top_of_screen + 18;i++) {
 							od_set_cursor(i - top_of_screen + 5, 1);
 							od_clr_line();
 						}
@@ -790,6 +790,7 @@ int main(int argc, char **argv)
     int last_space;
     int start_line;
     msgpath = NULL;
+    char *ptr;
     
 #if _MSC_VER
     int j;
@@ -936,11 +937,10 @@ int main(int argc, char **argv)
 		unwrapped_quote_len = 0;
 		fgets(buffer, 80, fptr);
 		while (!feof(fptr)) {
-			if (buffer[strlen(buffer) - 2] == '\r') {
-				buffer[strlen(buffer) - 1] = '\0';
-			} else if (buffer[strlen(buffer) - 1] == '\n') {
-				buffer[strlen(buffer) - 1] = '\r';
-			} 
+			ptr = strrchr(buffer, '\n');
+			if (ptr != NULL) {
+				ptr[0] = '\0';
+			}
 			if (unwrapped_quote_len == 0) {
 				unwrapped_quote = (char *)malloc(strlen(buffer) + 1);
 				strcpy(unwrapped_quote, buffer);
@@ -951,11 +951,11 @@ int main(int argc, char **argv)
 				unwrapped_quote_len = strlen(unwrapped_quote);
 			}
 			
-
+			memset(buffer, 0, 256);
 			fgets(buffer, 80, fptr);
 		}
         fclose(fptr);
-        unlink(msgtmp);
+       // unlink(msgtmp);
 		
 		// remove unneeded CRs
 		for (i=0;i<unwrapped_quote_len;i++) {
@@ -1003,7 +1003,7 @@ int main(int argc, char **argv)
 					memset(buffer, 0, 256);
 					strncpy(buffer, &unwrapped_quote[start_line], last_space - start_line + 1);
 					sprintf(quote_lines[quote_line_count], " %c> %s", msgto[0], buffer);
-					j = 0;
+					j = 1;
 					start_line = last_space+1;					
 					i = last_space + 1;
 				}
