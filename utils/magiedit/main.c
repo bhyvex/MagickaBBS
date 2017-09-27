@@ -955,7 +955,7 @@ int main(int argc, char **argv)
 			fgets(buffer, 80, fptr);
 		}
         fclose(fptr);
-       // unlink(msgtmp);
+        unlink(msgtmp);
 		
 		// remove unneeded CRs
 		for (i=0;i<unwrapped_quote_len;i++) {
