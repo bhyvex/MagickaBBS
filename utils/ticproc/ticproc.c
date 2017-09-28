@@ -6,6 +6,7 @@
 #include <dirent.h>
 #include <libgen.h>
 #include <ctype.h>
+#include <time.h>
 #include "../../src/inih/ini.h"
 #include "ticproc.h"
 #include "crc32.h"
@@ -111,10 +112,11 @@ int add_file(struct ticfile_t *ticfile) {
 						"description TEXT,"
 						"size INTEGER,"
 						"dlcount INTEGER,"
-						"approved INTEGER);";
+						"approved INTEGER,"
+						"uploaddate INTEGER);";
 	char fetch_sql[] = "SELECT Id, filename FROM files";
 	char delete_sql[] = "DELETE FROM files WHERE Id=?";
-	char insert_sql[] = "INSERT INTO files (filename, description, size, dlcount, approved) VALUES(?, ?, ?, 0, 1)";
+	char insert_sql[] = "INSERT INTO files (filename, description, size, dlcount, approved, uploaddate) VALUES(?, ?, ?, 0, 1, ?)";
 	int i;
 	int j;
 	char *fname;
@@ -125,7 +127,8 @@ int add_file(struct ticfile_t *ticfile) {
 	char *err_msg = 0;
 	int len;
 	unsigned long crc;
-
+	time_t curtime;
+	
 	if (ticfile->area == NULL) {
 		return -1;
 	}
@@ -295,10 +298,11 @@ int add_file(struct ticfile_t *ticfile) {
 		free(fname);
 		return -1;
 	}
+	curtime = time(NULL);
 	sqlite3_bind_text(res, 1, dest_filename, -1, 0);
 	sqlite3_bind_text(res, 2, description, -1, 0);
 	sqlite3_bind_int(res, 3, s.st_size);
-
+	sqlite3_bind_int(res, 4, curtime);
 	sqlite3_step(res);
 	sqlite3_finalize(res);
 	sqlite3_close(db);

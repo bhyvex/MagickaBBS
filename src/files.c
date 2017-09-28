@@ -10,6 +10,7 @@
 #include <termios.h>
 #include <dirent.h>
 #include <fcntl.h>
+#include <time.h>
 #include "Xmodem/zmodem.h"
 #include "bbs.h"
 #include "lua/lua.h"
@@ -610,15 +611,16 @@ void upload(struct user_record *user) {
 						"description TEXT,"
 						"size INTEGER,"
 						"dlcount INTEGER,"
+						"uploaddate INTEGER,"
 						"approved INTEGER);";
-	char *sql = "INSERT INTO files (filename, description, size, dlcount, approved) VALUES(?, ?, ?, 0, 0)";
+	char *sql = "INSERT INTO files (filename, description, size, dlcount, approved, uploaddate) VALUES(?, ?, ?, 0, 0, ?)";
 	sqlite3 *db;
 	sqlite3_stmt *res;
 	int rc;
 	struct stat s;
 	char *err_msg = NULL;
 	char *description;
-
+	time_t curtime;
 	
 	if (!do_upload(user, conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->upload_path)) {
 		s_printf(get_string(211));
@@ -679,6 +681,8 @@ void upload(struct user_record *user) {
 			sqlite3_bind_text(res, 2, description, -1, 0);
 		}
         sqlite3_bind_int(res, 3, s.st_size);
+        curtime = time(NULL);
+        sqlite3_bind_int(res, 4, curtime);
     } else {
       	dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
 		sqlite3_finalize(res);
@@ -974,7 +978,8 @@ void list_files(struct user_record *user) {
 							}
 						}
 					}
-				} else {
+				}
+				if (strlen(&(files_e[i]->description[j])) > 1) {
 					s_printf(get_string(74));
 				}
 			} else {

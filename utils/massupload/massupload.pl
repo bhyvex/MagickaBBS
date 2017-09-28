@@ -31,7 +31,8 @@ my $stmt = qq(CREATE TABLE IF NOT EXISTS files (
 						description TEXT,
 						size INTEGER,
 						dlcount INTEGER,
-						approved INTEGER););
+						approved INTEGER,
+						uploaddate INTEGER););
 my $rv = $dbh->do($stmt);
 
 my $string;
@@ -81,8 +82,9 @@ foreach my $fp (glob("$dir/*")) {
             print(" not zip file.\n");
         }
         my $size = -s $fp;
-        $sth = $dbh->prepare('INSERT INTO files (filename, description, size, dlcount, approved) VALUES($1, $2, $3, 0, 1)');
-        $sth->execute($fp, $string, $size);
+        my $curtime = time();
+        $sth = $dbh->prepare('INSERT INTO files (filename, description, size, dlcount, approved, uploaddate) VALUES($1, $2, $3, 0, 1, $4)');
+        $sth->execute($fp, $string, $size, $curtime);
     }
   }
 }
