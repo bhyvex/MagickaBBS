@@ -1205,7 +1205,7 @@ void file_scan() {
 	int i;
 	int j;
 	char buffer[PATH_MAX];
-	char sql[] = "SELECT COUNT(*) FROM files WHERE uploaddate > ?";
+	char sql[] = "SELECT COUNT(*) FROM files WHERE uploaddate > ? AND approved=1";
 	int rc;
 	sqlite3 *db;
     sqlite3_stmt *res;	
