@@ -108,6 +108,11 @@ int l_bbsMailScan(lua_State *L) {
 	return 0;
 }
 
+int l_bbsFileScan(lua_State *L) {
+	file_scan();
+	return 0;
+}
+
 int l_bbsRunDoor(lua_State *L) {
 	char *cmd = (char *)lua_tostring(L, 1);
 	int stdio = lua_toboolean(L, 2);
@@ -192,6 +197,8 @@ void lua_push_cfunctions(lua_State *L) {
 	lua_setglobal(L, "bbs_display_automsg");
 	lua_pushcfunction(L, l_getBBSInfo);
 	lua_setglobal(L, "bbs_get_info");
+	lua_pushcfunction(L, l_bbsFileScan);
+	lua_setglobal(L, "bbs_file_scan");	
 }
 
 void do_lua_script(char *script) {

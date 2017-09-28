@@ -82,6 +82,8 @@ end
 
 bbs_mail_scan();
 
+bbs_file_scan();
+
 -- Display Auto Message
 
 bbs_display_automsg();

@@ -23,12 +23,15 @@ extern int mynode;
 extern int bbs_stdin;
 extern int bbs_stdout;
 extern int bbs_stderr;
+extern time_t userlaston;
+extern struct user_record *gUser;
 
 struct file_entry {
 	char *filename;
 	char *description;
 	int size;
 	int dlcount;
+	time_t uploaddate;
 };
 
 char **tagged_files;
@@ -851,8 +854,8 @@ void download(struct user_record *user) {
 }
 
 void list_files(struct user_record *user) {
-	char *sql = "select filename, description, size, dlcount from files where approved=1";
-	char buffer[256];
+	char *sql = "select filename, description, size, dlcount, uploaddate from files where approved=1";
+	char buffer[PATH_MAX];
 	sqlite3 *db;
     sqlite3_stmt *res;
     int rc;
@@ -868,7 +871,7 @@ void list_files(struct user_record *user) {
 
 	struct file_entry **files_e;
 
-	sprintf(buffer, "%s/%s.sq3", conf.bbs_path, conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->database);
+	snprintf(buffer, PATH_MAX, "%s/%s.sq3", conf.bbs_path, conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->database);
 
 	rc = sqlite3_open(buffer, &db);
 	if (rc != SQLITE_OK) {
@@ -901,7 +904,7 @@ void list_files(struct user_record *user) {
 		files_e[files_c]->description = strdup((char *)sqlite3_column_text(res, 1));
 		files_e[files_c]->size = sqlite3_column_int(res, 2);
 		files_e[files_c]->dlcount = sqlite3_column_int(res, 3);
-
+		files_e[files_c]->uploaddate = sqlite3_column_int(res, 4);
 		files_c++;
 	}
 	sqlite3_finalize(res);
@@ -926,7 +929,11 @@ void list_files(struct user_record *user) {
 		} else {
 			file_unit = 'b';
 		}
-		s_printf(get_string(69), i, files_e[i]->dlcount, file_size, file_unit, basename(files_e[i]->filename));
+		if (files_e[i]->uploaddate > userlaston) {
+			s_printf(get_string(231), i, files_e[i]->dlcount, file_size, file_unit, basename(files_e[i]->filename));
+		} else {
+			s_printf(get_string(69), i, files_e[i]->dlcount, file_size, file_unit, basename(files_e[i]->filename));
+		}
 		lines+=3;
 		for (j=0;j<strlen(files_e[i]->description);j++) {
 			if (files_e[i]->description[j] == '\n') {
@@ -1193,3 +1200,69 @@ void prev_file_sub(struct user_record *user) {
 	user->cur_file_sub = i - 1;
 }
 
+void file_scan() {
+	char c;
+	int i;
+	int j;
+	char buffer[PATH_MAX];
+	char sql[] = "SELECT COUNT(*) FROM files WHERE uploaddate > ?";
+	int rc;
+	sqlite3 *db;
+    sqlite3_stmt *res;	
+	int new_files;
+	int lines = 0;
+	
+	s_printf(get_string(232));
+	c = s_getc();
+	
+	if (tolower(c) == 'y') {
+		for (i=0;i<conf.file_directory_count;i++) {
+			if (conf.file_directories[i]->sec_level > gUser->sec_level) {
+				continue;
+			}
+			s_printf(get_string(140), i, conf.file_directories[i]->name);
+			lines += 2;
+			if (lines == 22) {
+				s_printf(get_string(6));
+				s_getc();
+				lines = 0;
+			}				
+			for (j=0;j<conf.file_directories[i]->file_sub_count;j++) {
+				if (conf.file_directories[i]->file_subs[j]->download_sec_level > gUser->sec_level) {
+					continue;
+				}
+				snprintf(buffer, PATH_MAX, "%s/%s.sq3", conf.bbs_path, conf.file_directories[i]->file_subs[j]->database);
+				rc = sqlite3_open(buffer, &db);
+				if (rc != SQLITE_OK) {
+					dolog("Cannot open database: %s", sqlite3_errmsg(db));
+					sqlite3_close(db);
+
+					exit(1);
+				}
+				sqlite3_busy_timeout(db, 5000);
+				rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
+
+				if (rc != SQLITE_OK) {
+					sqlite3_finalize(res);
+					sqlite3_close(db);
+					continue;
+				}
+				sqlite3_bind_int(res, 1, userlaston);
+				
+				if (sqlite3_step(res) != SQLITE_ERROR) {
+					new_files = sqlite3_column_int(res, 0);
+					s_printf(get_string(141), j, conf.file_directories[i]->file_subs[j]->name, new_files);
+					lines++;
+				}
+				sqlite3_finalize(res);
+				sqlite3_close(db);
+				
+				if (lines == 22) {
+					s_printf(get_string(6));
+					s_getc();
+					lines = 0;
+				}				
+			}
+		}
+	}
+}

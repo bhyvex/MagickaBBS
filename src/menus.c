@@ -49,6 +49,7 @@
 #define MENU_SUBUNSUBCONF		39
 #define MENU_RESETPOINTERS      40
 #define MENU_RESETALLPOINTERS   41
+#define MENU_FILESCAN           42
 
 extern struct bbs_config conf;
 extern struct user_record *gUser;
@@ -197,6 +198,8 @@ int menu_system(char *menufile) {
 				menu[menu_items-1]->command = MENU_RESETPOINTERS;
 			} else if (strncasecmp(&buffer[8], "RESETALLMSGPTRS", 15) == 0) {
 				menu[menu_items-1]->command = MENU_RESETALLPOINTERS;
+			} else if (strncasecmp(&buffer[8], "FILESCAN", 8) == 0) {
+				menu[menu_items-1]->command = MENU_FILESCAN;
 			}
         } else if (strncasecmp(buffer, "SECLEVEL", 8) == 0) {
             menu[menu_items-1]->seclevel = atoi(&buffer[9]);
@@ -494,6 +497,9 @@ int menu_system(char *menufile) {
 							if (confirm == 'y' || confirm == 'Y') {
 								msgbase_reset_all_pointers();
 							}
+							break;
+						case MENU_FILESCAN:
+							file_scan();
 							break;
                         default:
                             break;     

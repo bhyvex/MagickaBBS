@@ -30,6 +30,7 @@ int gSocket;
 int sshBBS;
 int usertimeout;
 int timeoutpaused;
+time_t userlaston;
 
 char *ipaddress = NULL;
 
@@ -856,6 +857,8 @@ tryagain:
 	localtime_r(&now, &thetime);
 	localtime_r(&user->laston, &oldtime);
 
+	userlaston = user->laston;
+
 	if (thetime.tm_mday != oldtime.tm_mday || thetime.tm_mon != oldtime.tm_mon || thetime.tm_year != oldtime.tm_year) {
 		user->timeleft = user->sec_info->timeperday;
 		user->laston = now;
@@ -901,6 +904,8 @@ tryagain:
 		}
 
 		mail_scan(user);
+
+		file_scan();
 
 		automessage_display();
 	}
