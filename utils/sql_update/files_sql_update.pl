@@ -21,7 +21,7 @@ sub check_exists {
    		FetchHashKeyName => 'NAME_lc',
 	});
 
-	my $sql = "PRAGMA table_info(users)";
+	my $sql = "PRAGMA table_info(files)";
 	my $sth = $dbh->prepare($sql);
 
 	my $gotneeded;
