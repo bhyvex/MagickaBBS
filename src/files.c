@@ -854,7 +854,10 @@ void download(struct user_record *user) {
 }
 
 void list_files(struct user_record *user) {
-	char *sql = "select filename, description, size, dlcount, uploaddate from files where approved=1";
+	char *dsql = "select filename, description, size, dlcount, uploaddate from files where approved=1 ORDER BY uploaddate DESC";
+	char *fsql = "select filename, description, size, dlcount, uploaddate from files where approved=1 ORDER BY filename";
+	char *psql = "select filename, description, size, dlcount, uploaddate from files where approved=1 ORDER BY dlcount DESC";
+	char *sql;
 	char buffer[PATH_MAX];
 	sqlite3 *db;
     sqlite3_stmt *res;
@@ -869,8 +872,25 @@ void list_files(struct user_record *user) {
 	int k;
 	int match;
 
+	char ch;
 	struct file_entry **files_e;
 
+	s_printf(get_string(233));
+	ch = s_getc();
+	
+	switch(tolower(ch)) {
+		case 'u':
+			sql = dsql;
+			break;
+		case 'p':
+			sql = psql;
+			break;
+		default:
+			sql = fsql;
+			break;
+		
+	}
+	s_printf("\r\n");
 	snprintf(buffer, PATH_MAX, "%s/%s.sq3", conf.bbs_path, conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->database);
 
 	rc = sqlite3_open(buffer, &db);
