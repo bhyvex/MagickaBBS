@@ -1251,8 +1251,10 @@ void file_scan() {
 				
 				if (sqlite3_step(res) != SQLITE_ERROR) {
 					new_files = sqlite3_column_int(res, 0);
-					s_printf(get_string(141), j, conf.file_directories[i]->file_subs[j]->name, new_files);
-					lines++;
+					if (new_files > 0) {
+						s_printf(get_string(141), j, conf.file_directories[i]->file_subs[j]->name, new_files);
+						lines++;
+					}
 				}
 				sqlite3_finalize(res);
 				sqlite3_close(db);
@@ -1264,5 +1266,7 @@ void file_scan() {
 				}				
 			}
 		}
+		s_printf(get_string(6));
+		s_getc();		
 	}
 }
