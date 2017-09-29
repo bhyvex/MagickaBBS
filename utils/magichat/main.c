@@ -215,12 +215,14 @@ int main(int argc, char **argv) {
 									if (fptr) {
 										fgets(motd, 256, fptr);
 										while (!feof(fptr)) {
-											if (motd[strlen(buffer) - 1] == '\n') {
-												motd[strlen(buffer) - 1] = '\0';
+											if (motd[strlen(motd) - 1] == '\n') {
+												motd[strlen(motd) - 1] = '\0';
 											}
 											
 											snprintf(buffer, 1024, "{\"bbs\": \"SYSTEM\", \"nick\": \"SYSTEM\", \"msg\": \"%s\" }", motd);
-											send(clients[j]->fd, buffer, strlen(buffer) + 1, 0);
+											if (send(clients[j]->fd, buffer, strlen(buffer) + 1, 0) == -1) {
+												perror("send");
+											}
 											fgets(motd, 256, fptr);
 										}
 										fclose(fptr);
