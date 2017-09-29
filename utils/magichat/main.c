@@ -219,6 +219,11 @@ int main(int argc, char **argv) {
 												motd[strlen(motd) - 1] = '\0';
 											}
 											
+											if (strlen(motd) == 0) {
+												sprintf(motd, " ");
+											}
+											
+											
 											snprintf(buffer, 1024, "{\"bbs\": \"SYSTEM\", \"nick\": \"SYSTEM\", \"msg\": \"%s\" }", motd);
 											if (send(clients[j]->fd, buffer, strlen(buffer) + 1, 0) == -1) {
 												perror("send");
