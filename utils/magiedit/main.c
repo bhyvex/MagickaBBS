@@ -414,9 +414,9 @@ char *message_editor() {
 							od_printf("%s", line);
 							od_clr_line();
 							
-							i = position_y + 1;
+							i = position_y;
 							
-							if (position_y + 1 <= body_line_count) {
+							if (position_y <= body_line_count) {
 								for (; i< body_line_count && i < top_of_screen + 17;i++) {
 									od_set_cursor(i - top_of_screen + 5, 1);
 									od_printf("%s", body_lines[i]);
