@@ -265,9 +265,8 @@ void chat_system(struct user_record *user) {
 				strncat(partmessage, readbuffer, 1024);
 				strcpy(readbuffer, partmessage);
 				
-				len = strlen(readbuffer);
 				y = 0;
-				for (z = 0;z < len; z++) {
+				for (z = 0;z < strlen(readbuffer); z++) {
 					if (readbuffer[z] != '\n') {
 						message[y] = readbuffer[z];
 						message[y+1] = '\0';
