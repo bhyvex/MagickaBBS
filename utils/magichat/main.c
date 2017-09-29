@@ -178,15 +178,15 @@ int main(int argc, char **argv) {
 
                       	for (j = 1; j < r; j++) {
                     		if (jsoneq(buf, &tokens[j], "bbs") == 0) {
-			                    sprintf(msg.bbstag, "%.*s", tokens[j+1].end-tokens[j+1].start, buf + tokens[j+1].start);
+			                    snprintf(msg.bbstag, 16, "%.*s", tokens[j+1].end-tokens[j+1].start, buf + tokens[j+1].start);
 			                    j++;
                             }
                     		if (jsoneq(buf, &tokens[j], "nick") == 0) {
-			                    sprintf(msg.nick, "%.*s", tokens[j+1].end-tokens[j+1].start, buf + tokens[j+1].start);
+			                    snprintf(msg.nick, 16, "%.*s", tokens[j+1].end-tokens[j+1].start, buf + tokens[j+1].start);
 			                    j++;
                             }
                             if (jsoneq(buf, &tokens[j], "msg") == 0) {
-			                    sprintf(msg.msg, "%.*s", tokens[j+1].end-tokens[j+1].start, buf + tokens[j+1].start);
+			                    snprintf(msg.msg, 256, "%.*s", tokens[j+1].end-tokens[j+1].start, buf + tokens[j+1].start);
 			                    j++;
                             }                     
                         } 
@@ -196,6 +196,8 @@ int main(int argc, char **argv) {
                                 if (clients[j]->fd == i) {
                                     strncpy(clients[j]->bbstag, msg.bbstag, 16);
                                     strncpy(clients[j]->nick, msg.nick, 16);
+									clients[j]->bbstag[15] = '\0';
+									clients[j]->nick[15] = '\0';
 
                                     for(k = 0; k < client_count; k++) {
                                         if (i != clients[k]->fd && strcmp(clients[k]->nick, "UNKNOWN") != 0) {
