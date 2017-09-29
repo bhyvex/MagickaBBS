@@ -146,6 +146,7 @@ void chat_system(struct user_record *user) {
 	char *input_b;
 	char *ptr;
 	int z;
+	int y;
 	
 	if (sshBBS) {
 		chat_in = STDIN_FILENO;
@@ -265,12 +266,14 @@ void chat_system(struct user_record *user) {
 				strcpy(readbuffer, partmessage);
 				
 				len = strlen(readbuffer);
-				
+				y = 0;
 				for (z = 0;z < len; z++) {
 					if (readbuffer[z] != '\n') {
-						message[z] = readbuffer[z];
-						message[z+1] = '\0';
+						message[y] = readbuffer[z];
+						message[y+1] = '\0';
+						y++;
 					} else {
+						y = 0;
 						// json parse
 						jsmn_init(&parser);				
 						// we got some data from a client
