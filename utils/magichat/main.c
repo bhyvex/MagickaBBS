@@ -46,10 +46,13 @@ int main(int argc, char **argv) {
     int i, j, k;
     char buffer[1024];
     char buf[1024];
+    char motd[256];
     jsmn_parser parser;
     jsmntok_t tokens[8];
     int r;
     int nbytes;
+    FILE *fptr;
+    
     if (argc < 2) {
         printf("Usage: magichat [port]\n");
         return 0;
@@ -207,6 +210,22 @@ int main(int argc, char **argv) {
                                             }
                                         }
                                     }
+                                    
+									fptr = fopen("motd.txt", "r");
+									if (fptr) {
+										fgets(motd, 256, fptr);
+										while (!feof(fptr)) {
+											if (motd[strlen(buffer) - 1] == '\n') {
+												motd[strlen(buffer) - 1] = '\0';
+											}
+											
+											snprintf(buffer, 1024, "{\"bbs\": \"SYSTEM\", \"nick\": \"SYSTEM\", \"msg\": \"%s\" }", motd);
+											send(clients[j]->fd, buffer, strlen(buffer) + 1, 0);
+											fgets(motd, 256, fptr);
+										}
+										fclose(fptr);
+									}
+                                    
                                     break;
                                 }
                             }

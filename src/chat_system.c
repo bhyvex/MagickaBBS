@@ -226,7 +226,7 @@ void chat_system(struct user_record *user) {
 						input_b = encapsulate_quote(inputbuffer);
 						raw("{ \"bbs\": \"%s\", \"nick\": \"%s\", \"msg\": \"%s\" }", conf.mgchat_bbstag, user->loginname, input_b);
 						free(input_b);
-						sprintf(buffer2, "%s: %s", user->loginname, inputbuffer);
+						sprintf(buffer2, "(%s)[%s]: %s", conf.mgchat_bbstag, user->loginname, inputbuffer);
 						append_screenbuffer(buffer2);
 						do_update = 1;
 					}
