@@ -132,6 +132,8 @@ void chat_system(struct user_record *user) {
 	char buffer[513];
 	char outputbuffer[513];
 	char readbuffer[1024];
+	char message[1024];
+	char partmessage[1024];
 	int buffer_at = 0;
 	int do_update = 1;
 	int i;
@@ -142,7 +144,9 @@ void chat_system(struct user_record *user) {
     int r;
 	struct chat_msg msg;
 	char *input_b;
-
+	char *ptr;
+	int z;
+	
 	if (sshBBS) {
 		chat_in = STDIN_FILENO;
 	} else {
@@ -188,8 +192,9 @@ void chat_system(struct user_record *user) {
 		screenbuffer[i] = (char *)malloc(81);
 		memset(screenbuffer[i], 0, 81);
 	}
-
-	raw("{ \"bbs\": \"%s\", \"nick\": \"%s\", \"msg\": \"LOGIN\" }", conf.mgchat_bbstag, user->loginname);
+	memset(partmessage, 0, 1024);
+	
+	raw("{ \"bbs\": \"%s\", \"nick\": \"%s\", \"msg\": \"LOGIN\" }\n", conf.mgchat_bbstag, user->loginname);
 
 	while (1) {
 		FD_ZERO(&fds);
@@ -224,7 +229,7 @@ void chat_system(struct user_record *user) {
 						}
 					} else {
 						input_b = encapsulate_quote(inputbuffer);
-						raw("{ \"bbs\": \"%s\", \"nick\": \"%s\", \"msg\": \"%s\" }", conf.mgchat_bbstag, user->loginname, input_b);
+						raw("{ \"bbs\": \"%s\", \"nick\": \"%s\", \"msg\": \"%s\" }\n", conf.mgchat_bbstag, user->loginname, input_b);
 						free(input_b);
 						sprintf(buffer2, "(%s)[%s]: %s", conf.mgchat_bbstag, user->loginname, inputbuffer);
 						append_screenbuffer(buffer2);
@@ -246,7 +251,7 @@ void chat_system(struct user_record *user) {
 				}
 			}
 			if (FD_ISSET(chat_socket, &fds)) {
-				len = read(chat_socket, readbuffer, 1024);
+				len = read(chat_socket, readbuffer, 512);
 				if (len == 0) {
 					s_putstring("\r\n\r\n\r\nLost connection to chat server!\r\n");
 					for (i=0;i<22;i++) {
@@ -255,43 +260,62 @@ void chat_system(struct user_record *user) {
 					free(screenbuffer);
 					return;
 				}
+				
+				strncat(partmessage, readbuffer, 1024);
+				strcpy(readbuffer, partmessage);
+				
+				len = strlen(readbuffer);
+				
+				for (z = 0;z < len; z++) {
+					if (readbuffer[z] != '\n') {
+						message[z] = readbuffer[z];
+						message[z+1] = '\0';
+					} else {
+						// json parse
+						jsmn_init(&parser);				
+						// we got some data from a client
+						r = jsmn_parse(&parser, message, strlen(message), tokens, sizeof(tokens)/sizeof(tokens[0]));
+			 
+						if ((r < 0) ||  (r < 1 || tokens[0].type != JSMN_OBJECT)) {
+							// invalid json
+						} else {
+							for (j = 1; j < r; j++) {
+								if (jsoneq(message, &tokens[j], "bbs") == 0) {
+									sprintf(msg.bbstag, "%.*s", tokens[j+1].end-tokens[j+1].start, message + tokens[j+1].start);
+									j++;
+								}
+								if (jsoneq(message, &tokens[j], "nick") == 0) {
+									sprintf(msg.nick, "%.*s", tokens[j+1].end-tokens[j+1].start, message + tokens[j+1].start);
+									j++;
+								}
+								if (jsoneq(message, &tokens[j], "msg") == 0) {
+									sprintf(msg.msg, "%.*s", tokens[j+1].end-tokens[j+1].start, message + tokens[j+1].start);
+									j++;
+								}                     
+							} 
+						}
+						// set outputbuffer
+						if (strcmp(msg.bbstag, "SYSTEM") == 0 && strcmp(msg.nick, "SYSTEM") == 0) {
+							snprintf(outputbuffer, 512, ">> %s", msg.msg);
+						} else {
+							snprintf(outputbuffer, 512, "(%s)[%s]: %s", msg.bbstag, msg.nick, msg.msg);
+						}
+						// screen_append output buffer
+						append_screenbuffer(outputbuffer);
+						do_update = 1;
 
-				// json parse
-				jsmn_init(&parser);				
-                // we got some data from a client
-                r = jsmn_parse(&parser, readbuffer, len, tokens, sizeof(tokens)/sizeof(tokens[0]));
-     
-                if ((r < 0) ||  (r < 1 || tokens[0].type != JSMN_OBJECT)) {
-					// invalid json
-				} else {
-					for (j = 1; j < r; j++) {
-                    	if (jsoneq(readbuffer, &tokens[j], "bbs") == 0) {
-			            	sprintf(msg.bbstag, "%.*s", tokens[j+1].end-tokens[j+1].start, readbuffer + tokens[j+1].start);
-			            	j++;
-                        }
-                    	if (jsoneq(readbuffer, &tokens[j], "nick") == 0) {
-			                sprintf(msg.nick, "%.*s", tokens[j+1].end-tokens[j+1].start, readbuffer + tokens[j+1].start);
-			                j++;
-                        }
-                        if (jsoneq(readbuffer, &tokens[j], "msg") == 0) {
-			                sprintf(msg.msg, "%.*s", tokens[j+1].end-tokens[j+1].start, readbuffer + tokens[j+1].start);
-			                j++;
-                        }                     
-                    } 
+
+						memset(buffer, 0, 513);
+						buffer_at = 0;						
+					}
+					
 				}
-				// set outputbuffer
-				if (strcmp(msg.bbstag, "SYSTEM") == 0 && strcmp(msg.nick, "SYSTEM") == 0) {
-					snprintf(outputbuffer, 512, ">> %s", msg.msg);
+				if (z < len) {
+					memset(partmessage, 0, 1024);
+					memcpy(partmessage, &readbuffer[z], len - z);
 				} else {
-					snprintf(outputbuffer, 512, "(%s)[%s]: %s", msg.bbstag, msg.nick, msg.msg);
+					memset(partmessage, 0, 1024);
 				}
-				// screen_append output buffer
-				append_screenbuffer(outputbuffer);
-				do_update = 1;
-
-
-				memset(buffer, 0, 513);
-				buffer_at = 0;
 			}
 		}
 		if (do_update == 1) {

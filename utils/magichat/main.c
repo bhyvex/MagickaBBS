@@ -137,11 +137,11 @@ int main(int argc, char **argv) {
                         for (k=0;k<client_count;k++) {
                             if (clients[k]->fd == i) {
                                 if (strcmp(clients[k]->nick, "UNKNOWN") != 0) {
-                                    snprintf(buffer, 1024, "{\"bbs\": \"SYSTEM\", \"nick\": \"SYSTEM\", \"msg\": \"%s (%s) has left the chat\" }", clients[k]->nick, clients[k]->bbstag);
+                                    snprintf(buffer, 1024, "{\"bbs\": \"SYSTEM\", \"nick\": \"SYSTEM\", \"msg\": \"%s (%s) has left the chat\" }\n", clients[k]->nick, clients[k]->bbstag);
                                     for (j=0;j<=fdmax;j++) {
                                         if (FD_ISSET(j, &master)) {
                                             if (j != server_socket && j != clients[k]->fd) {
-                                                if (send(j, buffer, strlen(buffer) + 1, 0) == -1) {
+                                                if (send(j, buffer, strlen(buffer), 0) == -1) {
                                                     perror("send");
                                                 }
                                             }
@@ -204,8 +204,8 @@ int main(int argc, char **argv) {
 
                                     for(k = 0; k < client_count; k++) {
                                         if (i != clients[k]->fd && strcmp(clients[k]->nick, "UNKNOWN") != 0) {
-                                            snprintf(buffer, 1024, "{\"bbs\": \"SYSTEM\", \"nick\": \"SYSTEM\", \"msg\": \"%s (%s) has joined the chat\" }", clients[j]->nick, clients[j]->bbstag);
-                                            if (send(clients[k]->fd, buffer, strlen(buffer) + 1, 0) == -1) {
+                                            snprintf(buffer, 1024, "{\"bbs\": \"SYSTEM\", \"nick\": \"SYSTEM\", \"msg\": \"%s (%s) has joined the chat\" }\n", clients[j]->nick, clients[j]->bbstag);
+                                            if (send(clients[k]->fd, buffer, strlen(buffer), 0) == -1) {
                                                 perror("send");
                                             }
                                         }
@@ -224,8 +224,9 @@ int main(int argc, char **argv) {
 											}
 											
 											
-											snprintf(buffer, 1024, "{\"bbs\": \"SYSTEM\", \"nick\": \"SYSTEM\", \"msg\": \"%s\" }", motd);
-											if (send(clients[j]->fd, buffer, strlen(buffer) + 1, 0) == -1) {
+											snprintf(buffer, 1024, "{\"bbs\": \"SYSTEM\", \"nick\": \"SYSTEM\", \"msg\": \"%s\" }\n", motd);
+											
+											if (send(i, buffer, strlen(buffer), 0) == -1) {
 												perror("send");
 											}
 											fgets(motd, 256, fptr);
