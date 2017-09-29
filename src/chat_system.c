@@ -262,7 +262,7 @@ void chat_system(struct user_record *user) {
 					return;
 				}
 				
-				strncat(partmessage, readbuffer, 1024);
+				strncat(partmessage, readbuffer, len);
 				strcpy(readbuffer, partmessage);
 				
 				y = 0;
