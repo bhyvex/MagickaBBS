@@ -197,46 +197,57 @@ int main(int argc, char **argv) {
                         if (strcmp(msg.msg, "LOGIN") == 0) {
                             for (j=0;j<client_count;j++) {
                                 if (clients[j]->fd == i) {
-                                    strncpy(clients[j]->bbstag, msg.bbstag, 16);
-                                    strncpy(clients[j]->nick, msg.nick, 16);
-									clients[j]->bbstag[15] = '\0';
-									clients[j]->nick[15] = '\0';
+									if (strcmp(clients[j]->nick, "UNKNOWN") == 0) {
+										strncpy(clients[j]->bbstag, msg.bbstag, 16);
+										strncpy(clients[j]->nick, msg.nick, 16);
+										clients[j]->bbstag[15] = '\0';
+										clients[j]->nick[15] = '\0';
 
-                                    for(k = 0; k < client_count; k++) {
-                                        if (i != clients[k]->fd && strcmp(clients[k]->nick, "UNKNOWN") != 0) {
-                                            snprintf(buffer, 1024, "{\"bbs\": \"SYSTEM\", \"nick\": \"SYSTEM\", \"msg\": \"%s (%s) has joined the chat\" }\n", clients[j]->nick, clients[j]->bbstag);
-                                            if (send(clients[k]->fd, buffer, strlen(buffer), 0) == -1) {
-                                                perror("send");
-                                            }
-                                        }
-                                    }
-                                    
-									fptr = fopen("motd.txt", "r");
-									if (fptr) {
-										fgets(motd, 256, fptr);
-										while (!feof(fptr)) {
-											if (motd[strlen(motd) - 1] == '\n') {
-												motd[strlen(motd) - 1] = '\0';
+										for(k = 0; k < client_count; k++) {
+											if (i != clients[k]->fd && strcmp(clients[k]->nick, "UNKNOWN") != 0) {
+												snprintf(buffer, 1024, "{\"bbs\": \"SYSTEM\", \"nick\": \"SYSTEM\", \"msg\": \"%s (%s) has joined the chat\" }\n", clients[j]->nick, clients[j]->bbstag);
+												if (send(clients[k]->fd, buffer, strlen(buffer), 0) == -1) {
+													perror("send");
+												}
 											}
-											
-											if (strlen(motd) == 0) {
-												sprintf(motd, " ");
-											}
-											
-											
-											snprintf(buffer, 1024, "{\"bbs\": \"SYSTEM\", \"nick\": \"SYSTEM\", \"msg\": \"%s\" }\n", motd);
-											
-											if (send(i, buffer, strlen(buffer), 0) == -1) {
-												perror("send");
-											}
-											fgets(motd, 256, fptr);
 										}
-										fclose(fptr);
+										
+										fptr = fopen("motd.txt", "r");
+										if (fptr) {
+											fgets(motd, 256, fptr);
+											while (!feof(fptr)) {
+												if (motd[strlen(motd) - 1] == '\n') {
+													motd[strlen(motd) - 1] = '\0';
+												}
+												
+												if (strlen(motd) == 0) {
+													sprintf(motd, " ");
+												}
+												
+												
+												snprintf(buffer, 1024, "{\"bbs\": \"SYSTEM\", \"nick\": \"SYSTEM\", \"msg\": \"%s\" }\n", motd);
+												
+												if (send(i, buffer, strlen(buffer), 0) == -1) {
+													perror("send");
+												}
+												fgets(motd, 256, fptr);
+											}
+											fclose(fptr);
+										}
 									}
-                                    
-                                    break;
-                                }
-                            }
+									break;
+								}
+							}
+                        } else if (strcmp(msg.msg, "USERS") == 0) {
+							for (j=0;j<client_count;j++) {
+								if (strcmp(clients[j]->nick, "UNKNOWN") != 0) {
+									snprintf(buffer, 1024, "{\"bbs\": \"SYSTEM\", \"nick\": \"SYSTEM\", \"msg\": \"(%s)[%s] is online.\" }\n", clients[j]->bbstag, clients[j]->nick);
+											
+									if (send(i, buffer, strlen(buffer), 0) == -1) {
+										perror("send");
+									}
+								}
+							}
                         } else {
                             for (j=0;j<client_count;j++) {
                                 if (clients[j]->fd == i) {
