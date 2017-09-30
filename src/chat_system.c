@@ -176,7 +176,7 @@ void chat_system(struct user_record *user) {
     if ( (chat_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         return;
     }
-    if (inet_pton(AF_INET, conf.mgchat_server, &servaddr.sin_addr) != 0) {
+    if (inet_pton(AF_INET, conf.mgchat_server, &servaddr.sin_addr) != 1) {
         hostname_to_ip(conf.mgchat_server, buffer);
         if (!inet_pton(AF_INET, buffer, &servaddr.sin_addr)) {
 			return;
