@@ -26,7 +26,7 @@ extern int usertimeout;
 struct chat_msg {
     char nick[16];
     char bbstag[16];
-    char msg[256];
+    char msg[512];
 };
 
 static int jsoneq(const char *json, jsmntok_t *tok, const char *s) {
@@ -38,7 +38,7 @@ static int jsoneq(const char *json, jsmntok_t *tok, const char *s) {
 }
 
 static char *encapsulate_quote(char *in) {
-	char out[160];
+	char out[512];
 	int i;
 	int j = 0;
 	for (i=0;i<strlen(in);i++) {
@@ -94,16 +94,36 @@ int hostname_to_ip(char * hostname , char* ip) {
 }
 void append_screenbuffer(char *buffer) {
 	int z;
+	int i;
+	int last_space = 0;
 
 	for (z=0;z<strlen(buffer);z++) {
-		if (row_at == 80) {
+		if (row_at == 79) {
 			if (line_at == 22) {
+				if (last_space > 0) {
+					screenbuffer[line_at][last_space] = '\0';
+				}
 				scroll_up();
 				row_at = 0;
+				for (i=last_space+1;i<z;i++) {
+					screenbuffer[line_at][row_at++] = buffer[i];
+				}
+				last_space = 0;
 			} else {
+				if (last_space > 0) {
+					screenbuffer[line_at][last_space] = '\0';
+				}
+				line_at++;				
 				row_at = 0;
-				line_at++;
+				for (i=last_space+1;i<z;i++) {
+					screenbuffer[line_at][row_at++] = buffer[i];
+				}
+				last_space = 0;
 			}
+		}
+
+		if (buffer[z] == ' ') {
+			last_space = z;
 		}
 
 		screenbuffer[line_at][row_at] = buffer[z];
@@ -125,7 +145,7 @@ void chat_system(struct user_record *user) {
 	fd_set fds;
 	int t;
 	int ret;
-	char inputbuffer[80];
+	char inputbuffer[256];
 	int inputbuffer_at = 0;
 	int len;
 	char c;
@@ -155,7 +175,7 @@ void chat_system(struct user_record *user) {
 		chat_in = gSocket;
 	}
 
-	memset(inputbuffer, 0, 80);
+	memset(inputbuffer, 0, 256);
 	if (conf.mgchat_server == NULL && conf.mgchat_bbstag != NULL) {
 		s_putstring(get_string(49));
 		return;
@@ -239,7 +259,7 @@ void chat_system(struct user_record *user) {
 						append_screenbuffer(buffer2);
 						do_update = 1;
 					}
-					memset(inputbuffer, 0, 80);
+					memset(inputbuffer, 0, 256);
 					inputbuffer_at = 0;
 				} else if (c != '\n') {
 					if (c == '\b' || c == 127) {
@@ -248,7 +268,7 @@ void chat_system(struct user_record *user) {
 							inputbuffer[inputbuffer_at] = '\0';
 							do_update = 2;
 						}
-					} else if (inputbuffer_at < 79) {
+					} else if (inputbuffer_at < 256) {
 						inputbuffer[inputbuffer_at++] = c;
 						do_update = 2;
 					}
@@ -337,7 +357,11 @@ void chat_system(struct user_record *user) {
 			}
 			do_update = 0;
 		} else if (do_update == 2) {
-			s_printf("\e[24;1f%s\e[K", inputbuffer);
+			if (strlen(inputbuffer) > 79) {
+				s_printf("\e[24;1f<%s\e[K", &inputbuffer[strlen(inputbuffer) - 78]);
+			} else {
+				s_printf("\e[24;1f%s\e[K", inputbuffer);
+			}
 		}
 	}
 }
