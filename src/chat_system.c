@@ -21,6 +21,7 @@ static int line_at;
 static int row_at;
 static char sbuf[512];
 extern struct user_record gUser;
+extern usertimeout;
 
 struct chat_msg {
     char nick[16];
@@ -217,7 +218,9 @@ void chat_system(struct user_record *user) {
 					close(chat_socket);
 					disconnect("Socket closed");
 				}
-
+				
+				usertimeout = 10;
+				
 				if (c == '\r') {
 					if (inputbuffer[0] == '/') {
 						if (strcasecmp(&inputbuffer[1], "quit") == 0) {
