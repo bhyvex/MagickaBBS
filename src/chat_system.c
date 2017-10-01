@@ -15,7 +15,12 @@ extern int mynode;
 extern int gSocket;
 extern int sshBBS;
 
-static char **screenbuffer;
+struct character_t {
+	char c;
+	int color;
+};
+
+static struct character_t ***screenbuffer;
 static int chat_socket;
 static int line_at;
 static int row_at;
@@ -28,6 +33,7 @@ struct chat_msg {
     char bbstag[16];
     char msg[512];
 };
+
 
 static int jsoneq(const char *json, jsmntok_t *tok, const char *s) {
 	if (tok->type == JSMN_STRING && (int) strlen(s) == tok->end - tok->start &&
@@ -54,12 +60,19 @@ static char *encapsulate_quote(char *in) {
 
 void scroll_up() {
 	int y;
-
+	int x;
+	int color;
+	
 	for (y=1;y<23;y++) {
-		strcpy(screenbuffer[y-1], screenbuffer[y]);
-
+		for (x=0;x<80;x++) {
+			memcpy(screenbuffer[y-1][x], screenbuffer[y][x], sizeof(struct character_t));
+			color = screenbuffer[y][x]->color;
+		}
 	}
-	memset(screenbuffer[22], 0, 81);
+	for (x = 0;x<80;x++) {
+		screenbuffer[22][x]->c = '\0';
+		screenbuffer[22][x]->color = color;
+	}
 	row_at = 0;
 }
 
@@ -92,43 +105,91 @@ int hostname_to_ip(char * hostname , char* ip) {
 
     return 1;
 }
+
 void append_screenbuffer(char *buffer) {
 	int z;
 	int i;
 	int last_space = 0;
+	int last_pos = 0;
+	int curr_color = 7;
 
 	for (z=0;z<strlen(buffer);z++) {
+		if (buffer[z] == '|') {
+			z++;
+			if ((buffer[z] - '0' <= 2 && buffer[z] - '0' >= 0)  && (buffer[z+1] - '0' <= 9 && buffer[z+1] - '0' >= 0)) {
+				curr_color = (buffer[z] - '0') * 10 + (buffer[z+1] - '0');
+				z+=2;
+			} else {
+				z--;
+			}
+		}
 		if (row_at == 79) {
 			if (line_at == 22) {
 				if (last_space > 0) {
-					screenbuffer[line_at][last_space] = '\0';
+					for (i=last_space;i<=row_at;i++) {
+						screenbuffer[line_at][i]->c = '\0';
+						screenbuffer[line_at][i]->color = curr_color;
+					}
 				}
 				scroll_up();
 				row_at = 0;
-				for (i=last_space+1;i<z;i++) {
-					screenbuffer[line_at][row_at++] = buffer[i];
+				for (i=last_pos+1;i<z;i++) {
+					if (buffer[i] == '|') {
+						i++;
+						if ((buffer[i] - '0' <= 2 && buffer[i] - '0' >= 0)  && (buffer[i+1] - '0' <= 9 && buffer[i+1] - '0' >= 0)) {
+							curr_color = (buffer[i] - '0') * 10 + (buffer[i+1] - '0');
+							i+=2;
+						} else {
+							i--;
+						}
+					}				
+					if (i < strlen(buffer)) {
+						screenbuffer[line_at][row_at]->c = buffer[i];
+						screenbuffer[line_at][row_at++]->color = curr_color;
+					}
 				}
 				last_space = 0;
+				last_pos = 0;
 			} else {
 				if (last_space > 0) {
-					screenbuffer[line_at][last_space] = '\0';
+					for (i=last_space;i<=row_at;i++) {
+						screenbuffer[line_at][i]->c = '\0';
+						screenbuffer[line_at][i]->color = curr_color;
+					}
 				}
 				line_at++;				
 				row_at = 0;
-				for (i=last_space+1;i<z;i++) {
-					screenbuffer[line_at][row_at++] = buffer[i];
+				for (i=last_pos+1;i<z;i++) {
+					if (buffer[i] == '|') {
+						i++;
+						if ((buffer[i] - '0' <= 2 && buffer[i] - '0' >= 0)  && (buffer[i+1] - '0' <= 9 && buffer[i+1] - '0' >= 0)) {
+							curr_color = (buffer[i] - '0') * 10 + (buffer[i+1] - '0');
+							i+=2;
+						} else {
+							i--;
+						}
+					}				
+					if (i < strlen(buffer)) {
+						screenbuffer[line_at][row_at]->c = buffer[i];
+						screenbuffer[line_at][row_at++]->color = curr_color;
+					}
 				}
 				last_space = 0;
 			}
 		}
 
 		if (buffer[z] == ' ') {
-			last_space = z;
+			last_space = row_at;
+			last_pos = z;
 		}
 
-		screenbuffer[line_at][row_at] = buffer[z];
-		row_at++;
-		screenbuffer[line_at][row_at] = '\0';
+		if (z < strlen(buffer)) {
+			screenbuffer[line_at][row_at]->c = buffer[z];
+			screenbuffer[line_at][row_at]->color = curr_color;
+			row_at++;
+			screenbuffer[line_at][row_at]->c = '\0';
+			screenbuffer[line_at][row_at]->color = curr_color;
+		}
 	}
 	if (line_at == 22) {
 		scroll_up();
@@ -168,7 +229,7 @@ void chat_system(struct user_record *user) {
 	char *ptr;
 	int z;
 	int y;
-	
+	int last_color = 7;
 	if (sshBBS) {
 		chat_in = STDIN_FILENO;
 	} else {
@@ -209,10 +270,14 @@ void chat_system(struct user_record *user) {
 
 	memset(buffer, 0, 513);
 
-	screenbuffer = (char **)malloc(sizeof(char *) * 23);
+	screenbuffer = (struct character_t ***)malloc(sizeof(struct character_t **) * 23);
     for (i=0;i<23;i++) {
-		screenbuffer[i] = (char *)malloc(81);
-		memset(screenbuffer[i], 0, 81);
+		screenbuffer[i] = (struct character_t **)malloc(sizeof(struct character_t *) * 80);
+		for (z=0;z<80;z++) {
+			screenbuffer[i][z] = (struct character_t *)malloc(sizeof(struct character_t));
+			screenbuffer[i][z]->c = '\0';
+			screenbuffer[i][z]->color = 7;
+		}
 	}
 	memset(partmessage, 0, 1024);
 	
@@ -255,7 +320,7 @@ void chat_system(struct user_record *user) {
 						input_b = encapsulate_quote(inputbuffer);
 						raw("{ \"bbs\": \"%s\", \"nick\": \"%s\", \"msg\": \"%s\" }\n", conf.mgchat_bbstag, user->loginname, input_b);
 						free(input_b);
-						sprintf(buffer2, "(%s)[%s]: %s", conf.mgchat_bbstag, user->loginname, inputbuffer);
+						sprintf(buffer2, "|08(|13%s|08)[|11%s|08]: |07%s", conf.mgchat_bbstag, user->loginname, inputbuffer);
 						append_screenbuffer(buffer2);
 						do_update = 1;
 					}
@@ -321,9 +386,13 @@ void chat_system(struct user_record *user) {
 						}
 						// set outputbuffer
 						if (strcmp(msg.bbstag, "SYSTEM") == 0 && strcmp(msg.nick, "SYSTEM") == 0) {
-							snprintf(outputbuffer, 512, ">> %s", msg.msg);
+							snprintf(outputbuffer, 512, "|03>> %s|07", msg.msg);
 						} else {
-							snprintf(outputbuffer, 512, "(%s)[%s]: %s", msg.bbstag, msg.nick, msg.msg);
+							if (strcasestr(msg.msg, user->loginname) != NULL) {
+								snprintf(outputbuffer, 512, "|08(|13%s|08)[|11%s|08]: |10%s", msg.bbstag, msg.nick, msg.msg);
+							} else {
+								snprintf(outputbuffer, 512, "|08(|13%s|08)[|11%s|08]: |15%s", msg.bbstag, msg.nick, msg.msg);
+							}
 						}
 						// screen_append output buffer
 						append_screenbuffer(outputbuffer);
@@ -346,7 +415,67 @@ void chat_system(struct user_record *user) {
 		if (do_update == 1) {
 			s_putstring("\e[2J\e[1;1H");
 			for (i=0;i<=line_at;i++) {
-				s_printf("%s\r\n", screenbuffer[i]);
+				for (z = 0;z < 80; z++) {
+					if (screenbuffer[i][z]->color != last_color) {
+						switch (screenbuffer[i][z]->color) {
+							case 0:
+								s_printf("\e[0;30m");
+								break;
+							case 1:
+								s_printf("\e[0;34m");
+								break;
+							case 2:
+								s_printf("\e[0;32m");
+								break;
+							case 3:
+								s_printf("\e[0;36m");
+								break;
+							case 4:
+								s_printf("\e[0;31m");
+								break;
+							case 5:
+								s_printf("\e[0;35m");
+								break;
+							case 6:
+								s_printf("\e[0;33m");
+								break;
+							case 7:
+								s_printf("\e[0;37m");
+								break;
+							case 8:
+								s_printf("\e[1;30m");
+								break;
+							case 9:
+								s_printf("\e[1;34m");
+								break;
+							case 10:
+								s_printf("\e[1;32m");
+								break;
+							case 11:
+								s_printf("\e[1;36m");
+								break;
+							case 12:
+								s_printf("\e[1;31m");
+								break;
+							case 13:
+								s_printf("\e[1;35m");
+								break;
+							case 14:
+								s_printf("\e[1;33m");
+								break;
+							case 15:
+								s_printf("\e[1;37m");
+								break;
+						}
+						last_color = screenbuffer[i][z]->color;
+					}
+					if (screenbuffer[i][z]->c == '\0') {
+						break;
+					} else {
+						s_printf("%c", screenbuffer[i][z]->c);
+					}
+				}
+				s_printf("\r\n");
 			}
 			for (i=line_at+1;i<22;i++) {
 				s_putstring("\r\n");
