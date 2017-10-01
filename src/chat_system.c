@@ -21,7 +21,7 @@ static int line_at;
 static int row_at;
 static char sbuf[512];
 extern struct user_record gUser;
-extern usertimeout;
+extern int usertimeout;
 
 struct chat_msg {
     char nick[16];
