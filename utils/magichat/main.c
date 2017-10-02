@@ -248,6 +248,11 @@ int main(int argc, char **argv) {
 									}
 								}
 							}
+						} else if (strcmp(msg.msg, "PING") == 0) {
+							snprintf(buffer, 1024, "{\"bbs\": \"SYSTEM\", \"nick\": \"SYSTEM\", \"msg\": \"PONG\" }\n");
+							if (send(i, buffer, strlen(buffer), 0) == -1) {
+								perror("send");
+							}							
                         } else {
                             for (j=0;j<client_count;j++) {
                                 if (clients[j]->fd == i) {
