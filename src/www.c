@@ -332,17 +332,21 @@ int www_403(char *header, char *footer, struct MHD_Connection * connection) {
 }
 
 struct user_record *www_auth_ok(struct MHD_Connection *connection, const char *url) {
-	char *user_password = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Authorization");
+	char *ptr = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Authorization");
+	char *user_password;
 	base64_decodestate state;
 	char decoded_pass[34];
 	int len;
 	char *username;
 	char *password;
 	int i;
+	struct user_record *u;
 	
-	if (user_password == NULL) {
+	if (ptr == NULL) {
 		return NULL;
 	}
+	
+	user_password = strdup(ptr);
 	
 	if (strncasecmp(user_password, "basic ", 6) == 0) {
 		if (strlen(&user_password[6]) <= 48) {
@@ -358,10 +362,13 @@ struct user_record *www_auth_ok(struct MHD_Connection *connection, const char *u
 					break;
 				}
 			}
-			return check_user_pass(username, password);
+			u = check_user_pass(username, password);
+			free(user_password);
+			
+			return u;
 		}
 	}
-	
+	free(user_password);
 	return NULL;
 }
 
