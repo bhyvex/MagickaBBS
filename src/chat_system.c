@@ -45,7 +45,7 @@ static int jsoneq(const char *json, jsmntok_t *tok, const char *s) {
 
 static char *encapsulate_quote(char *in) {
 	char out[512];
-	int i;
+	int i = 0;
 	int j = 0;
 	for (j=0;j<strlen(in);j++) {
 		if (in[j] == '\"' || in[j] == '\\') {
