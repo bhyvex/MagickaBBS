@@ -47,13 +47,13 @@ static char *encapsulate_quote(char *in) {
 	char out[512];
 	int i;
 	int j = 0;
-	for (i=0;i<strlen(in);i++) {
+	for (j=0;j<strlen(in);j++) {
 		if (in[j] == '\"' || in[j] == '\\') {
 			out[i++] = '\\';
 		}
 		out[i] = in[j];
 		out[i+1] = '\0';
-		j++;
+		i++;
 	}
 	return strdup(out);
 }
@@ -114,6 +114,9 @@ void append_screenbuffer(char *buffer) {
 	int curr_color = 7;
 
 	for (z=0;z<strlen(buffer);z++) {
+		if (buffer[z] == '\\') {
+			z++;
+		}
 		if (buffer[z] == '|') {
 			z++;
 			if ((buffer[z] - '0' <= 2 && buffer[z] - '0' >= 0)  && (buffer[z+1] - '0' <= 9 && buffer[z+1] - '0' >= 0)) {
