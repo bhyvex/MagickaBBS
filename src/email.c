@@ -431,15 +431,31 @@ void list_emails(struct user_record *user) {
 				localtime_r((time_t *)&emails[i]->date, &msg_date);
 				if (i == position) {
 					if (!emails[i]->seen) {
-						s_printf(get_string(192), i + 1, emails[i]->subject, emails[i]->from,msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+						if (conf.date_style == 1) {
+							s_printf(get_string(192), i + 1, emails[i]->subject, emails[i]->from,msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+						} else {
+							s_printf(get_string(192), i + 1, emails[i]->subject, emails[i]->from,msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+						}
 					} else {
-						s_printf(get_string(193), i + 1, emails[i]->subject, emails[i]->from,msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+						if (conf.date_style == 1) {
+							s_printf(get_string(193), i + 1, emails[i]->subject, emails[i]->from,msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+						} else {
+							s_printf(get_string(193), i + 1, emails[i]->subject, emails[i]->from,msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+						}
 					}
 				} else {
 					if (!emails[i]->seen) {
-						s_printf(get_string(64), i + 1, emails[i]->subject, emails[i]->from,msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+						if (conf.date_style == 1) {
+							s_printf(get_string(64), i + 1, emails[i]->subject, emails[i]->from,msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+						} else {
+							s_printf(get_string(64), i + 1, emails[i]->subject, emails[i]->from,msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+						}
 					} else {
-						s_printf(get_string(65), i + 1, emails[i]->subject, emails[i]->from,msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+						if (conf.date_style == 1) {
+							s_printf(get_string(65), i + 1, emails[i]->subject, emails[i]->from,msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+						} else {
+							s_printf(get_string(65), i + 1, emails[i]->subject, emails[i]->from,msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+						}
 					}
 				}
 			}
@@ -471,16 +487,32 @@ void list_emails(struct user_record *user) {
 						s_printf("\e[%d;1H", position - start + 1);
 						localtime_r((time_t *)&emails[position-1]->date, &msg_date);
 						if (!emails[position - 1]->seen) {
-							s_printf(get_string(64), position, emails[position-1]->subject, emails[position-1]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+							if (conf.date_style == 1) {
+								s_printf(get_string(64), position, emails[position-1]->subject, emails[position-1]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+							} else {
+								s_printf(get_string(64), position, emails[position-1]->subject, emails[position-1]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+							}
 						} else {
-							s_printf(get_string(65), position, emails[position-1]->subject, emails[position-1]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+							if (conf.date_style == 1) {
+								s_printf(get_string(65), position, emails[position-1]->subject, emails[position-1]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+							} else {
+								s_printf(get_string(65), position, emails[position-1]->subject, emails[position-1]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+							}
 						}												
 						s_printf("\e[%d;1H", position - start + 2);
 						localtime_r((time_t *)&emails[position]->date, &msg_date);
 						if (!emails[position]->seen) {
-							s_printf(get_string(192), position + 1, emails[position]->subject, emails[position]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+							if (conf.date_style == 1) {
+								s_printf(get_string(192), position + 1, emails[position]->subject, emails[position]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+							} else {
+								s_printf(get_string(192), position + 1, emails[position]->subject, emails[position]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+							}
 						} else {
-							s_printf(get_string(193), position + 1, emails[position]->subject, emails[position]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+							if (conf.date_style == 1) {
+								s_printf(get_string(193), position + 1, emails[position]->subject, emails[position]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+							} else {
+								s_printf(get_string(193), position + 1, emails[position]->subject, emails[position]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+							}
 						}	
 						s_printf("\e[%d;5H", position - start + 2);
 					}
@@ -502,16 +534,32 @@ void list_emails(struct user_record *user) {
 						s_printf("\e[%d;1H", position - start + 3);
 						localtime_r((time_t *)&emails[position + 1]->date, &msg_date);
 						if (!emails[position + 1]->seen) {
-							s_printf(get_string(64), position + 2, emails[position + 1]->subject, emails[position + 1]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+							if (config.date_style == 1) {
+								s_printf(get_string(64), position + 2, emails[position + 1]->subject, emails[position + 1]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+							} else {
+								s_printf(get_string(64), position + 2, emails[position + 1]->subject, emails[position + 1]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+							}
 						} else {
-							s_printf(get_string(65), position + 2, emails[position + 1]->subject, emails[position + 1]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+							if (config.date_style == 1) {
+								s_printf(get_string(65), position + 2, emails[position + 1]->subject, emails[position + 1]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+							} else {
+								s_printf(get_string(65), position + 2, emails[position + 1]->subject, emails[position + 1]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+							}
 						}												
 						s_printf("\e[%d;1H", position - start + 2);
 						localtime_r((time_t *)&emails[position]->date, &msg_date);
 						if (!emails[position]->seen) {
-							s_printf(get_string(192), position + 1, emails[position]->subject, emails[position]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+							if (config.date_style == 1) {
+								s_printf(get_string(192), position + 1, emails[position]->subject, emails[position]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+							} else {
+								s_printf(get_string(192), position + 1, emails[position]->subject, emails[position]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+							}
 						} else {
-							s_printf(get_string(193), position + 1, emails[position]->subject, emails[position]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+							if (config.date_style == 1) {
+								s_printf(get_string(193), position + 1, emails[position]->subject, emails[position]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+							} else {
+								s_printf(get_string(193), position + 1, emails[position]->subject, emails[position]->from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+							}
 						}												
 						s_printf("\e[%d;5H", position - start + 3);
 					}											

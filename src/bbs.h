@@ -139,6 +139,7 @@ struct bbs_config {
 	int mgchat_port;
 	char *mgchat_bbstag;
 	int bwave_max_msgs;
+	int date_style;
 	struct fido_addr *main_aka;
 	
 	char *root_menu;

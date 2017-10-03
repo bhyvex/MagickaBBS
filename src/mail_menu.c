@@ -2281,15 +2281,31 @@ void list_messages(struct user_record *user) {
 						gmtime_r((time_t *)&msghs->msgs[j]->msg_h->DateWritten, &msg_date);
 						if (j == i -1) {
 							if (msghs->msgs[j]->msg_h->MsgNum > jlr.HighReadMsg || all_unread) {
-								s_printf(get_string(188), j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+								if (conf.date_style == 1) {
+									s_printf(get_string(188), j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+								} else {
+									s_printf(get_string(188), j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+								}
 							} else {
-								s_printf(get_string(189), j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+								if (conf.date_stle == 1) {
+									s_printf(get_string(189), j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+								} else {
+									s_printf(get_string(189), j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+								}
 							}
 						} else {
 							if (msghs->msgs[j]->msg_h->MsgNum > jlr.HighReadMsg || all_unread) {
-								s_printf(get_string(127), j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+								if (conf.date_style == 1) {
+									s_printf(get_string(127), j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+								} else {
+									s_printf(get_string(127), j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+								}
 							} else {
-								s_printf(get_string(128), j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+								if (conf.date_style == 1) {
+									s_printf(get_string(128), j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+								} else {
+									s_printf(get_string(128), j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+								}
 							}
 						}
 					}
@@ -2321,16 +2337,32 @@ void list_messages(struct user_record *user) {
 								s_printf("\e[%d;1H", i - start);
 								gmtime_r((time_t *)&msghs->msgs[i-2]->msg_h->DateWritten, &msg_date);
 								if (msghs->msgs[i-2]->msg_h->MsgNum > jlr.HighReadMsg || all_unread) {
-									s_printf(get_string(127), i - 1, msghs->msgs[i-2]->subject, msghs->msgs[i-2]->from, msghs->msgs[i-2]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+									if (conf.date_style == 1) {
+										s_printf(get_string(127), i - 1, msghs->msgs[i-2]->subject, msghs->msgs[i-2]->from, msghs->msgs[i-2]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+									} else {
+										s_printf(get_string(127), i - 1, msghs->msgs[i-2]->subject, msghs->msgs[i-2]->from, msghs->msgs[i-2]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+									}
 								} else {
-									s_printf(get_string(128), i - 1, msghs->msgs[i-2]->subject, msghs->msgs[i-2]->from, msghs->msgs[i-2]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+									if (conf.date_style == 1) {
+										s_printf(get_string(128), i - 1, msghs->msgs[i-2]->subject, msghs->msgs[i-2]->from, msghs->msgs[i-2]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+									} else {
+										s_printf(get_string(128), i - 1, msghs->msgs[i-2]->subject, msghs->msgs[i-2]->from, msghs->msgs[i-2]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+									}
 								}												
 								s_printf("\e[%d;1H", i - start + 1);
 								gmtime_r((time_t *)&msghs->msgs[i-1]->msg_h->DateWritten, &msg_date);
 								if (msghs->msgs[i-1]->msg_h->MsgNum > jlr.HighReadMsg || all_unread) {
-									s_printf(get_string(188), i, msghs->msgs[i-1]->subject, msghs->msgs[i-1]->from, msghs->msgs[i-1]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+									if (conf.date_style == 1) {
+										s_printf(get_string(188), i, msghs->msgs[i-1]->subject, msghs->msgs[i-1]->from, msghs->msgs[i-1]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+									} else {
+										s_printf(get_string(188), i, msghs->msgs[i-1]->subject, msghs->msgs[i-1]->from, msghs->msgs[i-1]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+									}
 								} else {
-									s_printf(get_string(189), i, msghs->msgs[i-1]->subject, msghs->msgs[i-1]->from, msghs->msgs[i-1]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+									if (conf.date_style == 1) {
+										s_printf(get_string(189), i, msghs->msgs[i-1]->subject, msghs->msgs[i-1]->from, msghs->msgs[i-1]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+									} else {
+										s_printf(get_string(189), i, msghs->msgs[i-1]->subject, msghs->msgs[i-1]->from, msghs->msgs[i-1]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+									}
 								}												
 								s_printf("\e[%d;5H", i - start + 1);
 							}
@@ -2352,16 +2384,32 @@ void list_messages(struct user_record *user) {
 								s_printf("\e[%d;1H", i - start + 2);
 								gmtime_r((time_t *)&msghs->msgs[i]->msg_h->DateWritten, &msg_date);
 								if (msghs->msgs[i]->msg_h->MsgNum > jlr.HighReadMsg || all_unread) {
-									s_printf(get_string(127), i + 1, msghs->msgs[i]->subject, msghs->msgs[i]->from, msghs->msgs[i]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+									if (conf.date_style == 1) {
+										s_printf(get_string(127), i + 1, msghs->msgs[i]->subject, msghs->msgs[i]->from, msghs->msgs[i]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+									} else {
+										s_printf(get_string(127), i + 1, msghs->msgs[i]->subject, msghs->msgs[i]->from, msghs->msgs[i]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+									}
 								} else {
-									s_printf(get_string(128), i + 1, msghs->msgs[i]->subject, msghs->msgs[i]->from, msghs->msgs[i]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+									if (conf.date_style == 1) {
+										s_printf(get_string(128), i + 1, msghs->msgs[i]->subject, msghs->msgs[i]->from, msghs->msgs[i]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+									} else {
+										s_printf(get_string(128), i + 1, msghs->msgs[i]->subject, msghs->msgs[i]->from, msghs->msgs[i]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+									}
 								}												
 								s_printf("\e[%d;1H", i - start + 1);
 								gmtime_r((time_t *)&msghs->msgs[i-1]->msg_h->DateWritten, &msg_date);
 								if (msghs->msgs[i-1]->msg_h->MsgNum > jlr.HighReadMsg || all_unread) {
-									s_printf(get_string(188), i, msghs->msgs[i-1]->subject, msghs->msgs[i-1]->from, msghs->msgs[i-1]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+									if (conf.date_style == 1) {
+										s_printf(get_string(188), i, msghs->msgs[i-1]->subject, msghs->msgs[i-1]->from, msghs->msgs[i-1]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+									} else {
+										s_printf(get_string(188), i, msghs->msgs[i-1]->subject, msghs->msgs[i-1]->from, msghs->msgs[i-1]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+									}
 								} else {
-									s_printf(get_string(189), i, msghs->msgs[i-1]->subject, msghs->msgs[i-1]->from, msghs->msgs[i-1]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+									if (conf.date_style == 1) {
+										s_printf(get_string(189), i, msghs->msgs[i-1]->subject, msghs->msgs[i-1]->from, msghs->msgs[i-1]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+									} else {
+										s_printf(get_string(189), i, msghs->msgs[i-1]->subject, msghs->msgs[i-1]->from, msghs->msgs[i-1]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+									}
 								}									
 								s_printf("\e[%d;5H", i - start + 1);			
 									

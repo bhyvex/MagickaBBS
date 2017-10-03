@@ -313,7 +313,11 @@ char *www_email_display(struct user_record *user, int email) {
 		strcat(page, buffer);
 		len += strlen(buffer);
 	
-		sprintf(buffer, "<div class=\"email-view-date\">Date: %.2d:%.2d %.2d-%.2d-%.2d</div>\n", msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+		if (conf.date_style == 1) {
+			sprintf(buffer, "<div class=\"email-view-date\">Date: %.2d:%.2d %.2d-%.2d-%.2d</div>\n", msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+		} else {
+			sprintf(buffer, "<div class=\"email-view-date\">Date: %.2d:%.2d %.2d-%.2d-%.2d</div>\n", msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+		}
 		if (len + strlen(buffer) > max_len - 1) {
 			max_len += 4096;
 			page = (char *)realloc(page, max_len);

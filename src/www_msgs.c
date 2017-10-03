@@ -247,9 +247,17 @@ char *www_msgs_messagelist(struct user_record *user, int conference, int area, i
 		from = www_sanitize(mhrs->msgs[i]->from);
 		subject = www_sanitize(mhrs->msgs[i]->subject);
 		if (mhrs->msgs[i]->msg_h->MsgNum > jlr.HighReadMsg) {
-			sprintf(buffer, "<div class=\"msg-summary\"><div class=\"msg-summary-id\">%d</div><div class=\"msg-summary-subject\"><a href=\"/msgs/%d/%d/%d\">%s</a></div><div class=\"msg-summary-from\">%s</div><div class=\"msg-summary-to\">%s</div><div class=\"msg-summary-date\">%.2d:%.2d %.2d-%.2d-%.2d</div></div>\n", mhrs->msgs[i]->msg_no + 1, conference, area, mhrs->msgs[i]->msg_h->MsgNum, subject, from, to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+			if (conf.date_style == 1) {
+				sprintf(buffer, "<div class=\"msg-summary\"><div class=\"msg-summary-id\">%d</div><div class=\"msg-summary-subject\"><a href=\"/msgs/%d/%d/%d\">%s</a></div><div class=\"msg-summary-from\">%s</div><div class=\"msg-summary-to\">%s</div><div class=\"msg-summary-date\">%.2d:%.2d %.2d-%.2d-%.2d</div></div>\n", mhrs->msgs[i]->msg_no + 1, conference, area, mhrs->msgs[i]->msg_h->MsgNum, subject, from, to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+			} else {
+				sprintf(buffer, "<div class=\"msg-summary\"><div class=\"msg-summary-id\">%d</div><div class=\"msg-summary-subject\"><a href=\"/msgs/%d/%d/%d\">%s</a></div><div class=\"msg-summary-from\">%s</div><div class=\"msg-summary-to\">%s</div><div class=\"msg-summary-date\">%.2d:%.2d %.2d-%.2d-%.2d</div></div>\n", mhrs->msgs[i]->msg_no + 1, conference, area, mhrs->msgs[i]->msg_h->MsgNum, subject, from, to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+			}
 		} else {
-			sprintf(buffer, "<div class=\"msg-summary-seen\"><div class=\"msg-summary-id\">%d</div><div class=\"msg-summary-subject\"><a href=\"/msgs/%d/%d/%d\">%s</a></div><div class=\"msg-summary-from\">%s</div><div class=\"msg-summary-to\">%s</div><div class=\"msg-summary-date\">%.2d:%.2d %.2d-%.2d-%.2d</div></div>\n", mhrs->msgs[i]->msg_no + 1, conference, area, mhrs->msgs[i]->msg_h->MsgNum, subject, from, to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+			if (conf.date_style == 1) {
+				sprintf(buffer, "<div class=\"msg-summary-seen\"><div class=\"msg-summary-id\">%d</div><div class=\"msg-summary-subject\"><a href=\"/msgs/%d/%d/%d\">%s</a></div><div class=\"msg-summary-from\">%s</div><div class=\"msg-summary-to\">%s</div><div class=\"msg-summary-date\">%.2d:%.2d %.2d-%.2d-%.2d</div></div>\n", mhrs->msgs[i]->msg_no + 1, conference, area, mhrs->msgs[i]->msg_h->MsgNum, subject, from, to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+			} else {
+				sprintf(buffer, "<div class=\"msg-summary-seen\"><div class=\"msg-summary-id\">%d</div><div class=\"msg-summary-subject\"><a href=\"/msgs/%d/%d/%d\">%s</a></div><div class=\"msg-summary-from\">%s</div><div class=\"msg-summary-to\">%s</div><div class=\"msg-summary-date\">%.2d:%.2d %.2d-%.2d-%.2d</div></div>\n", mhrs->msgs[i]->msg_no + 1, conference, area, mhrs->msgs[i]->msg_h->MsgNum, subject, from, to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+			}
 		}
 
 		free(to);
@@ -504,8 +512,11 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		
 		date = (time_t)jmh.DateWritten;
 		gmtime_r(&date, &msg_date);
-		
-		sprintf(buffer, "<div class=\"msg-view-date\">Date: %.2d:%.2d %.2d-%.2d-%.2d</div>\n", msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+		if (conf.date_style == 1) {
+			sprintf(buffer, "<div class=\"msg-view-date\">Date: %.2d:%.2d %.2d-%.2d-%.2d</div>\n", msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+		} else {
+			sprintf(buffer, "<div class=\"msg-view-date\">Date: %.2d:%.2d %.2d-%.2d-%.2d</div>\n", msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+		}
 		if (len + strlen(buffer) > max_len - 1) {
 			max_len += 4096;
 			page = (char *)realloc(page, max_len);

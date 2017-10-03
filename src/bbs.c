@@ -557,7 +557,11 @@ void display_last10_callers(struct user_record *user) {
 	for (z=0;z<i;z++) {
 		l10_timet = callers[z].time;
 		localtime_r(&l10_timet, &l10_time);
-		s_printf(get_string(4), callers[z].name, callers[z].location, l10_time.tm_hour, l10_time.tm_min, l10_time.tm_mday, l10_time.tm_mon + 1, l10_time.tm_year - 100);
+		if (conf.date_style == 1) {
+			s_printf(get_string(4), callers[z].name, callers[z].location, l10_time.tm_hour, l10_time.tm_min, l10_time.tm_mon + 1, l10_time.tm_mday, l10_time.tm_year - 100);
+		} else {
+			s_printf(get_string(4), callers[z].name, callers[z].location, l10_time.tm_hour, l10_time.tm_min, l10_time.tm_mday, l10_time.tm_mon + 1, l10_time.tm_year - 100);
+		}
 	}
 	s_printf(get_string(5));
 	s_printf(get_string(6));

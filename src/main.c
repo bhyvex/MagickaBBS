@@ -492,6 +492,12 @@ static int handler(void* user, const char* section, const char* name,
 			} else if (strcasecmp(value, "utf-8") == 0) {
 				conf->codepage = 1;
 			}
+		} else if (strcasecmp(name, "date style") == 0) {
+			if (strcasecmp(value, "us") == 0) {
+				conf->date_style = 1;
+			} else {
+				conf->date_style = 0;
+			}
 		}
 	} else if (strcasecmp(section, "paths") == 0){
 		if (strcasecmp(name, "ansi path") == 0) {
@@ -1182,6 +1188,7 @@ int main(int argc, char **argv) {
 	conf.ipguard_timeout = 120;
 	conf.protocol_count = 0;	
 	conf.codepage = 0;
+	conf.date_style = 0;
 	
 	// Load BBS data
 	if (ini_parse(argv[1], handler, &conf) <0) {
