@@ -2287,7 +2287,7 @@ void list_messages(struct user_record *user) {
 									s_printf(get_string(188), j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 								}
 							} else {
-								if (conf.date_stle == 1) {
+								if (conf.date_style == 1) {
 									s_printf(get_string(189), j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
 								} else {
 									s_printf(get_string(189), j + 1, msghs->msgs[j]->subject, msghs->msgs[j]->from, msghs->msgs[j]->to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
