@@ -137,7 +137,7 @@ Enter the conference number:
   %d. %s\r\n
 Enter the area number: 
 \r\nInvalid area number!\r\n
-\r\nScan for new mail? (Y/N) : 
+\r\nScan for new mail? (Y/N/S): 
 \r\n\e[1;32m%d. %s\e[0m\r\n
 \e[1;37m   --> %d. %s (%d new)\e[0m\r\n
 \r\n\e[0mTL: %dm :> 

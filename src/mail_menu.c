@@ -2590,7 +2590,7 @@ void mail_scan(struct user_record *user) {
 	s_printf(get_string(139));
 	c = s_getc();
 
-	if (tolower(c) == 'y') {
+	if (tolower(c) == 'y' || tolower(c) == 's') {
 		for (i=0;i<conf.mail_conference_count;i++) {
 			if (conf.mail_conferences[i]->sec_level > user->sec_level) {
 				continue;
@@ -2606,6 +2606,11 @@ void mail_scan(struct user_record *user) {
 				if (conf.mail_conferences[i]->mail_areas[j]->read_sec_level > user->sec_level) {
 					continue;
 				}
+				
+				if (tolower(c) == 's' && !msgbase_is_subscribed(i, j)) {
+					continue;
+				}
+				
 				jb = open_jam_base(conf.mail_conferences[i]->mail_areas[j]->path);
 				if (!jb) {
 					dolog("Unable to open message base");
