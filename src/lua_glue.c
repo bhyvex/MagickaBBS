@@ -44,11 +44,13 @@ int l_bbsRChar(lua_State *L) {
 int l_bbsDisplayAnsiPause(lua_State *L) {
 	char *str = (char *)lua_tostring(L, -1);
 	char buffer[256];
-
-	sprintf(buffer, "%s/%s.ans", conf.ansi_path, str);
 	
-	s_displayansi_pause(buffer, 1);
-
+	if (strchr(str, '/') == NULL) {
+		sprintf(buffer, "%s/%s.ans", conf.ansi_path, str);
+		s_displayansi_pause(buffer, 1);
+	} else {
+		s_displayansi_pause(str, 1);
+	}
 	return 0;
 }
 
