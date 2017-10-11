@@ -342,9 +342,12 @@ void s_displayansi(char *file) {
 
 	char buffer[256];
 
-	sprintf(buffer, "%s/%s.ans", conf.ansi_path, file);
-
-	s_displayansi_pause(buffer, 0);
+	if (strchr(file, '/') == NULL) {
+		sprintf(buffer, "%s/%s.ans", conf.ansi_path, file);
+		s_displayansi_pause(buffer, 0);
+	} else {
+		s_displayansi_pause(file, 0);
+	}
 }
 
 char s_getchar() {
