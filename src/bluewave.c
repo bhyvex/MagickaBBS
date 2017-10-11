@@ -79,6 +79,8 @@ int bwave_scan_area(int confr, int area, int areano, int totmsgs, FILE *fti_file
 		if (JAM_ReadLastRead(jb, gUser->id, &jlr) == JAM_NO_USER) {
 			jlr.LastReadMsg = 0;
 			jlr.HighReadMsg = 0;
+			jlr.UserCRC = JAM_Crc32(gUser->loginname, strlen(gUser->loginname));
+			jlr.UserID = gUser->id;			
 			all_unread = 1;
 		} else if (jlr.LastReadMsg == 0 && jlr.HighReadMsg == 0) {
 			all_unread = 1;
