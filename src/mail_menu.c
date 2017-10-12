@@ -1899,6 +1899,49 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 	}
 }
 
+void read_new_msgs(struct user_record *user, struct msg_headers *msghs) {
+	s_JamBase *jb;
+	s_JamLastRead jlr;
+	int all_unread;
+	int i;
+	int k;
+	char buffer[7];
+
+	// list mail in message base
+	if (msghs != NULL && msghs->msg_count > 0) {
+		jb = open_jam_base(conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
+		if (!jb) {
+			dolog("Error opening JAM base.. %s", conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
+			return;
+		} else {
+			all_unread = 0;
+			if (JAM_ReadLastRead(jb, user->id, &jlr) == JAM_NO_USER) {
+				jlr.LastReadMsg = 0;
+				jlr.HighReadMsg = 0;
+				all_unread = 1;
+			} else if (jlr.LastReadMsg == 0 && jlr.HighReadMsg == 0) {
+				all_unread = 1;
+			}
+			JAM_CloseMB(jb);
+			if (all_unread == 0) {
+				k = jlr.HighReadMsg;
+				for (i=0;i<msghs->msg_count;i++) {
+					if (msghs->msgs[i]->msg_h->MsgNum == k) {
+						break;
+					}
+				}
+				i += 2;
+			} else {
+				i = 1;
+			}
+
+			if (i > 0 && i <= msghs->msg_count) {
+				read_message(user, msghs, i - 1);
+			}
+		}
+	}	
+}
+
 void read_mail(struct user_record *user) {
 	struct msg_headers *msghs;
 	s_JamBase *jb;
@@ -2577,7 +2620,9 @@ void prev_mail_area(struct user_record *user) {
 	}
 }
 
-void mail_scan(struct user_record *user) {
+
+
+void do_mail_scan(struct user_record *user, int oldscan) {
 	s_JamBase *jb;
 	s_JamBaseHeader jbh;
 	s_JamLastRead jlr;
@@ -2586,7 +2631,9 @@ void mail_scan(struct user_record *user) {
 	int i;
 	int j;
 	int lines = 0;
-
+	int orig_conf;
+	int orig_area;
+	
 	s_printf(get_string(139));
 	c = s_getc();
 
@@ -2616,10 +2663,12 @@ void mail_scan(struct user_record *user) {
 					dolog("Unable to open message base");
 					continue;
 				}
+				
 				if (JAM_ReadMBHeader(jb, &jbh) != 0) {
 					JAM_CloseMB(jb);
 					continue;
 				}
+				
 				if (JAM_ReadLastRead(jb, user->id, &jlr) == JAM_NO_USER) {
 					if (jbh.ActiveMsgs == 0) {
 						JAM_CloseMB(jb);
@@ -2629,23 +2678,55 @@ void mail_scan(struct user_record *user) {
 						msghs = read_message_headers(i, j, user);
 						if (msghs != NULL) {
 							if (msghs->msg_count > 0) {
-								s_printf(get_string(141), j, conf.mail_conferences[i]->mail_areas[j]->name, msghs->msg_count);
-								lines++;
-								if (lines == 22) {
-									s_printf(get_string(6));
-									s_getc();
-									lines = 0;
+								if (oldscan) {
+									s_printf(get_string(141), j, conf.mail_conferences[i]->mail_areas[j]->name, msghs->msg_count);
+									lines++;
+									if (lines == 22) {
+										s_printf(get_string(6));
+										s_getc();
+										lines = 0;
+									}
+								} else {
+									orig_conf = user->cur_mail_conf;
+									orig_area = user->cur_mail_area;
+									
+									user->cur_mail_conf = i;
+									user->cur_mail_area = j;
+									
+									read_new_msgs(user, msghs);
+									
+									user->cur_mail_conf = orig_conf;
+									user->cur_mail_area = orig_area;
 								}
 							}
 							free_message_headers(msghs);
 						}
 					} else {
-						s_printf(get_string(141), j, conf.mail_conferences[i]->mail_areas[j]->name, jbh.ActiveMsgs);
-						lines++;
-						if (lines == 22) {
-							s_printf(get_string(6));
-							s_getc();
-							lines = 0;
+						if (oldscan) {
+							s_printf(get_string(141), j, conf.mail_conferences[i]->mail_areas[j]->name, jbh.ActiveMsgs);
+							lines++;
+							if (lines == 22) {
+								s_printf(get_string(6));
+								s_getc();
+								lines = 0;
+							}
+						} else {
+							msghs = read_message_headers(i, j, user);
+							if (msghs != NULL) {
+								if (msghs->msg_count > 0) {					
+									orig_conf = user->cur_mail_conf;
+									orig_area = user->cur_mail_area;
+									
+									user->cur_mail_conf = i;
+									user->cur_mail_area = j;
+									
+									read_new_msgs(user, msghs);
+									
+									user->cur_mail_conf = orig_conf;
+									user->cur_mail_area = orig_area;
+								}
+								free_message_headers(msghs);
+							}
 						}
 					}
 				} else {
@@ -2655,24 +2736,56 @@ void mail_scan(struct user_record *user) {
 							if (msghs != NULL) {
 								if (msghs->msg_count > 0) {
 									if (msghs->msgs[msghs->msg_count-1]->msg_no > jlr.HighReadMsg) {
-										s_printf(get_string(141), j, conf.mail_conferences[i]->mail_areas[j]->name, msghs->msgs[msghs->msg_count-1]->msg_h->MsgNum - jlr.HighReadMsg);
-										lines++;
-										if (lines == 22) {
-											s_printf(get_string(6));
-											s_getc();
-											lines = 0;
+										if (oldscan) {
+											s_printf(get_string(141), j, conf.mail_conferences[i]->mail_areas[j]->name, msghs->msgs[msghs->msg_count-1]->msg_h->MsgNum - jlr.HighReadMsg);
+											lines++;
+											if (lines == 22) {
+												s_printf(get_string(6));
+												s_getc();
+												lines = 0;
+											}
+										} else {
+											orig_conf = user->cur_mail_conf;
+											orig_area = user->cur_mail_area;
+											
+											user->cur_mail_conf = i;
+											user->cur_mail_area = j;
+											
+											read_new_msgs(user, msghs);
+											
+											user->cur_mail_conf = orig_conf;
+											user->cur_mail_area = orig_area;
 										}
 									}
 								}
 								free_message_headers(msghs);
 							}
 						} else {
-							s_printf(get_string(141), j, conf.mail_conferences[i]->mail_areas[j]->name, jbh.ActiveMsgs - jlr.HighReadMsg);
-							lines++;
-							if (lines == 22) {
-								s_printf(get_string(6));
-								s_getc();
-								lines = 0;
+							if (oldscan) {
+								s_printf(get_string(141), j, conf.mail_conferences[i]->mail_areas[j]->name, jbh.ActiveMsgs - jlr.HighReadMsg);
+								lines++;
+								if (lines == 22) {
+									s_printf(get_string(6));
+									s_getc();
+									lines = 0;
+								}
+							} else {
+								msghs = read_message_headers(i, j, user);
+								if (msghs != NULL) {
+									if (msghs->msg_count > 0) {					
+										orig_conf = user->cur_mail_conf;
+										orig_area = user->cur_mail_area;
+										
+										user->cur_mail_conf = i;
+										user->cur_mail_area = j;
+										
+										read_new_msgs(user, msghs);
+										
+										user->cur_mail_conf = orig_conf;
+										user->cur_mail_area = orig_area;
+									}
+									free_message_headers(msghs);
+								}
 							}
 						}
 					} else {
@@ -2686,6 +2799,14 @@ void mail_scan(struct user_record *user) {
 		s_printf(get_string(6));
 		s_getc();
 	}
+}
+
+void full_mail_scan(struct user_record *user) {
+	do_mail_scan(user, 0);
+}
+
+void mail_scan(struct user_record *user) {
+	do_mail_scan(user, 1);
 }
 
 

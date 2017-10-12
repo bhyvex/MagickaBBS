@@ -105,6 +105,11 @@ int l_bbsGetEmailCount(lua_State *L) {
 	return 1;
 }
 
+int l_bbsFullMailScan(lua_State *L) {
+	full_mail_scan(gUser);
+	return 0;
+}
+
 int l_bbsMailScan(lua_State *L) {
 	mail_scan(gUser);
 	return 0;
@@ -201,6 +206,8 @@ void lua_push_cfunctions(lua_State *L) {
 	lua_setglobal(L, "bbs_get_info");
 	lua_pushcfunction(L, l_bbsFileScan);
 	lua_setglobal(L, "bbs_file_scan");	
+	lua_pushcfunction(L, l_bbsFullMailScan);
+	lua_setglobal(L, "bbs_full_mail_scan");		
 }
 
 void do_lua_script(char *script) {
