@@ -1567,12 +1567,13 @@ int read_message(struct user_record *user, struct msg_headers *msghs, int mailno
                     break;
                 }
             }
+
+            s_printf(get_string(187));
 			if (newscan) {
 				s_printf(get_string(235));
 			} else {
-				s_printf(get_string(187));
+				s_printf(get_string(186));
 			}
-            s_printf(get_string(186));
             c = s_getc();
             
             if (tolower(c) == 'r') {
