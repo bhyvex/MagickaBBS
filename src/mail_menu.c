@@ -1953,7 +1953,9 @@ int read_new_msgs(struct user_record *user, struct msg_headers *msghs) {
 			}
 
 			if (i > 0 && i <= msghs->msg_count) {
-				return read_message(user, msghs, i - 1, 1);
+				res = read_message(user, msghs, i - 1, 1);
+				s_printf("\r\n");
+				return res;
 			}
 		}
 	}
