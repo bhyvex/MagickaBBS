@@ -2923,6 +2923,8 @@ void msg_conf_sub_bases() {
 				} else {
 					done = 1;
 				}
+			} else {
+				done = 1;
 			}
 		} else {
 			done = 1;
