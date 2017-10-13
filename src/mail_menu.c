@@ -2843,7 +2843,7 @@ void msg_conf_sub_bases() {
 	char buffer[10];
 	int toggle_area;
 	int done = 0;
-	
+	int j;
 	s_printf("\e[1;1H\e[2J");
 	
 	do {
@@ -2858,12 +2858,36 @@ void msg_conf_sub_bases() {
 				s_printf(get_string(225));
 				s_readstring(buffer, 9);
 				s_printf("\r\n");
-				if (strlen(buffer) > 0 && buffer[0] >= '0' && buffer[0] <= '9') {
-					toggle_area = atoi(buffer);
-					msgbase_sub_unsub(gUser->cur_mail_conf, toggle_area);
-					lines = 0;
+				if (strlen(buffer) > 0) {
+					if (buffer[0] >= '0' && buffer[0] <= '9') {
+						toggle_area = atoi(buffer);
+						if (conf.mail_conferences[gUser->cur_mail_conf]->mail_areas[toggle_area]->read_sec_level <= gUser->sec_level) {
+							msgbase_sub_unsub(gUser->cur_mail_conf, toggle_area);
+						}
+						lines = 0;
 					
-					break;
+						break;
+					}
+					if (buffer[0] == 'a' || buffer[0] == 'A') {
+						for (j=0;j<conf.mail_conferences[gUser->cur_mail_conf]->mail_area_count;j++) {
+							if (conf.mail_conferences[gUser->cur_mail_conf]->mail_areas[j]->read_sec_level <= gUser->sec_level) {
+								if (!msgbase_is_subscribed(gUser->cur_mail_conf, j)) {
+									msgbase_sub_unsub(gUser->cur_mail_conf, j);
+								}
+							}
+						}
+						break;
+					}
+					if (buffer[0] == 'n' || buffer[0] == 'N') {
+						for (j=0;j<conf.mail_conferences[gUser->cur_mail_conf]->mail_area_count;j++) {
+							if (conf.mail_conferences[gUser->cur_mail_conf]->mail_areas[j]->read_sec_level <= gUser->sec_level) {
+								if (msgbase_is_subscribed(gUser->cur_mail_conf, j)) {
+									msgbase_sub_unsub(gUser->cur_mail_conf, j);
+								}
+							}
+						}
+						break;
+					}					
 				}
 				lines = 0;
 			}
@@ -2873,12 +2897,32 @@ void msg_conf_sub_bases() {
 			s_printf(get_string(225));
 			s_readstring(buffer, 9);
 			s_printf("\r\n");
-			if (strlen(buffer) > 0 && buffer[0] >= '0' && buffer[0] <= '9') {
-				toggle_area = atoi(buffer);
-				msgbase_sub_unsub(gUser->cur_mail_conf, toggle_area);
-				lines = 0;
-			} else {
-				done = 1;
+			if (strlen(buffer) > 0) {
+				if (buffer[0] >= '0' && buffer[0] <= '9') {
+					toggle_area = atoi(buffer);
+					if (conf.mail_conferences[gUser->cur_mail_conf]->mail_areas[toggle_area]->read_sec_level <= gUser->sec_level) {
+						msgbase_sub_unsub(gUser->cur_mail_conf, toggle_area);
+					}
+					lines = 0;
+				} else if (buffer[0] == 'a' || buffer[0] == 'A') {
+					for (j=0;j<conf.mail_conferences[gUser->cur_mail_conf]->mail_area_count;j++) {
+						if (conf.mail_conferences[gUser->cur_mail_conf]->mail_areas[j]->read_sec_level <= gUser->sec_level) {
+							if (!msgbase_is_subscribed(gUser->cur_mail_conf, j)) {
+								msgbase_sub_unsub(gUser->cur_mail_conf, j);
+							}
+						}
+					}
+				} else if (buffer[0] == 'n' || buffer[0] == 'N') {
+					for (j=0;j<conf.mail_conferences[gUser->cur_mail_conf]->mail_area_count;j++) {
+						if (conf.mail_conferences[gUser->cur_mail_conf]->mail_areas[j]->read_sec_level <= gUser->sec_level) {
+							if (msgbase_is_subscribed(gUser->cur_mail_conf, j)) {
+								msgbase_sub_unsub(gUser->cur_mail_conf, j);
+							}
+						}
+					}		
+				} else {
+					done = 1;
+				}
 			}
 		} else {
 			done = 1;
