@@ -1882,10 +1882,10 @@ int read_message(struct user_record *user, struct msg_headers *msghs, int mailno
 			}
 		} else if (tolower(c) == 'j' && newscan == 1) {
 			free(body);
-			doquit = 2;
+			doquit = 1;
 		} else if (tolower(c) == 'q') {
             free(body);
-			doquit = 1;
+			doquit = 2;
 		} else if (c == ' ') {
 			mailno++;
 			if (mailno >= msghs->msg_count) {
