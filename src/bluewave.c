@@ -833,13 +833,13 @@ void bwave_upload_reply() {
 
 	if (netmail == 1) {
 		if (conf.netmail_sem != NULL) {
-			sem_fd = open(conf.netmail_sem, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
+			sem_fd = open(conf.netmail_sem, O_RDWR | O_CREAT | O_TRUNC, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
 			close(sem_fd);
 		}
 	} 
 	if (echomail == 1) {
 		if (conf.echomail_sem != NULL) {
-			sem_fd = open(conf.echomail_sem, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
+			sem_fd = open(conf.echomail_sem, O_RDWR | O_CREAT | O_TRUNC, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
 			close(sem_fd);
 		}						
 	}
