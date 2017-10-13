@@ -1570,7 +1570,7 @@ int read_message(struct user_record *user, struct msg_headers *msghs, int mailno
 
             s_printf(get_string(187));
 			if (newscan) {
-				s_printf(get_string(235));
+				s_printf(get_string(234));
 			} else {
 				s_printf(get_string(186));
 			}
