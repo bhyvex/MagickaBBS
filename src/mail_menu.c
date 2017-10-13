@@ -1417,7 +1417,7 @@ void unmangle_ansi(char *body, int len, char **body_out, int *body_len) {
 	
 
 
-void read_message(struct user_record *user, struct msg_headers *msghs, int mailno) {
+int read_message(struct user_record *user, struct msg_headers *msghs, int mailno, int newscan) {
 	s_JamBase *jb;
 	s_JamMsgHeader jmh;
 	s_JamSubPacket* jsp;
@@ -1454,10 +1454,10 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 	jb = open_jam_base(conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
 	if (!jb) {
 		dolog("Error opening JAM base.. %s", conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
-		return;
+		return 0;
 	}
 
-	while (!doquit) {
+	while (doquit == 0) {
 
 		if (JAM_ReadLastRead(jb, user->id, &jlr) == JAM_NO_USER) {
 			jlr.UserCRC = JAM_Crc32(user->loginname, strlen(user->loginname));
@@ -1489,7 +1489,9 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 		body = (char *)malloc(msghs->msgs[mailno]->msg_h->TxtLen);
 
 		JAM_ReadMsgText(jb, msghs->msgs[mailno]->msg_h->TxtOffset, msghs->msgs[mailno]->msg_h->TxtLen, (char *)body);
-		JAM_WriteLastRead(jb, user->id, &jlr);
+		if (!newscan) {
+			JAM_WriteLastRead(jb, user->id, &jlr);
+		}
 
 		z2 = msghs->msgs[mailno]->msg_h->TxtLen;
 
@@ -1565,8 +1567,11 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
                     break;
                 }
             }
-
-            s_printf(get_string(187));
+			if (newscan) {
+				s_printf(get_string(235));
+			} else {
+				s_printf(get_string(187));
+			}
             s_printf(get_string(186));
             c = s_getc();
             
@@ -1574,6 +1579,8 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
                 should_break = 1;
             } else if (tolower(c) == 'q') {
                 should_break = 1;
+			} else if (tolower(c) == 'j' && newscan == 1) {
+				should_break = 1;
             } else if (c == '\e') {
                 c = s_getc();
                 if (c == 91) {
@@ -1666,7 +1673,7 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
                             free(msg_lines[i]);
                         }
                         free(msg_lines);                        
-						return;
+						return 0;
 					}
 
 					JAM_ClearMsgHeader( &jmh );
@@ -1830,7 +1837,7 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
                                 free(msg_lines[i]);
                             }
                             free(msg_lines);                            
-							return;
+							return 0;
 						}
 					}
 					if (JAM_AddMessage(jb, &jmh, jsp, (char *)replybody, strlen(replybody))) {
@@ -1872,7 +1879,9 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
 			if (subject != NULL) {
 				free(subject);
 			}
-
+		} else if (tolower(c) == 'j' && newscan == 1) {
+			free(body);
+			doquit = 2;
 		} else if (tolower(c) == 'q') {
             free(body);
 			doquit = 1;
@@ -1897,22 +1906,29 @@ void read_message(struct user_record *user, struct msg_headers *msghs, int mailn
         free(msg_lines);	
         msg_line_count = 0;
 	}
+	
+	if (doquit == 2) {
+		return 1;
+	}
+	
+	return 0;
 }
 
-void read_new_msgs(struct user_record *user, struct msg_headers *msghs) {
+int read_new_msgs(struct user_record *user, struct msg_headers *msghs) {
 	s_JamBase *jb;
 	s_JamLastRead jlr;
 	int all_unread;
 	int i;
 	int k;
 	char buffer[7];
-
+	int res;
+	
 	// list mail in message base
 	if (msghs != NULL && msghs->msg_count > 0) {
 		jb = open_jam_base(conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
 		if (!jb) {
 			dolog("Error opening JAM base.. %s", conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
-			return;
+			return 0;
 		} else {
 			all_unread = 0;
 			if (JAM_ReadLastRead(jb, user->id, &jlr) == JAM_NO_USER) {
@@ -1936,10 +1952,11 @@ void read_new_msgs(struct user_record *user, struct msg_headers *msghs) {
 			}
 
 			if (i > 0 && i <= msghs->msg_count) {
-				read_message(user, msghs, i - 1);
+				return read_message(user, msghs, i - 1, 1);
 			}
 		}
-	}	
+	}
+	return 0;
 }
 
 void read_mail(struct user_record *user) {
@@ -1990,7 +2007,7 @@ void read_mail(struct user_record *user) {
 			}
 
 			if (i > 0 && i <= msghs->msg_count) {
-				read_message(user, msghs, i - 1);
+				read_message(user, msghs, i - 1, 0);
 			}
 		}
 	}
@@ -2474,7 +2491,7 @@ void list_messages(struct user_record *user) {
 					}
 				} else if (c == 13) {
 					redraw = 1;
-					read_message(user, msghs, i - 1);
+					read_message(user, msghs, i - 1, 0);
 					free_message_headers(msghs);
 					msghs = read_message_headers(user->cur_mail_conf, user->cur_mail_area, user);
 					jb = open_jam_base(conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
@@ -2633,7 +2650,7 @@ void do_mail_scan(struct user_record *user, int oldscan) {
 	int lines = 0;
 	int orig_conf;
 	int orig_area;
-	
+	int res = 0;
 	s_printf(get_string(139));
 	c = s_getc();
 
@@ -2693,7 +2710,7 @@ void do_mail_scan(struct user_record *user, int oldscan) {
 									user->cur_mail_conf = i;
 									user->cur_mail_area = j;
 									
-									read_new_msgs(user, msghs);
+									res = read_new_msgs(user, msghs);
 									
 									user->cur_mail_conf = orig_conf;
 									user->cur_mail_area = orig_area;
@@ -2720,7 +2737,7 @@ void do_mail_scan(struct user_record *user, int oldscan) {
 									user->cur_mail_conf = i;
 									user->cur_mail_area = j;
 									
-									read_new_msgs(user, msghs);
+									res = read_new_msgs(user, msghs);
 									
 									user->cur_mail_conf = orig_conf;
 									user->cur_mail_area = orig_area;
@@ -2751,7 +2768,7 @@ void do_mail_scan(struct user_record *user, int oldscan) {
 											user->cur_mail_conf = i;
 											user->cur_mail_area = j;
 											
-											read_new_msgs(user, msghs);
+											res = read_new_msgs(user, msghs);
 											
 											user->cur_mail_conf = orig_conf;
 											user->cur_mail_area = orig_area;
@@ -2779,7 +2796,7 @@ void do_mail_scan(struct user_record *user, int oldscan) {
 										user->cur_mail_conf = i;
 										user->cur_mail_area = j;
 										
-										read_new_msgs(user, msghs);
+										res = read_new_msgs(user, msghs);
 										
 										user->cur_mail_conf = orig_conf;
 										user->cur_mail_area = orig_area;
@@ -2794,8 +2811,15 @@ void do_mail_scan(struct user_record *user, int oldscan) {
 					}
 				}
 				JAM_CloseMB(jb);
+				if (res) {
+					break;
+				}
 			}
+			if (res) {
+				break;
+			}			
 		}
+		
 		s_printf(get_string(6));
 		s_getc();
 	}

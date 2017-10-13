@@ -284,7 +284,7 @@ extern void msg_conf_sub_bases();
 extern void msgbase_reset_pointers(int conference, int msgarea);
 extern void msgbase_reset_all_pointers();
 extern void full_mail_scan(struct user_record *user);
-extern void read_new_msgs(struct user_record *user, struct msg_headers *msghs);
+extern int read_new_msgs(struct user_record *user, struct msg_headers *msghs);
 
 extern void rundoor(struct user_record *user, char *cmd, int stdio, char *codepage);
 extern void runexternal(struct user_record *user, char *cmd, int stdio, char **argv, char *cwd, int raw, char *codepage);
