@@ -1736,11 +1736,7 @@ int read_message(struct user_record *user, struct msg_headers *msghs, int mailno
 							JAM_PutSubfield(jsp, &jsf);
 
 							if (msghs->msgs[mailno]->msgid != NULL) {
-								sprintf(buffer, "%d:%d/%d.%d %s", conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
-										conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
-										conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node,
-										conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point,
-										msghs->msgs[mailno]->msgid);
+								sprintf(buffer, "%s", msghs->msgs[mailno]->msgid);
 							}
 
 							jsf.LoID   = JAMSFLD_REPLYID;
@@ -1805,11 +1801,7 @@ int read_message(struct user_record *user, struct msg_headers *msghs, int mailno
 							JAM_PutSubfield(jsp, &jsf);
 							jmh.MsgIdCRC = JAM_Crc32(buffer, strlen(buffer));
 							if (msghs->msgs[mailno]->msgid != NULL) {
-								sprintf(buffer, "%d:%d/%d.%d %s", conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
-										conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
-										conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node,
-										conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point,
-										msghs->msgs[mailno]->msgid);
+								sprintf(buffer, "%s", msghs->msgs[mailno]->msgid);
 							}
 
 							jsf.LoID   = JAMSFLD_REPLYID;
