@@ -82,7 +82,7 @@ int save_user(struct user_record *user) {
 	int rc;
 
 	char *update_sql = "UPDATE users SET password=?, salt=?, firstname=?,"
-					   "lastname=?, email=?, location=?, sec_level=?, last_on=?, time_left=?, cur_mail_conf=?, cur_mail_area=?, cur_file_dir=?, cur_file_sub=?, times_on=?, bwavepktno=?, archiver=?, protocol=?,nodemsgs=?,codepage=?,exteditor=? where loginname LIKE ?";
+					   "lastname=?, email=?, location=?, sec_level=?, last_on=?, time_left=?, cur_mail_conf=?, cur_mail_area=?, cur_file_dir=?, cur_file_sub=?, times_on=?, bwavepktno=?, archiver=?, protocol=?,nodemsgs=?,codepage=?,exteditor=?,bwavestyle=? where loginname LIKE ?";
 
  	sprintf(buffer, "%s/users.sq3", conf.bbs_path);
 
@@ -118,7 +118,8 @@ int save_user(struct user_record *user) {
 		sqlite3_bind_int(res, 18, user->nodemsgs);
 		sqlite3_bind_int(res, 19, user->codepage);
 		sqlite3_bind_int(res, 20, user->exteditor);
-        sqlite3_bind_text(res, 21, user->loginname, -1, 0);
+		sqlite3_bind_int(res, 21, user->bwavestyle);
+        sqlite3_bind_text(res, 22, user->loginname, -1, 0);
     } else {
         dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
     }
@@ -260,10 +261,11 @@ int inst_user(struct user_record *user) {
 						"protocol INTEGER,"
 						"nodemsgs INTEGER,"
 						"codepage INTEGER,"
-						"exteditor INTEGER);";
+						"exteditor INTEGER,"
+						"bwavestyle INTEGER);";
 
 	char *insert_sql = "INSERT INTO users (loginname, password, salt, firstname,"
-					   "lastname, email, location, sec_level, last_on, time_left, cur_mail_conf, cur_mail_area, cur_file_dir, cur_file_sub, times_on, bwavepktno, archiver, protocol, nodemsgs, codepage, exteditor) VALUES(?,?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+					   "lastname, email, location, sec_level, last_on, time_left, cur_mail_conf, cur_mail_area, cur_file_dir, cur_file_sub, times_on, bwavepktno, archiver, protocol, nodemsgs, codepage, exteditor, bwavestyle) VALUES(?,?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     char *err_msg = 0;
 
  	snprintf(buffer, PATH_MAX, "%s/users.sq3", conf.bbs_path);
@@ -312,6 +314,7 @@ int inst_user(struct user_record *user) {
 		sqlite3_bind_int(res, 19, user->nodemsgs);
 		sqlite3_bind_int(res, 20, user->codepage);
 		sqlite3_bind_int(res, 21, user->exteditor);
+		sqlite3_bind_int(res, 22, user->bwavestyle);
     } else {
         dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
         sqlite3_close(db);
@@ -341,7 +344,7 @@ struct user_record *check_user_pass(char *loginname, char *password) {
   	sqlite3_stmt *res;
   	int rc;
   	char *sql = "SELECT Id, loginname, password, salt, firstname,"
-					   "lastname, email, location, sec_level, last_on, time_left, cur_mail_conf, cur_mail_area, cur_file_dir, cur_file_sub, times_on, bwavepktno, archiver, protocol,nodemsgs, codepage, exteditor FROM users WHERE loginname LIKE ?";
+					   "lastname, email, location, sec_level, last_on, time_left, cur_mail_conf, cur_mail_area, cur_file_dir, cur_file_sub, times_on, bwavepktno, archiver, protocol,nodemsgs, codepage, exteditor, bwavestyle FROM users WHERE loginname LIKE ?";
 	char *pass_hash;
 
 	sprintf(buffer, "%s/users.sq3", conf.bbs_path);
@@ -391,6 +394,7 @@ struct user_record *check_user_pass(char *loginname, char *password) {
 		user->nodemsgs = sqlite3_column_int(res, 19);
 		user->codepage = sqlite3_column_int(res, 20);
 		user->exteditor = sqlite3_column_int(res, 21);
+		user->bwavestyle = sqlite3_column_int(res, 22);
 		pass_hash = hash_sha256(password, user->salt);
 
 		if (strcmp(pass_hash, user->password) != 0) {
@@ -677,6 +681,7 @@ struct user_record *new_user() {
 	user->nodemsgs = 1;
 	user->codepage = conf.codepage;
 	user->exteditor = 2;
+	user->bwavestyle = 0;
 	inst_user(user);
 
 	return user;

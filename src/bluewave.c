@@ -212,11 +212,12 @@ void bwave_create_packet() {
 	int stout;
 	int stin;
 	int sterr;	
-	
+	char *weekday[] = {"SU", "MO", "TU", "WE", "TH", "FR", "SA"};
 	struct termios oldit;
 	struct termios oldot;
 	struct stat s;
-	
+	struct tm time_tm;
+	time_t thetime;
 	FILE *mix_file;
 	FILE *fti_file;
 	FILE *dat_file;
@@ -374,7 +375,13 @@ void bwave_create_packet() {
 	if (totmsgs > 0) {
 		// create archive
 		bpos = 0;
-		snprintf(archive, 1024, "%s/node%d/%s.%03d", conf.bbs_path, mynode, conf.bwave_name, gUser->bwavepktno);
+		if (gUser->bwavestyle) {
+			thetime = time(NULL);
+			localtime_r(&thetime, &time_tm);
+			snprintf(archive, 1024, "%s/node%d/%s.%s%d", conf.bbs_path, mynode, conf.bwave_name, weekday[time_tm.tm_wday], gUser->bwavepktno % 10);
+		} else {
+			snprintf(archive, 1024, "%s/node%d/%s.%03d", conf.bbs_path, mynode, conf.bwave_name, gUser->bwavepktno);
+		}
 		
 		for (i=0;i<strlen(conf.archivers[gUser->defarchiver-1]->pack);i++) {
 			if (conf.archivers[gUser->defarchiver-1]->pack[i] == '*') {

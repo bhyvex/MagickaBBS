@@ -205,6 +205,7 @@ struct user_record {
 	int nodemsgs;
 	int codepage;
 	int exteditor;
+	int bwavestyle;
 };
 
 struct jam_msg {

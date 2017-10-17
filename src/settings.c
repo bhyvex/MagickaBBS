@@ -35,6 +35,7 @@ void settings_menu(struct user_record *user) {
 				break;
 		}
 		s_printf(get_string(222), buffer);
+		s_printf(get_string(235), (user->bwavestyle ? "000-999" : "mo?,tu? ..."));
 		s_printf(get_string(153));
 		s_printf(get_string(154));
 
@@ -143,6 +144,12 @@ void settings_menu(struct user_record *user) {
 					if (user->exteditor == 3) {
 						user->exteditor = 0;
 					}
+					save_user(user);
+				}
+				break;
+			case 'b':
+				{
+					user->bwavestyle = !user->bwavestyle;
 					save_user(user);
 				}
 				break;
