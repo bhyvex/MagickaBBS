@@ -40,7 +40,7 @@ MBOBJS = $(MBOBJS_MSG) $(MBOBJS_JAM) $(MBOBJS_SQ3)
 DEFS = $(PLATFORMDEF) $(MBDEFS) $(NLDEFS)
 
 # Commands
-ifeq ($(OS), FreeBSD)
+ifeq ($(OS), $(filter $(OS), FreeBSD DragonFly))
   CC = cc $(CPPFLAGS) $(CFLAGS) $(DEFS) $(LDFLAGS) -L/usr/local/lib -I $(INCDIR) -I ../../../deps/ -I/usr/local/include -Wall
 else
   CC = gcc $(CPPFLAGS) $(CFLAGS) $(DEFS) $(LDFLAGS) -I $(INCDIR) -I ../../../deps/ -Wall 
