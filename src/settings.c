@@ -35,7 +35,7 @@ void settings_menu(struct user_record *user) {
 				break;
 		}
 		s_printf(get_string(222), buffer);
-		s_printf(get_string(235), (user->bwavestyle ? "000-999" : "mo?,tu? ..."));
+		s_printf(get_string(235), (user->bwavestyle ? "mo?,tu? ..." : "000-999"));
 		s_printf(get_string(153));
 		s_printf(get_string(154));
 
