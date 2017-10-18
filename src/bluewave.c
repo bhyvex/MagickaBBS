@@ -378,6 +378,11 @@ void bwave_create_packet() {
 		if (gUser->bwavestyle) {
 			thetime = time(NULL);
 			localtime_r(&thetime, &time_tm);
+			
+			if (gUser->bwavepktno / 10 != time_tm.tm_wday) {
+				gUser->bwavepktno = time_tm.tm_wday * 10;
+			}
+			
 			snprintf(archive, 1024, "%s/node%d/%s.%s%d", conf.bbs_path, mynode, conf.bwave_name, weekday[time_tm.tm_wday], gUser->bwavepktno % 10);
 		} else {
 			snprintf(archive, 1024, "%s/node%d/%s.%03d", conf.bbs_path, mynode, conf.bwave_name, gUser->bwavepktno);
