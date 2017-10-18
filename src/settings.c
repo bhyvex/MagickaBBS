@@ -149,6 +149,7 @@ void settings_menu(struct user_record *user) {
 				break;
 			case 'b':
 				{
+					user->bwavepktno = 0;
 					user->bwavestyle = !user->bwavestyle;
 					save_user(user);
 				}
