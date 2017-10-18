@@ -10,6 +10,7 @@ struct filearea_t {
 
 struct ticproc_t {
 	int ignore_pass;
+	int case_insensitve;
 	char *inbound;
 	char *bad;
 	int filearea_count;

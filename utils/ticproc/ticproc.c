@@ -13,6 +13,27 @@
 
 struct ticproc_t conf;
 
+char *find_file_nocase(char *filename) {
+	DIR *inb;
+	struct dirent *dent;
+	char *nocasefname;
+	
+	inb = opendir(conf.inbound);
+	if (!inb) {
+		fprintf(stderr, "Error opening inbound directory\n");
+		return NULL;
+	}
+	while ((dent = readdir(inb)) != NULL) {
+		if (strcasecmp(dent->d_name, filename) == 0) {
+			ncasefname = strdup(dent->d_name);
+			closedir(inb);
+			return ncasefname;
+		}
+	}
+	closedir(inb);
+	return NULL;
+}
+
 static int handler(void* user, const char* section, const char* name,
                    const char* value)
 {
@@ -29,6 +50,12 @@ static int handler(void* user, const char* section, const char* name,
 			conf.inbound = strdup(value);
 		} else if (strcasecmp(name, "bad files directory") == 0) {
 			conf.bad = strdup(value);
+		} else if (strcasecmp(name, "ignore case") == 0) {
+			if (strcasecmp(value, "true") == 0) {
+				conf.case_insensitve = 1;
+			} else {
+				conf.case_insensitve = 0;
+			}
 		}
 	} else {
 		for (i=0;i<conf.filearea_count;i++) {
@@ -128,6 +155,8 @@ int add_file(struct ticfile_t *ticfile) {
 	int len;
 	unsigned long crc;
 	time_t curtime;
+	char *casename;
+	char *ncasename;
 	
 	if (ticfile->area == NULL) {
 		return -1;
@@ -177,21 +206,58 @@ int add_file(struct ticfile_t *ticfile) {
 	if (ticfile->lname != NULL) {
 		snprintf(src_filename, 4096, "%s/%s", conf.inbound, ticfile->lname);
 		snprintf(dest_filename, 4096, "%s/%s", conf.file_areas[i]->path, ticfile->lname);
+		
+		
 		if (stat(src_filename, &s) != 0) {
 			snprintf(src_filename, 4096, "%s/%s", conf.inbound, ticfile->file);
-			snprintf(dest_filename, 4096, "%s/%s", conf.file_areas[i]->path, ticfile->file);
+			snprintf(dest_filename, 4096, "%s/%s", conf.file_areas[i]->path, ticfile->file);		
+			casename = ticfile->file;
+		} else {
+			casename = ticfile->lname;
 		}
 	} else {
 		snprintf(src_filename, 4096, "%s/%s", conf.inbound, ticfile->file);
 		snprintf(dest_filename, 4096, "%s/%s", conf.file_areas[i]->path, ticfile->file);
+		casename = ticfile->file;
 	}
 	// check crc
 	fptr = fopen(src_filename, "rb");
 	if (!fptr) {
-		fprintf(stderr, "Error Opening %s\n", src_filename);
-		sqlite3_free(err_msg);
-		sqlite3_close(db);
-		return -1;
+		
+		if (conf.case_insensitve) {
+			nocasename = find_file_nocase(casename);
+			if (nocasename == NULL) {
+				if (casename == ticfile->lname) {
+					nocasename = find_file_nocase(ticfile->file);
+					if (nocasename == NULL) {
+						fprintf(stderr, "Error Opening %s\n", src_filename);
+						sqlite3_free(err_msg);
+						sqlite3_close(db);
+						return -1;
+						
+					}
+				} else {
+					fprintf(stderr, "Error Opening %s\n", src_filename);
+					sqlite3_free(err_msg);
+					sqlite3_close(db);
+					return -1;
+				}
+			}
+			snprintf(src_filename, 4096, "%s/%s", conf.inbound, nocasename);
+			free(nocasename);
+			fptr = fopen(src_filename, "rb");
+			if (!fptr) {
+				fprintf(stderr, "Error Opening %s\n", src_filename);
+				sqlite3_free(err_msg);
+				sqlite3_close(db);
+				return -1;					
+			}
+		} else {
+			fprintf(stderr, "Error Opening %s\n", src_filename);
+			sqlite3_free(err_msg);
+			sqlite3_close(db);
+			return -1;
+		}
 	}
 
 	if (ticfile->crc != NULL) {
@@ -422,6 +488,7 @@ int main(int argc, char **argv) {
 	struct dirent *dent;
 
 	conf.filearea_count = 0;
+	conf.case_insensitve = 0;
 	if (ini_parse(argv[1], handler, NULL) <0) {
 		fprintf(stderr, "Unable to load configuration ini (%s)!\n", argv[1]);
 		exit(-1);
