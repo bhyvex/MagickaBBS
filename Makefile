@@ -1,5 +1,8 @@
 OS := $(shell uname -s)
 
+ifeq ($(OS), DragonFly)
+  MAKEFILE=Makefile.freebsd
+endif
 ifeq ($(OS), FreeBSD)
   MAKEFILE=Makefile.freebsd
 endif

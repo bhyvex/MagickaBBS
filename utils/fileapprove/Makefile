@@ -5,6 +5,11 @@ ifeq ($(OS), FreeBSD)
   CFLAGS=-I/usr/local/include
   LDFLAGS=-L/usr/local/lib
 endif
+ifeq ($(OS), DragonFly)
+  CC=cc
+  CFLAGS=-I/usr/local/include -I/usr/local/include/ncurses
+  LDFLAGS=-L/usr/local/lib
+endif
 ifeq ($(OS), NetBSD)
   CC=cc
   CFLAGS=-I/usr/pkg/include
@@ -23,7 +28,6 @@ endif
 
 
 CC=cc
-CFLAGS=-I/usr/local/include
 DEPS = fileapprove.c
 
 OBJ = fileapprove.o
