@@ -16,7 +16,7 @@ struct ticproc_t conf;
 char *find_file_nocase(char *filename) {
 	DIR *inb;
 	struct dirent *dent;
-	char *nocasefname;
+	char *ncasefname;
 	
 	inb = opendir(conf.inbound);
 	if (!inb) {
@@ -156,7 +156,7 @@ int add_file(struct ticfile_t *ticfile) {
 	unsigned long crc;
 	time_t curtime;
 	char *casename;
-	char *ncasename;
+	char *nocasename;
 	
 	if (ticfile->area == NULL) {
 		return -1;
