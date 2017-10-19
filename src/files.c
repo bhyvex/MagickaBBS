@@ -1162,7 +1162,7 @@ void file_search() {
 			}
 		}
 
-		s_printf("%s\n", sqlite3_errmsg(db));
+		
 
 		while (sqlite3_step(res) == SQLITE_ROW) {
 			if (files_c == 0) {
@@ -1180,6 +1180,9 @@ void file_search() {
 			files_e[files_c]->sub = gUser->cur_file_sub;
 			files_c++;
 		}
+
+		s_printf("%s\n", sqlite3_errmsg(db));
+		
 		sqlite3_finalize(res);
 		sqlite3_close(db);
 
