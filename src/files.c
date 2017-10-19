@@ -1109,9 +1109,9 @@ void file_search() {
 		strncat(sqlbuffer, ")", 1024);
 	}
 	if (stype == 1) {
-		snprintf(sqlbuffer, 1024, "select filename, description, size, dlcount, uploaddate from files where approved=1 AND description (filename LIKE ?");
+		snprintf(sqlbuffer, 1024, "select filename, description, size, dlcount, uploaddate from files where approved=1 AND (description LIKE ?");
 		for (i=1; i < searchterm_count; i++) {
-			strncat(sqlbuffer, " OR filename LIKE ?", 1024);
+			strncat(sqlbuffer, " OR description LIKE ?", 1024);
 		}
 		strncat(sqlbuffer, ")", 1024);
 	}
