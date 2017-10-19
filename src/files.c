@@ -27,6 +27,8 @@ extern time_t userlaston;
 extern struct user_record *gUser;
 
 struct file_entry {
+	int dir;
+	int sub;
 	char *filename;
 	char *description;
 	int size;
@@ -853,6 +855,403 @@ void download(struct user_record *user) {
 	tagged_count = 0;
 }
 
+void do_list_files(struct file_entry **files_e, int files_c) {
+	int file_size;
+	char file_unit;
+	int lines = 0;
+	int i;
+	int j;
+	int z;
+	int k;
+	int match;
+	char buffer[6];
+	
+	s_printf("\r\n");
+	
+	for (i=0;i<files_c;i++) {
+		file_size = files_e[i]->size;
+		if (file_size > 1024 * 1024 * 1024) {
+			file_size = file_size / 1024 / 1024 / 1024;
+			file_unit = 'G';
+		} else if (file_size > 1024 * 1024) {
+			file_size = file_size / 1024 / 1024;
+			file_unit = 'M';
+		} else if (file_size > 1024) {
+			file_size = file_size / 1024;
+			file_unit = 'K';
+		} else {
+			file_unit = 'b';
+		}
+		if (files_e[i]->uploaddate > userlaston) {
+			s_printf(get_string(231), i, files_e[i]->dlcount, file_size, file_unit, basename(files_e[i]->filename));
+		} else {
+			s_printf(get_string(69), i, files_e[i]->dlcount, file_size, file_unit, basename(files_e[i]->filename));
+		}
+		lines+=3;
+		for (j=0;j<strlen(files_e[i]->description);j++) {
+			if (files_e[i]->description[j] == '\n') {
+				s_printf("\r\n");
+				lines++;
+				if (lines >= 18) {
+					lines = 0;
+					while (1) {
+						s_printf(get_string(70));
+						s_readstring(buffer, 5);
+						if (strlen(buffer) == 0) {
+							s_printf("\r\n");
+							break;
+						} else if (tolower(buffer[0]) == 'q') {
+							for (z=0;z<files_c;z++) {
+								free(files_e[z]->filename);
+								free(files_e[z]->description);
+								free(files_e[z]);
+							}
+							free(files_e);
+							s_printf("\r\n");
+							return;
+						}  else {
+							z = atoi(buffer);
+							if (z >= 0 && z < files_c) {
+								if (conf.file_directories[files_e[z]->dir]->file_subs[files_e[z]->sub]->download_sec_level <= gUser->sec_level) {
+									match = 0;
+									for (k=0;k<tagged_count;k++) {
+										if (strcmp(tagged_files[k], files_e[z]->filename) == 0) {
+											match = 1;
+											break;
+										}
+									}
+									if (match == 0) {
+										if (tagged_count == 0) {
+											tagged_files = (char **)malloc(sizeof(char *));
+										} else {
+											tagged_files = (char **)realloc(tagged_files, sizeof(char *) * (tagged_count + 1));
+										}
+										tagged_files[tagged_count] = strdup(files_e[z]->filename);
+										tagged_count++;
+										s_printf(get_string(71), basename(files_e[z]->filename));
+									} else {
+										s_printf(get_string(72));
+									}
+								} else {
+									s_printf(get_string(73));
+								}
+							}
+						}
+					}
+				}
+				if (strlen(&(files_e[i]->description[j])) > 1) {
+					s_printf(get_string(74));
+				}
+			} else {
+				s_putchar(files_e[i]->description[j]);
+			}
+		}
+		if (lines >= 18) {
+			lines = 0;
+			while (1) {
+				s_printf(get_string(70));
+				s_readstring(buffer, 5);
+				if (strlen(buffer) == 0) {
+					s_printf("\r\n");
+					break;
+				} else if (tolower(buffer[0]) == 'q') {
+					for (z=0;z<files_c;z++) {
+						free(files_e[z]->filename);
+						free(files_e[z]->description);
+						free(files_e[z]);
+					}
+					free(files_e);
+					s_printf("\r\n");
+					return;
+				}  else {
+					z = atoi(buffer);
+					if (z >= 0 && z < files_c) {
+						if (conf.file_directories[files_e[z]->dir]->file_subs[files_e[z]->sub]->download_sec_level <= gUser->sec_level) {
+							match = 0;
+							for (k=0;k<tagged_count;k++) {
+								if (strcmp(tagged_files[k], files_e[z]->filename) == 0) {
+									match = 1;
+									break;
+								}
+							}
+							if (match == 0) {
+								if (tagged_count == 0) {
+									tagged_files = (char **)malloc(sizeof(char *));
+								} else {
+									tagged_files = (char **)realloc(tagged_files, sizeof(char *) * (tagged_count + 1));
+								}
+								tagged_files[tagged_count] = strdup(files_e[z]->filename);
+								tagged_count++;
+								s_printf(get_string(71), basename(files_e[z]->filename));
+							} else {
+								s_printf(get_string(72));
+							}
+						} else {
+							s_printf(get_string(73));
+						}
+					}
+				}
+			}
+		}		
+	}
+	while (1) {
+		s_printf(get_string(75));
+		s_readstring(buffer, 5);
+		if (strlen(buffer) == 0) {
+			for (z=0;z<files_c;z++) {
+				free(files_e[z]->filename);
+				free(files_e[z]->description);
+				free(files_e[z]);
+			}
+			free(files_e);
+			s_printf("\r\n");
+			return;
+		} else {
+			z = atoi(buffer);
+			if (z >= 0 && z < files_c) {
+				if (conf.file_directories[files_e[z]->dir]->file_subs[files_e[z]->sub]->download_sec_level <= gUser->sec_level) {
+					match = 0;
+					for (k=0;k<tagged_count;k++) {
+						if (strcmp(tagged_files[k], files_e[z]->filename) == 0) {
+							match = 1;
+							break;
+						}
+					}
+					if (match == 0) {
+						if (tagged_count == 0) {
+							tagged_files = (char **)malloc(sizeof(char *));
+						} else {
+							tagged_files = (char **)realloc(tagged_files, sizeof(char *) * (tagged_count + 1));
+						}
+						tagged_files[tagged_count] = strdup(files_e[z]->filename);
+						tagged_count++;
+						s_printf(get_string(71), basename(files_e[z]->filename));
+					} else {
+						s_printf(get_string(72));
+					}
+				} else {
+					s_printf(get_string(73));
+				}
+			}
+		}
+	}	
+}
+
+void file_search() {
+	char ch;
+	int all = 0;
+	int stype = 0;
+	char buffer[PATH_MAX];
+	char sqlbuffer[1024];
+	char **searchterms;
+	int searchterm_count = 0;
+	char *ptr;
+	int i;
+	int j;
+	int search_dir;
+	int search_sub;
+	sqlite3 *db;
+    sqlite3_stmt *res;
+    int rc;
+	int files_c;
+	struct file_entry **files_e;
+	
+	if (!sqlite3_compileoption_used("SQLITE_ENABLE_FTS3")) {
+		s_printf("\r\nSorry, search is unavailable. Please recompile sqlite3 with FTS3 support.\r\n");
+		return;
+	}
+	
+	s_printf("\r\nSearch by (F)ilename, (D)escription or (B)oth: ");
+	ch = s_getc();
+	
+	switch(tolower(ch)) {
+		case 'd':
+			stype = 1;
+			break;
+		case 'b':
+			stype = 2;
+			break;
+	}
+	
+	s_printf("\r\nSearch in (C)urrent area or (A)ll areas: ");
+	
+	ch = s_getc();
+	if (tolower(ch) == 'a') {
+		all = 1;
+	}
+	
+	s_printf("\r\nKeywords: ");
+	
+	s_readstring(buffer, 128);
+	
+	if (strlen(buffer) == 0) {
+		s_printf("\r\nPlease enter at least one keyword.\r\n");
+		return;
+	}
+	ptr = strtok(buffer, " ");
+	while (ptr != NULL) {
+		if (searchterm_count == 0) {
+			searchterms = (char **)malloc(sizeof(char *));
+		} else {
+			searchterms = (char **)realloc(searchterms, sizeof(char *) * (searchterm_count + 1));
+		}
+		
+		searchterms[searchterm_count] = strdup(ptr);
+		searchterm_count++;
+		ptr = strtok(NULL, " ");
+	}
+	if (stype == 0) {
+		snprintf(sqlbuffer, 1024, "select filename, description, size, dlcount, uploaddate from files where approved=1 AND filename MATCH(?");
+		for (i=1; i < searchterm_count; i++) {
+			strncat(sqlbuffer, ",?", 1024);
+		}
+		strncat(sqlbuffer, ")", 1024);
+	}
+	if (stype == 1) {
+		snprintf(sqlbuffer, 1024, "select filename, description, size, dlcount, uploaddate from files where approved=1 AND description MATCH(?");
+		for (i=1; i < searchterm_count; i++) {
+			strncat(sqlbuffer, ",?", 1024);
+		}
+		strncat(sqlbuffer, ")", 1024);
+	}
+	if (stype == 2) {
+		snprintf(sqlbuffer, 1024, "select filename, description, size, dlcount, uploaddate from files where approved=1 AND (filename MATCH(?");
+		for (i=1; i < searchterm_count; i++) {
+			strncat(sqlbuffer, ",?", 1024);
+		}
+		strncat(sqlbuffer, ") OR description MATCH(", 1024);
+		for (i=1; i < searchterm_count; i++) {
+			strncat(sqlbuffer, ",?", 1024);
+		}
+		strncat(sqlbuffer, "))", 1024);
+	}
+	
+	if (!all) {
+		files_c = 0;		
+		snprintf(buffer, PATH_MAX, "%s/%s.sq3", conf.bbs_path, conf.file_directories[gUser->cur_file_dir]->file_subs[gUser->cur_file_sub]->database);
+
+		rc = sqlite3_open(buffer, &db);
+		if (rc != SQLITE_OK) {
+			dolog("Cannot open database: %s", sqlite3_errmsg(db));
+			sqlite3_close(db);
+
+			exit(1);
+		}
+		sqlite3_busy_timeout(db, 5000);
+		rc = sqlite3_prepare_v2(db, sqlbuffer, -1, &res, 0);
+
+		if (rc != SQLITE_OK) {
+			sqlite3_finalize(res);
+			sqlite3_close(db);
+			for (i=0;i<searchterm_count;i++) {
+				free(searchterms[i]);
+			}
+			free(searchterms);
+			return;
+		}
+		if (stype == 2) {
+			for (j=0;j<2;j++) {
+				for (i=0;i<searchterm_count;i++) {
+					sqlite3_bind_text(res, j * searchterm_count + i + 1, searchterms[i], -1, 0);
+				}
+			}
+		} else {
+			for (i=0;i<searchterm_count;i++) {
+				sqlite3_bind_text(res, i + 1, searchterms[i], -1, 0);
+			}
+		}
+
+		while (sqlite3_step(res) == SQLITE_ROW) {
+			if (files_c == 0) {
+				files_e = (struct file_entry **)malloc(sizeof(struct file_entry *));
+			} else {
+				files_e = (struct file_entry **)realloc(files_e, sizeof(struct file_entry *) * (files_c + 1));
+			}
+			files_e[files_c] = (struct file_entry *)malloc(sizeof(struct file_entry));
+			files_e[files_c]->filename = strdup((char *)sqlite3_column_text(res, 0));
+			files_e[files_c]->description = strdup((char *)sqlite3_column_text(res, 1));
+			files_e[files_c]->size = sqlite3_column_int(res, 2);
+			files_e[files_c]->dlcount = sqlite3_column_int(res, 3);
+			files_e[files_c]->uploaddate = sqlite3_column_int(res, 4);
+			files_e[files_c]->dir = gUser->cur_file_dir;
+			files_e[files_c]->sub = gUser->cur_file_sub;
+			files_c++;
+		}
+		sqlite3_finalize(res);
+		sqlite3_close(db);
+
+		if (files_c != 0) {
+			do_list_files(files_e, files_c);
+		}
+	} else {
+		files_c = 0;		
+		for (search_dir = 0; search_dir < conf.file_directory_count; search_dir++) {
+			if (conf.file_directories[search_dir]->sec_level < gUser->sec_level) {
+				continue;
+			}
+			for (search_sub = 0; search_sub < conf.file_directories[search_dir]->file_sub_count; search_sub++) {
+				if (conf.file_directories[search_dir]->file_subs[search_sub]->download_sec_level < gUser->sec_level) {
+					continue;
+				}
+				snprintf(buffer, PATH_MAX, "%s/%s.sq3", conf.bbs_path, conf.file_directories[search_dir]->file_subs[search_sub]->database);
+
+				rc = sqlite3_open(buffer, &db);
+				if (rc != SQLITE_OK) {
+					dolog("Cannot open database: %s", sqlite3_errmsg(db));
+					sqlite3_close(db);
+					exit(1);
+				}
+				sqlite3_busy_timeout(db, 5000);
+				rc = sqlite3_prepare_v2(db, sqlbuffer, -1, &res, 0);
+
+				if (rc != SQLITE_OK) {
+					sqlite3_finalize(res);
+					sqlite3_close(db);
+					continue;
+				}
+				if (stype == 2) {
+					for (j=0;j<2;j++) {
+						for (i=0;i<searchterm_count;i++) {
+							sqlite3_bind_text(res, j * searchterm_count + i + 1, searchterms[i], -1, 0);
+						}
+					}
+				} else {
+					for (i=0;i<searchterm_count;i++) {
+						sqlite3_bind_text(res, i + 1, searchterms[i], -1, 0);
+					}
+				}
+
+				while (sqlite3_step(res) == SQLITE_ROW) {
+					if (files_c == 0) {
+						files_e = (struct file_entry **)malloc(sizeof(struct file_entry *));
+					} else {
+						files_e = (struct file_entry **)realloc(files_e, sizeof(struct file_entry *) * (files_c + 1));
+					}
+					files_e[files_c] = (struct file_entry *)malloc(sizeof(struct file_entry));
+					files_e[files_c]->filename = strdup((char *)sqlite3_column_text(res, 0));
+					files_e[files_c]->description = strdup((char *)sqlite3_column_text(res, 1));
+					files_e[files_c]->size = sqlite3_column_int(res, 2);
+					files_e[files_c]->dlcount = sqlite3_column_int(res, 3);
+					files_e[files_c]->uploaddate = sqlite3_column_int(res, 4);
+					files_e[files_c]->dir = gUser->cur_file_dir;
+					files_e[files_c]->sub = gUser->cur_file_sub;
+					files_c++;
+				}
+				sqlite3_finalize(res);
+				sqlite3_close(db);				
+			}
+		}
+		
+		if (files_c != 0) {
+			do_list_files(files_e, files_c);
+		}
+	}
+	for (i=0;i<searchterm_count;i++) {
+		free(searchterms[i]);
+	}
+	free(searchterms);
+}
+
 void list_files(struct user_record *user) {
 	char *dsql = "select filename, description, size, dlcount, uploaddate from files where approved=1 ORDER BY uploaddate DESC";
 	char *fsql = "select filename, description, size, dlcount, uploaddate from files where approved=1 ORDER BY filename";
@@ -863,14 +1262,6 @@ void list_files(struct user_record *user) {
     sqlite3_stmt *res;
     int rc;
 	int files_c;
-	int file_size;
-	char file_unit;
-	int lines = 0;
-	int i;
-	int j;
-	int z;
-	int k;
-	int match;
 
 	char ch;
 	struct file_entry **files_e;
@@ -925,6 +1316,8 @@ void list_files(struct user_record *user) {
 		files_e[files_c]->size = sqlite3_column_int(res, 2);
 		files_e[files_c]->dlcount = sqlite3_column_int(res, 3);
 		files_e[files_c]->uploaddate = sqlite3_column_int(res, 4);
+		files_e[files_c]->dir = user->cur_file_dir;
+		files_e[files_c]->sub = user->cur_file_sub;
 		files_c++;
 	}
 	sqlite3_finalize(res);
@@ -934,174 +1327,8 @@ void list_files(struct user_record *user) {
 		s_printf(get_string(68));
 		return;
 	}
-	s_printf("\r\n");
-	for (i=0;i<files_c;i++) {
-		file_size = files_e[i]->size;
-		if (file_size > 1024 * 1024 * 1024) {
-			file_size = file_size / 1024 / 1024 / 1024;
-			file_unit = 'G';
-		} else if (file_size > 1024 * 1024) {
-			file_size = file_size / 1024 / 1024;
-			file_unit = 'M';
-		} else if (file_size > 1024) {
-			file_size = file_size / 1024;
-			file_unit = 'K';
-		} else {
-			file_unit = 'b';
-		}
-		if (files_e[i]->uploaddate > userlaston) {
-			s_printf(get_string(231), i, files_e[i]->dlcount, file_size, file_unit, basename(files_e[i]->filename));
-		} else {
-			s_printf(get_string(69), i, files_e[i]->dlcount, file_size, file_unit, basename(files_e[i]->filename));
-		}
-		lines+=3;
-		for (j=0;j<strlen(files_e[i]->description);j++) {
-			if (files_e[i]->description[j] == '\n') {
-				s_printf("\r\n");
-				lines++;
-				if (lines >= 18) {
-					lines = 0;
-					while (1) {
-						s_printf(get_string(70));
-						s_readstring(buffer, 5);
-						if (strlen(buffer) == 0) {
-							s_printf("\r\n");
-							break;
-						} else if (tolower(buffer[0]) == 'q') {
-							for (z=0;z<files_c;z++) {
-								free(files_e[z]->filename);
-								free(files_e[z]->description);
-								free(files_e[z]);
-							}
-							free(files_e);
-							s_printf("\r\n");
-							return;
-						}  else {
-							z = atoi(buffer);
-							if (z >= 0 && z < files_c) {
-								if (conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->download_sec_level <= user->sec_level) {
-									match = 0;
-									for (k=0;k<tagged_count;k++) {
-										if (strcmp(tagged_files[k], files_e[z]->filename) == 0) {
-											match = 1;
-											break;
-										}
-									}
-									if (match == 0) {
-										if (tagged_count == 0) {
-											tagged_files = (char **)malloc(sizeof(char *));
-										} else {
-											tagged_files = (char **)realloc(tagged_files, sizeof(char *) * (tagged_count + 1));
-										}
-										tagged_files[tagged_count] = strdup(files_e[z]->filename);
-										tagged_count++;
-										s_printf(get_string(71), basename(files_e[z]->filename));
-									} else {
-										s_printf(get_string(72));
-									}
-								} else {
-									s_printf(get_string(73));
-								}
-							}
-						}
-					}
-				}
-				if (strlen(&(files_e[i]->description[j])) > 1) {
-					s_printf(get_string(74));
-				}
-			} else {
-				s_putchar(files_e[i]->description[j]);
-			}
-		}
-		if (lines >= 18) {
-			lines = 0;
-			while (1) {
-				s_printf(get_string(70));
-				s_readstring(buffer, 5);
-				if (strlen(buffer) == 0) {
-					s_printf("\r\n");
-					break;
-				} else if (tolower(buffer[0]) == 'q') {
-					for (z=0;z<files_c;z++) {
-						free(files_e[z]->filename);
-						free(files_e[z]->description);
-						free(files_e[z]);
-					}
-					free(files_e);
-					s_printf("\r\n");
-					return;
-				}  else {
-					z = atoi(buffer);
-					if (z >= 0 && z < files_c) {
-						if (conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->download_sec_level <= user->sec_level) {
-							match = 0;
-							for (k=0;k<tagged_count;k++) {
-								if (strcmp(tagged_files[k], files_e[z]->filename) == 0) {
-									match = 1;
-									break;
-								}
-							}
-							if (match == 0) {
-								if (tagged_count == 0) {
-									tagged_files = (char **)malloc(sizeof(char *));
-								} else {
-									tagged_files = (char **)realloc(tagged_files, sizeof(char *) * (tagged_count + 1));
-								}
-								tagged_files[tagged_count] = strdup(files_e[z]->filename);
-								tagged_count++;
-								s_printf(get_string(71), basename(files_e[z]->filename));
-							} else {
-								s_printf(get_string(72));
-							}
-						} else {
-							s_printf(get_string(73));
-						}
-					}
-				}
-			}
-		}		
-	}
-	while (1) {
-		s_printf(get_string(75));
-		s_readstring(buffer, 5);
-		if (strlen(buffer) == 0) {
-			for (z=0;z<files_c;z++) {
-				free(files_e[z]->filename);
-				free(files_e[z]->description);
-				free(files_e[z]);
-			}
-			free(files_e);
-			s_printf("\r\n");
-			return;
-		} else {
-			z = atoi(buffer);
-			if (z >= 0 && z < files_c) {
-				if (conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->download_sec_level <= user->sec_level) {
-					match = 0;
-					for (k=0;k<tagged_count;k++) {
-						if (strcmp(tagged_files[k], files_e[z]->filename) == 0) {
-							match = 1;
-							break;
-						}
-					}
-					if (match == 0) {
-						if (tagged_count == 0) {
-							tagged_files = (char **)malloc(sizeof(char *));
-						} else {
-							tagged_files = (char **)realloc(tagged_files, sizeof(char *) * (tagged_count + 1));
-						}
-						tagged_files[tagged_count] = strdup(files_e[z]->filename);
-						tagged_count++;
-						s_printf(get_string(71), basename(files_e[z]->filename));
-					} else {
-						s_printf(get_string(72));
-					}
-				} else {
-					s_printf(get_string(73));
-				}
-			}
-		}
-	}
+	
+	do_list_files(files_e, files_c);
 }
 
 void choose_subdir(struct user_record *user) {
