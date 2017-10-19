@@ -39,6 +39,12 @@ MBOBJS = $(MBOBJS_MSG) $(MBOBJS_JAM) $(MBOBJS_SQ3)
 
 DEFS = $(PLATFORMDEF) $(MBDEFS) $(NLDEFS)
 
+ifeq ($(OS), SunOS)
+  SLIBS = -lsocket -lnsl
+else
+  SLIBS =
+endif
+
 # Commands
 ifeq ($(OS), $(filter $(OS), FreeBSD DragonFly))
   CC = cc $(CPPFLAGS) $(CFLAGS) $(DEFS) $(LDFLAGS) -L/usr/local/lib -I $(INCDIR) -I ../../../deps/ -I/usr/local/include -Wall
@@ -88,7 +94,7 @@ files :  $(BINDIR)/magimail$(EXESUFFIX) \
 			$(BINDIR)/magilistout$(EXESUFFIX)
 
 $(BINDIR)/magimail$(EXESUFFIX) : $(CMOBJS) $(SHOBJS) $(NLOBJS) $(MBOBJS) $(OSLIB)
-	$(CC) -o $(BINDIR)/magimail$(EXESUFFIX) $(CMOBJS) $(SHOBJS) $(NLOBJS) $(MBOBJS) $(OSLIB) -lsqlite3
+	$(CC) -o $(BINDIR)/magimail$(EXESUFFIX) $(CMOBJS) $(SHOBJS) $(NLOBJS) $(MBOBJS) $(OSLIB) -lsqlite3 $(SLIBS)
 	$(STRIP) $(BINDIR)/magimail$(EXESUFFIX)
 
 $(BINDIR)/magistats$(EXESUFFIX) : tools/magistats.c $(SHOBJS) $(OSLIB)

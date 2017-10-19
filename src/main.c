@@ -17,10 +17,12 @@
 #include <poll.h>
 #if defined(linux)
 #  include <pty.h>
-#elif defined(__OpenBSD__) || defined(__NetBSD__) || defined(__APPLE__)
+#elif defined(__OpenBSD__) || defined(__NetBSD__) || defined(__APPLE__) 
 #  include <util.h>
-#else
+#elif defined(__FreeBSD__)
 #  include <libutil.h>
+#elif defined(__sun)
+#  include "os/sunos.h"
 #endif
 #if defined(ENABLE_WWW)
 #  include <microhttpd.h>

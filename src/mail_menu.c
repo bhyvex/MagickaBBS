@@ -13,7 +13,9 @@
 #include "lua/lua.h"
 #include "lua/lualib.h"
 #include "lua/lauxlib.h"
-
+#ifdef __sun
+#include "os/sunos.h"
+#endif
 extern struct bbs_config conf;
 extern struct user_record *gUser;
 extern int mynode;
@@ -24,8 +26,11 @@ time_t utc_to_local(time_t utc) {
 
 	localtime_r(&utc, &date_time);
 
+#ifdef __sun
+	local = utc + gmtoff(utc);
+#else
 	local = utc + date_time.tm_gmtoff;
-
+#endif
 	return local;
 }
 

@@ -14,8 +14,10 @@
 #  include <pty.h>
 #elif defined(__OpenBSD__) || defined(__NetBSD__) || defined(__APPLE__)
 #  include <util.h>
-#else
+#elif defined(__FreeBSD__)
 #  include <libutil.h>
+#elif defined(__sun)
+#  include "os/sunos.h"
 #endif
 #include "bbs.h"
 #include "lua/lua.h"

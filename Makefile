@@ -15,7 +15,9 @@ endif
 ifeq ($(OS), Darwin)
   MAKEFILE=Makefile.osx
 endif
-
+ifeq ($(OS), SunOS)
+  MAKEFILE=Makefile.sunos
+endif
 all: magicka
 
 .PHONY: magicka www clean cleanwww

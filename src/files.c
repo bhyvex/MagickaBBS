@@ -576,7 +576,12 @@ int do_upload(struct user_record *user, char *final_path) {
 				return 0;
 			}
 			while ((dent = readdir(inb)) != NULL) {
+#ifdef __sun
+				stat(dent->d_name, &s);
+				if (S_ISREG(s.st_mode)) {
+#else
 				if (dent->d_type == DT_REG) {
+#endif
 					snprintf(upload_command, 1024, "%s%s", upload_path, dent->d_name);
 					snprintf(upload_filename, 1024, "%s/%s", final_path, dent->d_name);
 					

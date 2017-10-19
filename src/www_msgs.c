@@ -4,9 +4,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <sys/utsname.h>
-#ifdef __FreeBSD__
 #include <sys/stat.h>
-#endif
 #include "bbs.h"
 #include "jamlib/jam.h"
 

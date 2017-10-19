@@ -85,6 +85,9 @@
 #if defined( __LINUX__ )
 #include <sys/file.h>
 #include <unistd.h>
+#ifdef __sun
+#include <fcntl.h>
+#endif
 #endif
 
 #define OS_ERROR_OFFSET 10000

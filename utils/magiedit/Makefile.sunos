@@ -1,0 +1,22 @@
+CC=cc
+CFLAGS=-I../../deps/odoors/
+DEPS = main.c
+ODOORS = ../../deps/odoors/libs-`uname -s`/libODoors.a
+
+OBJ = main.o
+
+all: magiedit
+
+${ODOORS}:
+	cd ../../deps/odoors && $(MAKE) MAKEFLAGS=
+
+%.o: %.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+magiedit: $(OBJ) $(ODOORS)
+	$(CC) -o magiedit -o $@ $^ $(CFLAGS) $(ODOORS) -lsocket
+
+.PHONY: clean
+
+clean:
+	rm -f $(OBJ) magiedit
