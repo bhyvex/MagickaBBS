@@ -1056,12 +1056,7 @@ void file_search() {
 	int files_c;
 	struct file_entry **files_e;
 	
-	if (!sqlite3_compileoption_used("SQLITE_ENABLE_FTS3")) {
-		s_printf("\r\nSorry, search is unavailable. Please recompile sqlite3 with FTS3 support.\r\n");
-		return;
-	}
-	
-	s_printf("\r\nSearch by (F)ilename, (D)escription or (B)oth: ");
+	s_printf(get_string(236));
 	ch = s_getc();
 	
 	switch(tolower(ch)) {
@@ -1073,19 +1068,19 @@ void file_search() {
 			break;
 	}
 	
-	s_printf("\r\nSearch in (C)urrent area or (A)ll areas: ");
+	s_printf(get_string(237));
 	
 	ch = s_getc();
 	if (tolower(ch) == 'a') {
 		all = 1;
 	}
 	
-	s_printf("\r\nKeywords: ");
+	s_printf(get_string(239));
 	
 	s_readstring(buffer, 128);
 	
 	if (strlen(buffer) == 0) {
-		s_printf("\r\nPlease enter at least one keyword.\r\n");
+		s_printf(get_string(238));
 		return;
 	}
 	ptr = strtok(buffer, " ");
