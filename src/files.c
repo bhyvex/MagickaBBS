@@ -1162,6 +1162,8 @@ void file_search() {
 			}
 		}
 
+		s_printf("%s\n", sqlite3_errmsg(db));
+
 		while (sqlite3_step(res) == SQLITE_ROW) {
 			if (files_c == 0) {
 				files_e = (struct file_entry **)malloc(sizeof(struct file_entry *));
