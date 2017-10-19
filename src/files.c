@@ -1141,6 +1141,7 @@ void file_search() {
 		rc = sqlite3_prepare_v2(db, sqlbuffer, -1, &res, 0);
 
 		if (rc != SQLITE_OK) {
+			s_printf("%s\n", sqlite3_errmsg(db));
 			sqlite3_finalize(res);
 			sqlite3_close(db);
 			for (i=0;i<searchterm_count;i++) {
