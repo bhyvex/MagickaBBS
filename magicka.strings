@@ -235,6 +235,6 @@ File exists!\r\n
 \e[24;1H\e[1;32mUp / Down\e[1;37m to Scroll, \e[1;32mLeft / Right \e[1;37mChange Message, \e[1;32mR \e[1;37mReply, \e[1;32mJ \e[1;37mNext Area, \e[1;32mQ \e[1;37mQuit\e[K\e[0m
 \e[0;36mB. \e[1;37mBluewave Packet Style (\e[1;33m%s\e[1;37m)\r\n
 \r\n\e[1;37mSearch by (\e[1;32mF\e[1;37m)ilename, (\e[1;32mD\e[1;37m)escription or (\e[1;32mB\e[1;37m)oth:\e[0m 
-\r\n\e[1;37mSearch in (\e[1;32C\e[1;37m)urrent area or (\e[1;32A\e[1;37m)ll areas:\e[0m 
+\r\n\e[1;37mSearch in (\e[1;32mC\e[1;37m)urrent area or (\e[1;32mA\e[1;37m)ll areas:\e[0m 
 \r\n\e[1;31mPlease enter at least one keyword.\e[0m\r\n
 \r\n\e[1;37mKeywords:\e[0m 
