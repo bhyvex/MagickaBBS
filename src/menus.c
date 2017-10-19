@@ -51,6 +51,7 @@
 #define MENU_RESETALLPOINTERS   41
 #define MENU_FILESCAN           42
 #define MENU_FULLMAILSCAN       43
+#define MENU_FILESEARCH			44
 
 extern struct bbs_config conf;
 extern struct user_record *gUser;
@@ -203,6 +204,8 @@ int menu_system(char *menufile) {
 				menu[menu_items-1]->command = MENU_FILESCAN;
 			} else if (strncasecmp(&buffer[8], "FULLMAILSCAN", 12) == 0) {
 				menu[menu_items-1]->command = MENU_FULLMAILSCAN;
+			} else if (strncasecmp(&buffer[8], "FILESEARCH", 10) == 0) {
+				menu[menu_items-1]->command = MENU_FILESEARCH;
 			}
         } else if (strncasecmp(buffer, "SECLEVEL", 8) == 0) {
             menu[menu_items-1]->seclevel = atoi(&buffer[9]);
@@ -506,6 +509,9 @@ int menu_system(char *menufile) {
 							break;
 						case MENU_FULLMAILSCAN:
 							full_mail_scan(gUser);
+							break;
+						case MENU_FILESEARCH:
+							file_search();
 							break;
                         default:
                             break;     
