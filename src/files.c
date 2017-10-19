@@ -1096,34 +1096,35 @@ void file_search() {
 			searchterms = (char **)realloc(searchterms, sizeof(char *) * (searchterm_count + 1));
 		}
 		
-		searchterms[searchterm_count] = strdup(ptr);
+		searchterms[searchterm_count] = malloc(strlen(ptr) + 3);
+		sprintf(searchterms[searchterm_count], "%%%s%%", ptr);
 		searchterm_count++;
 		ptr = strtok(NULL, " ");
 	}
 	if (stype == 0) {
-		snprintf(sqlbuffer, 1024, "select filename, description, size, dlcount, uploaddate from files where approved=1 AND filename MATCH(?");
+		snprintf(sqlbuffer, 1024, "select filename, description, size, dlcount, uploaddate from files where approved=1 AND (filename LIKE ?");
 		for (i=1; i < searchterm_count; i++) {
-			strncat(sqlbuffer, " OR ?", 1024);
+			strncat(sqlbuffer, " OR filename LIKE ?", 1024);
 		}
 		strncat(sqlbuffer, ")", 1024);
 	}
 	if (stype == 1) {
-		snprintf(sqlbuffer, 1024, "select filename, description, size, dlcount, uploaddate from files where approved=1 AND description MATCH(?");
+		snprintf(sqlbuffer, 1024, "select filename, description, size, dlcount, uploaddate from files where approved=1 AND description (filename LIKE ?");
 		for (i=1; i < searchterm_count; i++) {
-			strncat(sqlbuffer, " OR ?", 1024);
+			strncat(sqlbuffer, " OR filename LIKE ?", 1024);
 		}
 		strncat(sqlbuffer, ")", 1024);
 	}
 	if (stype == 2) {
-		snprintf(sqlbuffer, 1024, "select filename, description, size, dlcount, uploaddate from files where approved=1 AND (filename MATCH(?");
+		snprintf(sqlbuffer, 1024, "select filename, description, size, dlcount, uploaddate from files where approved=1 AND (filename LIKE ?");
 		for (i=1; i < searchterm_count; i++) {
-			strncat(sqlbuffer, " OR ?", 1024);
+			strncat(sqlbuffer, " OR filename LIKE ?", 1024);
 		}
-		strncat(sqlbuffer, ") OR description MATCH(", 1024);
+		strncat(sqlbuffer, " OR description LIKE ?", 1024);
 		for (i=1; i < searchterm_count; i++) {
-			strncat(sqlbuffer, " OR ?", 1024);
+			strncat(sqlbuffer, " OR description LIKE ?", 1024);
 		}
-		strncat(sqlbuffer, "))", 1024);
+		strncat(sqlbuffer, ")", 1024);
 	}
 	
 	if (!all) {
@@ -1181,8 +1182,6 @@ void file_search() {
 			files_c++;
 		}
 
-		s_printf("%s\n", sqlite3_errmsg(db));
-		
 		sqlite3_finalize(res);
 		sqlite3_close(db);
 
