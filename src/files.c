@@ -1103,25 +1103,25 @@ void file_search() {
 	if (stype == 0) {
 		snprintf(sqlbuffer, 1024, "select filename, description, size, dlcount, uploaddate from files where approved=1 AND filename MATCH(?");
 		for (i=1; i < searchterm_count; i++) {
-			strncat(sqlbuffer, ",?", 1024);
+			strncat(sqlbuffer, " OR ?", 1024);
 		}
 		strncat(sqlbuffer, ")", 1024);
 	}
 	if (stype == 1) {
 		snprintf(sqlbuffer, 1024, "select filename, description, size, dlcount, uploaddate from files where approved=1 AND description MATCH(?");
 		for (i=1; i < searchterm_count; i++) {
-			strncat(sqlbuffer, ",?", 1024);
+			strncat(sqlbuffer, " OR ?", 1024);
 		}
 		strncat(sqlbuffer, ")", 1024);
 	}
 	if (stype == 2) {
 		snprintf(sqlbuffer, 1024, "select filename, description, size, dlcount, uploaddate from files where approved=1 AND (filename MATCH(?");
 		for (i=1; i < searchterm_count; i++) {
-			strncat(sqlbuffer, ",?", 1024);
+			strncat(sqlbuffer, " OR ?", 1024);
 		}
 		strncat(sqlbuffer, ") OR description MATCH(", 1024);
 		for (i=1; i < searchterm_count; i++) {
-			strncat(sqlbuffer, ",?", 1024);
+			strncat(sqlbuffer, " OR ?", 1024);
 		}
 		strncat(sqlbuffer, "))", 1024);
 	}
