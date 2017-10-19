@@ -1142,7 +1142,6 @@ void file_search() {
 		rc = sqlite3_prepare_v2(db, sqlbuffer, -1, &res, 0);
 
 		if (rc != SQLITE_OK) {
-			s_printf("%s\n", sqlite3_errmsg(db));
 			sqlite3_finalize(res);
 			sqlite3_close(db);
 			for (i=0;i<searchterm_count;i++) {
@@ -1191,11 +1190,11 @@ void file_search() {
 	} else {
 		files_c = 0;		
 		for (search_dir = 0; search_dir < conf.file_directory_count; search_dir++) {
-			if (conf.file_directories[search_dir]->sec_level < gUser->sec_level) {
+			if (conf.file_directories[search_dir]->sec_level > gUser->sec_level) {
 				continue;
 			}
 			for (search_sub = 0; search_sub < conf.file_directories[search_dir]->file_sub_count; search_sub++) {
-				if (conf.file_directories[search_dir]->file_subs[search_sub]->download_sec_level < gUser->sec_level) {
+				if (conf.file_directories[search_dir]->file_subs[search_sub]->download_sec_level > gUser->sec_level) {
 					continue;
 				}
 				snprintf(buffer, PATH_MAX, "%s/%s.sq3", conf.bbs_path, conf.file_directories[search_dir]->file_subs[search_sub]->database);
