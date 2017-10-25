@@ -210,7 +210,7 @@ int menu_system(char *menufile) {
 				menu[menu_items-1]->command = MENU_FILESEARCH;
 			} else if (strncasecmp(&buffer[8], "DISPLAYTXTFILE", 14) == 0) {
 				menu[menu_items-1]->command = MENU_DISPTXTFILE;
-			} else if (strncasecmp(&buffer[8], "DISPLAYTXTFILEPAUSE", 19) == 0) {
+			} else if (strncasecmp(&buffer[8], "DISPLAYTXTPAUSE", 15) == 0) {
 				menu[menu_items-1]->command = MENU_DISPTXTFILEPAUSE;
 			} 
         } else if (strncasecmp(buffer, "SECLEVEL", 8) == 0) {
@@ -528,6 +528,8 @@ int menu_system(char *menufile) {
 							if (menu[i]->data != NULL) {
 								s_displayansi_pause(menu[i]->data, 1);
 							}
+							s_printf(get_string(6));
+							s_getc();
 							break;
                         default:
                             break;     
