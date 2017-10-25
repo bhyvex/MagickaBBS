@@ -52,6 +52,8 @@
 #define MENU_FILESCAN           42
 #define MENU_FULLMAILSCAN       43
 #define MENU_FILESEARCH			44
+#define MENU_DISPTXTFILE		45
+#define MENU_DISPTXTFILEPAUSE	46
 
 extern struct bbs_config conf;
 extern struct user_record *gUser;
@@ -206,7 +208,11 @@ int menu_system(char *menufile) {
 				menu[menu_items-1]->command = MENU_FULLMAILSCAN;
 			} else if (strncasecmp(&buffer[8], "FILESEARCH", 10) == 0) {
 				menu[menu_items-1]->command = MENU_FILESEARCH;
-			}
+			} else if (strncasecmp(&buffer[8], "DISPLAYTXTFILE", 14) == 0) {
+				menu[menu_items-1]->command = MENU_DISPTXTFILE;
+			} else if (strncasecmp(&buffer[8], "DISPLAYTXTFILEPAUSE", 19) == 0) {
+				menu[menu_items-1]->command = MENU_DISPTXTFILEPAUSE;
+			} 
         } else if (strncasecmp(buffer, "SECLEVEL", 8) == 0) {
             menu[menu_items-1]->seclevel = atoi(&buffer[9]);
         } else if (strncasecmp(buffer, "DATA", 4) == 0) {
@@ -512,6 +518,16 @@ int menu_system(char *menufile) {
 							break;
 						case MENU_FILESEARCH:
 							file_search();
+							break;
+						case MENU_DISPTXTFILE:
+							if (menu[i]->data != NULL) {
+								s_displayansi_pause(menu[i]->data, 0);
+							}
+							break;
+						case MENU_DISPTXTFILEPAUSE:
+							if (menu[i]->data != NULL) {
+								s_displayansi_pause(menu[i]->data, 1);
+							}
 							break;
                         default:
                             break;     
