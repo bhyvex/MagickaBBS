@@ -239,3 +239,5 @@ File exists!\r\n
 \r\n\e[1;31mPlease enter at least one keyword.\e[0m\r\n
 \r\n\e[1;37mKeywords:\e[0m 
 \r\nUsername may not begin or end with a space\r\n
+\r\nFirstname may not begin or end with a space\r\n
+\r\nLastname may not begin or end with a space\r\n

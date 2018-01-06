@@ -494,6 +494,46 @@ void list_users(struct user_record *user) {
 	s_getc();
 }
 
+int check_fullname(char *firstname, char *lastname) {
+	char buffer[256];
+	sqlite3 *db;
+  sqlite3_stmt *res;
+  int rc;
+  char *sql = "SELECT * FROM users WHERE firstname = ? AND lastname = ?";
+
+	sprintf(buffer, "%s/users.sq3", conf.bbs_path);
+
+	rc = sqlite3_open(buffer, &db);
+
+	if (rc != SQLITE_OK) {
+    dolog("Cannot open database: %s", sqlite3_errmsg(db));
+    sqlite3_close(db);
+
+    exit(1);
+  }
+  sqlite3_busy_timeout(db, 5000);
+  rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
+
+  if (rc == SQLITE_OK) {
+      sqlite3_bind_text(res, 1, firstname, -1, 0);
+      sqlite3_bind_text(res, 2, lastname, -1, 0);
+  } else {
+      dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
+  }
+
+  int step = sqlite3_step(res);
+
+  if (step == SQLITE_ROW) {
+		sqlite3_finalize(res);
+		sqlite3_close(db);
+		return 0;
+  }
+
+  sqlite3_finalize(res);
+  sqlite3_close(db);
+  return 1;
+}
+
 int check_user(char *loginname) {
 	char buffer[256];
 	sqlite3 *db;
@@ -541,7 +581,8 @@ struct user_record *new_user() {
 	int nameok = 0;
 	int passok = 0;
 	int i;
-
+	int fullnameok = 0;
+	
 	user = (struct user_record *)malloc(sizeof(struct user_record));
 	s_printf("\r\n\r\n");
 	s_displayansi("newuser");
@@ -600,18 +641,50 @@ struct user_record *new_user() {
 				memset(buffer, 0, 256);
 			}
 		} while (!nameok);
-		s_printf(get_string(171));
-		memset(buffer, 0, 256);
-		s_readstring(buffer, 32);
-		s_printf("\r\n");
-		user->firstname = strdup(buffer);
-
-		s_printf(get_string(172));
-		memset(buffer, 0, 256);
-		s_readstring(buffer, 32);
-		s_printf("\r\n");
-		user->lastname = strdup(buffer);
-
+		do {
+			nameok = 0;
+			do {
+				s_printf(get_string(171));
+				memset(buffer, 0, 256);
+				s_readstring(buffer, 32);
+				if (buffer[0] == ' ' || buffer[strlen(buffer) - 1] == ' ') {
+					s_printf(get_string(241));
+					continue;
+				}
+				if (strlen(buffer) == 0) {
+					s_printf(get_string(167));
+					continue;
+				}
+				
+				s_printf("\r\n");
+				user->firstname = strdup(buffer);
+				nameok = 1;
+			} while (!nameok);
+			nameok = 0;
+			
+			do {		
+				s_printf(get_string(172));
+				memset(buffer, 0, 256);
+				s_readstring(buffer, 32);
+				if (buffer[0] == ' ' || buffer[strlen(buffer) - 1] == ' ') {
+					s_printf(get_string(242));
+					continue;
+				}
+				if (strlen(buffer) == 0) {
+					s_printf(get_string(167));
+					continue;
+				}
+				
+				s_printf("\r\n");
+				nameok = 1;
+				user->lastname = strdup(buffer);
+			} while (!nameok);
+			fullnameok = check_fullname(user->firstname, user->lastname);
+			if (!fullnameok) {
+				free(user->firstname);
+				free(user->lastname);
+			}
+		} while (!fullnameok);
 		s_printf(get_string(173));
 		memset(buffer, 0, 256);
 		s_readstring(buffer, 64);
