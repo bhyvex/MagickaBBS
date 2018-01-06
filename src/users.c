@@ -683,6 +683,7 @@ struct user_record *new_user() {
 			if (!fullnameok) {
 				free(user->firstname);
 				free(user->lastname);
+				s_printf(get_string(243));
 			}
 		} while (!fullnameok);
 		s_printf(get_string(173));
