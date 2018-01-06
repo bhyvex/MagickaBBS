@@ -557,7 +557,10 @@ struct user_record *new_user() {
 				s_printf(get_string(167));
 				continue;
 			}
-
+			if (buffer[0] == ' ' || buffer[strlen(buffer) - 1] == ' ') {
+				s_printf(get_string(240));
+				continue;
+			}
 			for (i=0;i<strlen(buffer);i++) {
 				if (!(tolower(buffer[i]) >= 97 && tolower(buffer[i]) <= 122) && buffer[i] != 32 && !(buffer[i] >= '0' && buffer[i] <= '9')) {
 					s_printf(get_string(168));

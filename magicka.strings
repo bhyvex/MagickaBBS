@@ -238,3 +238,4 @@ File exists!\r\n
 \r\n\e[1;37mSearch in (\e[1;32mC\e[1;37m)urrent area or (\e[1;32mA\e[1;37m)ll areas:\e[0m 
 \r\n\e[1;31mPlease enter at least one keyword.\e[0m\r\n
 \r\n\e[1;37mKeywords:\e[0m 
+\r\nUsername may not begin or end with a space\r\n
