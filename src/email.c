@@ -354,7 +354,7 @@ void show_email(struct user_record *user, int msgno, int email_count, struct ema
 }
 
 void list_emails(struct user_record *user) {
-	char buffer[256];
+	char buffer[PATH_MAX];
 	sqlite3 *db;
 	sqlite3_stmt *res;
 	int rc;
@@ -370,16 +370,15 @@ void list_emails(struct user_record *user) {
 	int i;
 	char c;
 	int closed = 0;
-	sprintf(buffer, "%s/email.sq3", conf.bbs_path);
+	snprintf(buffer, PATH_MAX, "%s/email.sq3", conf.bbs_path);
 
 	rc = sqlite3_open(buffer, &db);
 	if (rc != SQLITE_OK) {
-  	dolog("Cannot open database: %s", sqlite3_errmsg(db));
-    sqlite3_close(db);
-
+  		dolog("Cannot open database: %s", sqlite3_errmsg(db));
+    	sqlite3_close(db);
 		exit(1);
 	}
-	 sqlite3_busy_timeout(db, 5000);
+	sqlite3_busy_timeout(db, 5000);
 	rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
 
 	if (rc == SQLITE_OK) {

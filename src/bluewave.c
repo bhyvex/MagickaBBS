@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 #include <termios.h>
 #include <fcntl.h>
+#include <sqlite3.h>
 #include "bluewave.h"
 #include "jamlib/jam.h"
 #include "bbs.h"
@@ -45,6 +46,84 @@ tWORD converts(tWORD s) {
 #endif
 }
 
+int bwave_scan_email(int areano, int totmsgs, FILE *fti_file, FILE *mix_file, FILE *dat_file, int *last_ptr) {
+	sqlite3 *db;
+	sqlite3_stmt *res;
+	int rc;
+	char *sql = "SELECT sender,subject,date,body,id FROM email WHERE recipient LIKE ? AND seen = 0";
+	char buffer[PATH_MAX];
+	MIX_REC mix;
+	FTI_REC fti;
+	long mixptr;
+	struct tm timeStruct;
+	char *month_name[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+	time_t thetime;
+	char *body;
+	int area_msgs = 0;
+
+	snprintf(buffer, PATH_MAX, "%s/email.sq3", conf.bbs_path);
+	rc = sqlite3_open(buffer, &db);
+	if (rc != SQLITE_OK) {
+  		dolog("Cannot open database: %s", sqlite3_errmsg(db));
+    	sqlite3_close(db);
+		return totmsgs;
+	}
+	sqlite3_busy_timeout(db, 5000);
+	rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
+
+	if (rc == SQLITE_OK) {
+		sqlite3_bind_text(res, 1, gUser->loginname, -1, 0);
+	} else {
+		dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
+		sqlite3_finalize(res);
+		sqlite3_close(db);
+		return totmsgs;
+	}
+
+	mixptr = ftell(fti_file);
+
+	while (sqlite3_step(res) == SQLITE_ROW) {
+		memset(&fti, 0, sizeof(FTI_REC));
+		strncpy(fti.from, sqlite3_column_text(res, 0), 35);
+		strncpy(fti.to, gUser->loginname, 35);
+		strncpy(fti.subject, sqlite3_column_text(res, 1), 71);
+		thetime = sqlite3_column_int(res, 2);
+		localtime_r((time_t *)&thetime, &timeStruct);
+		
+		sprintf(fti.date, "%02d-%s-%04d %02d:%02d", timeStruct.tm_mday, month_name[timeStruct.tm_mon], timeStruct.tm_year + 1900, timeStruct.tm_hour, timeStruct.tm_min);
+		fti.msgnum = converts((tWORD)sqlite3_column_int(res, 4));
+		body = strdup(sqlite3_column_text(res, 3));
+		fti.replyto = 0;
+		fti.replyat = 0;
+		fti.msgptr = convertl(*last_ptr);
+		fti.msglength = convertl(strlen(body));
+		
+		*last_ptr += strlen(body);	
+		fti.flags |= FTI_MSGLOCAL;
+		fti.flags = converts(fti.flags);
+		fti.orig_zone = 0;
+		fti.orig_net = 0;
+		fti.orig_node = 0;
+		fwrite(body, 1, strlen(body), dat_file);
+		fwrite(&fti, sizeof(FTI_REC), 1, fti_file);
+		free(body);
+		area_msgs++;
+		totmsgs++;				
+	}
+
+	sqlite3_finalize(res);
+	sqlite3_close(db);
+
+	memset(&mix, 0, sizeof(MIX_REC));
+		
+	snprintf(mix.areanum, 6, "%d", 1);
+	mix.totmsgs = converts(area_msgs);
+	mix.numpers = converts(area_msgs);
+	mix.msghptr = convertl(mixptr);
+	fwrite(&mix, sizeof(MIX_REC), 1, mix_file);	
+
+	return totmsgs;
+}
 
 int bwave_scan_area(int confr, int area, int areano, int totmsgs, FILE *fti_file, FILE *mix_file, FILE *dat_file, int *last_ptr) {
 	struct msg_headers *msghs = read_message_headers(confr, area, gUser);
@@ -291,68 +370,91 @@ void bwave_create_packet() {
 	
 	s_printf("\r\n");
 	
-	for (i=0;i<conf.mail_conference_count;i++) {
-		for (j=0;j<conf.mail_conferences[i]->mail_area_count;j++) {
-			if (conf.mail_conferences[i]->mail_areas[j]->read_sec_level <= gUser->sec_level && conf.mail_conferences[i]->mail_areas[j]->qwkname != NULL && msgbase_is_subscribed(i, j)) {
-				lasttot = totmsgs;
-				totmsgs = bwave_scan_area(i, j, area_count+1, totmsgs, fti_file, mix_file, dat_file, &last_ptr);
-				s_printf(get_string(195), conf.mail_conferences[i]->name, conf.mail_conferences[i]->mail_areas[j]->name, totmsgs - lasttot); 
-				//if (lasttot == totmsgs) {
-				//	continue;
-				//}
-				
-				if (area_count == 0) {
-					areas = (INF_AREA_INFO **)malloc(sizeof(INF_AREA_INFO *));
-				} else {
-					areas = (INF_AREA_INFO **)realloc(areas, sizeof(INF_AREA_INFO *) * (area_count + 1));
-				}
-				flags = 0;
-				areas[area_count] = (INF_AREA_INFO *)malloc(sizeof(INF_AREA_INFO));
-				
-				memset(areas[area_count], 0, sizeof(INF_AREA_INFO));
-				
-				snprintf(areas[area_count]->areanum, 6, "%d", area_count + 1);
-				
-				memcpy(areas[area_count]->echotag, conf.mail_conferences[i]->mail_areas[j]->qwkname, strlen(conf.mail_conferences[i]->mail_areas[j]->qwkname));
-				
-				strncpy(areas[area_count]->title, conf.mail_conferences[i]->mail_areas[j]->name, 49);
-				
-				if (conf.mail_conferences[i]->mail_areas[j]->write_sec_level <= gUser->sec_level) {
-					flags |= INF_POST;
-				}
-				
-				if (conf.mail_conferences[i]->mail_areas[j]->type == TYPE_NETMAIL_AREA) {
-					flags |= INF_NO_PUBLIC;
-					flags |= INF_NETMAIL;
-					flags |= INF_ECHO;
-				}
-				
-				if (conf.mail_conferences[i]->mail_areas[j]->type == TYPE_ECHOMAIL_AREA || conf.mail_conferences[i]->mail_areas[j]->type == TYPE_NEWSGROUP_AREA) {
-					flags |= INF_NO_PRIVATE;
-					flags |= INF_ECHO;
-				}
-				
-				if (conf.mail_conferences[i]->mail_areas[j]->type == TYPE_LOCAL_AREA) {
-					flags |= INF_NO_PRIVATE;
-				}
-				
-				flags |= INF_SCANNING;
-				
-				areas[area_count]->area_flags = converts(flags);
-				areas[area_count]->network_type = INF_NET_FIDONET;
+	totmsgs = bwave_scan_email(area_count+1, totmsgs, fti_file, mix_file, dat_file, &last_ptr);
+	s_printf(get_string(195), "Private Email", "Private Email", totmsgs); 
+	areas = (INF_AREA_INFO **)malloc(sizeof(INF_AREA_INFO *));
 
-				area_count++;
-				if (totmsgs == conf.bwave_max_msgs) {
-					break;
-				}
+	flags = 0;
+	areas[area_count] = (INF_AREA_INFO *)malloc(sizeof(INF_AREA_INFO));
 				
+	memset(areas[area_count], 0, sizeof(INF_AREA_INFO));
+
+	snprintf(areas[area_count]->areanum, 6, "%d", area_count + 1);			
+	
+	memcpy(areas[area_count]->echotag, "PRIVATE_EMAIL", 13);
+				
+	strncpy(areas[area_count]->title, "Private Email", 49);
+	flags |= INF_POST;
+	flags |= INF_NO_PUBLIC;
+	flags |= INF_SCANNING;
+	
+	areas[area_count]->area_flags = converts(flags);
+	areas[area_count]->network_type = INF_NET_FIDONET;
+	
+	area_count++;
+
+	if (totmsgs < conf.bwave_max_msgs) {
+
+		for (i=0;i<conf.mail_conference_count;i++) {
+			for (j=0;j<conf.mail_conferences[i]->mail_area_count;j++) {
+				if (conf.mail_conferences[i]->mail_areas[j]->read_sec_level <= gUser->sec_level && conf.mail_conferences[i]->mail_areas[j]->qwkname != NULL && msgbase_is_subscribed(i, j)) {
+					lasttot = totmsgs;
+					totmsgs = bwave_scan_area(i, j, area_count+1, totmsgs, fti_file, mix_file, dat_file, &last_ptr);
+					s_printf(get_string(195), conf.mail_conferences[i]->name, conf.mail_conferences[i]->mail_areas[j]->name, totmsgs - lasttot); 
+					//if (lasttot == totmsgs) {
+					//	continue;
+					//}
+					
+					areas = (INF_AREA_INFO **)realloc(areas, sizeof(INF_AREA_INFO *) * (area_count + 1));
+		
+					flags = 0;
+					areas[area_count] = (INF_AREA_INFO *)malloc(sizeof(INF_AREA_INFO));
+					
+					memset(areas[area_count], 0, sizeof(INF_AREA_INFO));
+					
+					snprintf(areas[area_count]->areanum, 6, "%d", area_count + 1);
+					
+					memcpy(areas[area_count]->echotag, conf.mail_conferences[i]->mail_areas[j]->qwkname, strlen(conf.mail_conferences[i]->mail_areas[j]->qwkname));
+					
+					strncpy(areas[area_count]->title, conf.mail_conferences[i]->mail_areas[j]->name, 49);
+					
+					if (conf.mail_conferences[i]->mail_areas[j]->write_sec_level <= gUser->sec_level) {
+						flags |= INF_POST;
+					}
+					
+					if (conf.mail_conferences[i]->mail_areas[j]->type == TYPE_NETMAIL_AREA) {
+						flags |= INF_NO_PUBLIC;
+						flags |= INF_NETMAIL;
+						flags |= INF_ECHO;
+					}
+					
+					if (conf.mail_conferences[i]->mail_areas[j]->type == TYPE_ECHOMAIL_AREA || conf.mail_conferences[i]->mail_areas[j]->type == TYPE_NEWSGROUP_AREA) {
+						flags |= INF_NO_PRIVATE;
+						flags |= INF_ECHO;
+					}
+					
+					if (conf.mail_conferences[i]->mail_areas[j]->type == TYPE_LOCAL_AREA) {
+						flags |= INF_NO_PRIVATE;
+					}
+					
+					flags |= INF_SCANNING;
+					
+					areas[area_count]->area_flags = converts(flags);
+					areas[area_count]->network_type = INF_NET_FIDONET;
+
+					area_count++;
+					if (totmsgs == conf.bwave_max_msgs) {
+						break;
+					}
+					
+				}
+			}
+			if (totmsgs == conf.bwave_max_msgs) {
+				break;
 			}
 		}
-		if (totmsgs == conf.bwave_max_msgs) {
-			break;
-		}
 	}
-	
+
 	fclose(dat_file);
 	fclose(mix_file);
 	fclose(fti_file);
@@ -641,7 +743,20 @@ void bwave_upload_reply() {
 	int stout;
 	int stin;
 	int sterr;
-	
+	sqlite3 *db;
+  	sqlite3_stmt *res;
+  	int rc;	
+	char *csql = "CREATE TABLE IF NOT EXISTS email ("
+    					"id INTEGER PRIMARY KEY,"
+						"sender TEXT COLLATE NOCASE,"
+						"recipient TEXT COLLATE NOCASE,"
+						"subject TEXT,"
+						"body TEXT,"
+						"date INTEGER,"
+						"seen INTEGER);";
+	char *isql = "INSERT INTO email (sender, recipient, subject, body, date, seen) VALUES(?, ?, ?, ?, ?, 0)";
+ 	char *err_msg = 0;
+
 	msg_count = 0;
 	
 	snprintf(buffer, 1024, "%s/node%d", conf.bbs_path, mynode);
@@ -726,123 +841,203 @@ void bwave_upload_reply() {
 	}
 	
 	while (fread(&upl_rec, sizeof(UPL_REC), 1, upl_file)) {
-		// find area
-		confr = -1;
-		area = -1;
+		if (strcmp("PRIVATE_EMAIL", upl_rec.echotag) == 0) {
+			if (msg_attr & UPL_INACTIVE) {
+				continue;
+			}
+					
+			if (strcasecmp(upl_rec.from, gUser->loginname) != 0) {
+				continue;
+			}
+
+			snprintf(msgbuffer, 1024, "%s/node%d/bwave/%s", conf.bbs_path, mynode, upl_rec.filename);
+			if (stat(msgbuffer, &s) != 0) {
+				continue;
+			}
 			
-		for (i=0;i<conf.mail_conference_count;i++) {
-			for (j=0;j<conf.mail_conferences[i]->mail_area_count;j++) {
-				if (strcmp(conf.mail_conferences[i]->mail_areas[j]->qwkname, upl_rec.echotag) == 0) {
-					confr = i;
-					area = j;
+			body = (char *)malloc(s.st_size + 1);
+			msg_file = fopen(msgbuffer, "r");
+			if (!msg_file) {
+				free(body);
+				continue;
+			}
+					
+			fread(body, 1, s.st_size, msg_file);
+			fclose(msg_file);
+								
+			body[s.st_size] = '\0';
+					
+			bpos = 0;
+			for (i=0;i<strlen(body);i++) {
+				if (body[i] != '\n') {
+					body[bpos++] = body[i];
+				}
+			}
+			body[bpos] = '\0';
+
+			sprintf(buffer, "%s/email.sq3", conf.bbs_path);
+
+			rc = sqlite3_open(buffer, &db);
+		
+			if (rc != SQLITE_OK) {
+				dolog("Cannot open database: %s", sqlite3_errmsg(db));
+				sqlite3_close(db);
+				free(body);
+				continue;
+			}
+			sqlite3_busy_timeout(db, 5000);
+
+			rc = sqlite3_exec(db, csql, 0, 0, &err_msg);
+			if (rc != SQLITE_OK ) {
+
+				dolog("SQL error: %s", err_msg);
+
+				sqlite3_free(err_msg);
+				sqlite3_close(db);
+
+				free(body);
+				continue;
+			}
+
+			rc = sqlite3_prepare_v2(db, isql, -1, &res, 0);
+
+			if (rc == SQLITE_OK) {
+				sqlite3_bind_text(res, 1, gUser->loginname, -1, 0);
+				sqlite3_bind_text(res, 2, upl_rec.to, -1, 0);
+				sqlite3_bind_text(res, 3, upl_rec.subj, -1, 0);
+				sqlite3_bind_text(res, 4, body, -1, 0);
+				sqlite3_bind_int(res, 5, convertl(upl_rec.unix_date));
+			} else {
+				dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
+				sqlite3_finalize(res);
+				sqlite3_close(db);
+				free(body);
+				continue;
+			}
+			sqlite3_step(res);
+
+			sqlite3_finalize(res);
+			sqlite3_close(db);
+			free(body);
+		} else {
+			// find area
+			confr = -1;
+			area = -1;
+				
+			for (i=0;i<conf.mail_conference_count;i++) {
+				for (j=0;j<conf.mail_conferences[i]->mail_area_count;j++) {
+					if (strcmp(conf.mail_conferences[i]->mail_areas[j]->qwkname, upl_rec.echotag) == 0) {
+						confr = i;
+						area = j;
+						break;
+					}
+				}
+				if (confr != -1) {
 					break;
 				}
 			}
-			if (confr != -1) {
-				break;
-			}
-		}
-		
-		if (confr != -1 && area != -1) {
-			// import message
-			if (conf.mail_conferences[confr]->mail_areas[area]->write_sec_level <= gUser->sec_level) {
-				msg_attr = converts(upl_rec.msg_attr);
-				
-				if (msg_attr & UPL_INACTIVE) {
-					continue;
-				}
-				
-				if (strcasecmp(upl_rec.from, gUser->loginname) != 0) {
-					continue;
-				}
-				
-				addr.zone = 0;
-				addr.net = 0;
-				addr.node = 0;
-				addr.zone = 0;				
-				
-				if (conf.mail_conferences[confr]->mail_areas[area]->type == TYPE_NETMAIL_AREA) {
-					if (!(msg_attr & UPL_NETMAIL)) {
-						continue;
-					}
-					addr.zone = converts(upl_rec.destzone);
-					addr.net = converts(upl_rec.destnet);
-					addr.node = converts(upl_rec.destnode);
-					addr.zone = converts(upl_rec.destpoint);
-					netmail = 1;
-				} else if (conf.mail_conferences[confr]->mail_areas[area]->type == TYPE_ECHOMAIL_AREA || conf.mail_conferences[confr]->mail_areas[area]->type == TYPE_NEWSGROUP_AREA) {
-					if (msg_attr & UPL_PRIVATE) {
-						continue;
-					}
-					echomail = 1;
-				} else { // Local area
-					if (msg_attr & UPL_PRIVATE) {
-						continue;
-					}		
-				}
-				
-				snprintf(msgbuffer, 1024, "%s/node%d/bwave/%s", conf.bbs_path, mynode, upl_rec.filename);
-				
-				if (conf.mail_conferences[confr]->tagline != NULL) {
-					tagline = conf.mail_conferences[confr]->tagline;
-				} else {
-					tagline = conf.default_tagline;
-				}
-				
-				if (conf.mail_conferences[confr]->nettype == NETWORK_FIDO) {
-					if (conf.mail_conferences[confr]->fidoaddr->point == 0) {
-						snprintf(originlinebuffer, 256, "\r--- %s\r * Origin: %s (%d:%d/%d)\r", upl_hdr.reader_tear, tagline, conf.mail_conferences[confr]->fidoaddr->zone,
-																								conf.mail_conferences[confr]->fidoaddr->net,
-																								conf.mail_conferences[confr]->fidoaddr->node);
-					} else {
-					
-						snprintf(originlinebuffer, 256, "\r--- %s\r * Origin: %s (%d:%d/%d.%d)\r", upl_hdr.reader_tear, tagline, conf.mail_conferences[confr]->fidoaddr->zone,
-																									conf.mail_conferences[confr]->fidoaddr->net,
-																									conf.mail_conferences[confr]->fidoaddr->node,
-																									conf.mail_conferences[confr]->fidoaddr->point);
-					}
-				} else {
-					snprintf(originlinebuffer, 256, "\r--- %s\r * Origin: %s \r", upl_hdr.reader_tear, tagline);
-				}
 			
-				if (stat(msgbuffer, &s) != 0) {
-					continue;
-				}
-				body = (char *)malloc(s.st_size + 1 + strlen(originlinebuffer));
-				msg_file = fopen(msgbuffer, "r");
-				if (!msg_file) {
-					free(body);
-					continue;
-				}
-				
-				fread(body, 1, s.st_size, msg_file);
-				fclose(msg_file);
-							
-				body[s.st_size] = '\0';
-				
-				strcat(body, originlinebuffer);
-				
-				bpos = 0;
-				for (i=0;i<strlen(body);i++) {
-					if (body[i] != '\n') {
-						body[bpos++] = body[i];
+			if (confr != -1 && area != -1) {
+				// import message
+				if (conf.mail_conferences[confr]->mail_areas[area]->write_sec_level <= gUser->sec_level) {
+					msg_attr = converts(upl_rec.msg_attr);
+					
+					if (msg_attr & UPL_INACTIVE) {
+						continue;
 					}
+					
+					if (strcasecmp(upl_rec.from, gUser->loginname) != 0) {
+						continue;
+					}
+					
+					addr.zone = 0;
+					addr.net = 0;
+					addr.node = 0;
+					addr.zone = 0;				
+					
+					if (conf.mail_conferences[confr]->mail_areas[area]->type == TYPE_NETMAIL_AREA) {
+						if (!(msg_attr & UPL_NETMAIL)) {
+							continue;
+						}
+						addr.zone = converts(upl_rec.destzone);
+						addr.net = converts(upl_rec.destnet);
+						addr.node = converts(upl_rec.destnode);
+						addr.zone = converts(upl_rec.destpoint);
+						netmail = 1;
+					} else if (conf.mail_conferences[confr]->mail_areas[area]->type == TYPE_ECHOMAIL_AREA || conf.mail_conferences[confr]->mail_areas[area]->type == TYPE_NEWSGROUP_AREA) {
+						if (msg_attr & UPL_PRIVATE) {
+							continue;
+						}
+						echomail = 1;
+					} else { // Local area
+						if (msg_attr & UPL_PRIVATE) {
+							continue;
+						}		
+					}
+					
+					snprintf(msgbuffer, 1024, "%s/node%d/bwave/%s", conf.bbs_path, mynode, upl_rec.filename);
+					
+					if (conf.mail_conferences[confr]->tagline != NULL) {
+						tagline = conf.mail_conferences[confr]->tagline;
+					} else {
+						tagline = conf.default_tagline;
+					}
+					
+					if (conf.mail_conferences[confr]->nettype == NETWORK_FIDO) {
+						if (conf.mail_conferences[confr]->fidoaddr->point == 0) {
+							snprintf(originlinebuffer, 256, "\r--- %s\r * Origin: %s (%d:%d/%d)\r", upl_hdr.reader_tear, tagline, conf.mail_conferences[confr]->fidoaddr->zone,
+																									conf.mail_conferences[confr]->fidoaddr->net,
+																									conf.mail_conferences[confr]->fidoaddr->node);
+						} else {
+						
+							snprintf(originlinebuffer, 256, "\r--- %s\r * Origin: %s (%d:%d/%d.%d)\r", upl_hdr.reader_tear, tagline, conf.mail_conferences[confr]->fidoaddr->zone,
+																										conf.mail_conferences[confr]->fidoaddr->net,
+																										conf.mail_conferences[confr]->fidoaddr->node,
+																										conf.mail_conferences[confr]->fidoaddr->point);
+						}
+					} else {
+						snprintf(originlinebuffer, 256, "\r--- %s\r * Origin: %s \r", upl_hdr.reader_tear, tagline);
+					}
+				
+					if (stat(msgbuffer, &s) != 0) {
+						continue;
+					}
+					body = (char *)malloc(s.st_size + 1 + strlen(originlinebuffer));
+					msg_file = fopen(msgbuffer, "r");
+					if (!msg_file) {
+						free(body);
+						continue;
+					}
+					
+					fread(body, 1, s.st_size, msg_file);
+					fclose(msg_file);
+								
+					body[s.st_size] = '\0';
+					
+					strcat(body, originlinebuffer);
+					
+					bpos = 0;
+					for (i=0;i<strlen(body);i++) {
+						if (body[i] != '\n') {
+							body[bpos++] = body[i];
+						}
+					}
+					body[bpos] = '\0';
+					
+					
+					if (bwave_add_message(confr, area, convertl(upl_rec.unix_date), upl_rec.to, upl_rec.subj, &addr, body) != 0) {
+						// failed to add message
+						s_printf(get_string(197));
+					} else {
+						msg_count++;
+					}
+					
+					free(body);
 				}
-				body[bpos] = '\0';
-				
-				
-				if (bwave_add_message(confr, area, convertl(upl_rec.unix_date), upl_rec.to, upl_rec.subj, &addr, body) != 0) {
-					// failed to add message
-					s_printf(get_string(197));
-				} else {
-					msg_count++;
-				}
-				
-				free(body);
 			}
 		}
 	}
-	
+
 	snprintf(buffer, 1024, "%s/node%d/bwave/", conf.bbs_path, mynode);
 	recursive_delete(buffer);
 
