@@ -61,8 +61,10 @@ int bwave_scan_area(int confr, int area, int areano, int totmsgs, FILE *fti_file
 	struct fido_addr *fido;
 	char *body;
 	struct tm timeStruct;
+	char realname[66];
 	char *month_name[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 		
+	snprintf(realname, 65, "%s %s", gUser->firstname, gUser->lastname);
 	if (msghs == NULL) {
 		return totmsgs;
 	}
@@ -111,7 +113,7 @@ int bwave_scan_area(int confr, int area, int areano, int totmsgs, FILE *fti_file
 		}
 		
 		if (msghs->msgs[k]->to != NULL) {
-			if (strcasecmp(msghs->msgs[k]->to, gUser->loginname) == 0) {
+			if (strcasecmp(msghs->msgs[k]->to, gUser->loginname) == 0 || strncasecmp(msghs->msgs[k]->to, realname, 42) == 0) {
 				personal_msgs++;
 			}
 		}
@@ -246,7 +248,8 @@ void bwave_create_packet() {
 	
 	hdr.ver = PACKET_LEVEL;
 	strncpy(hdr.loginname, gUser->loginname, 42);
-	strncpy(hdr.aliasname, gUser->loginname, 42);
+	//strncpy(hdr.aliasname, gUser->loginname, 42);
+	snprintf(hdr.aliasname, 42, "%s %s", gUser->firstname, gUser->lastname);
 	hdr.zone = converts(conf.main_aka->zone);
 	hdr.node = converts(conf.main_aka->node);
 	hdr.net = converts(conf.main_aka->net);

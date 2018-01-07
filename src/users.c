@@ -655,7 +655,10 @@ struct user_record *new_user() {
 					s_printf(get_string(167));
 					continue;
 				}
-				
+				if (strchr(buffer, ' ') != NULL) {
+					s_printf(get_string(244));
+					continue;
+				}				
 				s_printf("\r\n");
 				user->firstname = strdup(buffer);
 				nameok = 1;
@@ -674,7 +677,10 @@ struct user_record *new_user() {
 					s_printf(get_string(167));
 					continue;
 				}
-				
+				if (strchr(buffer, ' ') != NULL) {
+					s_printf(get_string(244));
+					continue;
+				}
 				s_printf("\r\n");
 				nameok = 1;
 				user->lastname = strdup(buffer);
