@@ -114,7 +114,7 @@ int bwave_scan_email(int areano, int totmsgs, FILE *fti_file, FILE *mix_file, FI
 
 	sqlite3_finalize(res);
 
-	rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
+	rc = sqlite3_prepare_v2(db, sqlseen, -1, &res, 0);
 	if (rc == SQLITE_OK) {
 		sqlite3_bind_text(res, 1, gUser->loginname, -1, 0);
 		sqlite3_step(res);
