@@ -51,6 +51,7 @@ int bwave_scan_email(int areano, int totmsgs, FILE *fti_file, FILE *mix_file, FI
 	sqlite3_stmt *res;
 	int rc;
 	char *sql = "SELECT sender,subject,date,body,id FROM email WHERE recipient LIKE ? AND seen = 0";
+	char *sqlseen = "UPDATE email SET seen = 1 WHERE recipient LIKE ?";
 	char buffer[PATH_MAX];
 	MIX_REC mix;
 	FTI_REC fti;
@@ -111,6 +112,13 @@ int bwave_scan_email(int areano, int totmsgs, FILE *fti_file, FILE *mix_file, FI
 		totmsgs++;				
 	}
 
+	sqlite3_finalize(res);
+
+	rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
+	if (rc == SQLITE_OK) {
+		sqlite3_bind_text(res, 1, gUser->loginname, -1, 0);
+		sqlite3_step(res);
+	}
 	sqlite3_finalize(res);
 	sqlite3_close(db);
 
