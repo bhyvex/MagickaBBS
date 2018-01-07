@@ -919,6 +919,7 @@ void bwave_upload_reply() {
 			sqlite3_finalize(res);
 			sqlite3_close(db);
 			free(body);
+			msg_count++;
 		} else {
 			// find area
 			confr = -1;
