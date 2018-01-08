@@ -1260,6 +1260,7 @@ void list_files(struct user_record *user) {
 	char *dsql = "select filename, description, size, dlcount, uploaddate from files where approved=1 ORDER BY uploaddate DESC";
 	char *fsql = "select filename, description, size, dlcount, uploaddate from files where approved=1 ORDER BY filename";
 	char *psql = "select filename, description, size, dlcount, uploaddate from files where approved=1 ORDER BY dlcount DESC";
+	char *nsql = "select filename, description, size, dlcount, uploaddate from files where approved=1 ORDER BY uploaddate DESC WHERE uploaddate > ?";
 	char *sql;
 	char buffer[PATH_MAX];
 	sqlite3 *db;
@@ -1280,6 +1281,9 @@ void list_files(struct user_record *user) {
 		case 'p':
 			sql = psql;
 			break;
+		case 'n':
+			sql = nsql;
+			break;
 		default:
 			sql = fsql;
 			break;
@@ -1297,7 +1301,9 @@ void list_files(struct user_record *user) {
     }
 	sqlite3_busy_timeout(db, 5000);
     rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
-
+	if (sql == nsql) {
+		sqlite3_bind_int(res, 1, userlaston);
+	}
     if (rc != SQLITE_OK) {
         sqlite3_finalize(res);
 		sqlite3_close(db);
