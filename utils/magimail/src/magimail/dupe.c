@@ -137,11 +137,15 @@ bool OpenDupeDB(void)
    if(res == 0)
    {
       /* New file */
+      osClose(dupefh);
+      dupefh=osOpen(config.cfg_DupeFile,MODE_NEWFILE);
+      LogWrite(3,TOSSINGINFO,"Creating new dupe file %s",config.cfg_DupeFile);
 
-		LogWrite(3,TOSSINGINFO,"Creating new dupe file %s",config.cfg_DupeFile);
-
-      strcpy(buf,DUPES_IDENTIFIER);
+      strncpy(buf,DUPES_IDENTIFIER,4);
       osWrite(dupefh,buf,4);
+      osClose(dupefh);
+      dupefh=osOpen(config.cfg_DupeFile,MODE_READWRITE);
+      osSeek(dupefh, 4, OFFSET_BEGINNING);
    }
    else if(res != 4 || strcmp(buf,DUPES_IDENTIFIER)!=0)
    {
