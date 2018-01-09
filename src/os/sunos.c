@@ -22,7 +22,7 @@ int openpty(int *amaster, int *aslave, char *name, void *termp, void *winp) {
 		strcpy(name, pname);
 	}	
 
-	pts = open(name, O_RDWR);
+	pts = open(pname, O_RDWR);
 	ioctl(pts, I_PUSH, "ptem");
 	ioctl(pts, I_PUSH, "ldterm");
 	ioctl(pts, I_PUSH, "ttcompat");
