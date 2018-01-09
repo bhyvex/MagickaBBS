@@ -1796,6 +1796,8 @@ no_fossil:
 			tio_raw.c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
 			tio_raw.c_cflag &= ~(CSIZE|PARENB);
 			tio_raw.c_cflag |= CS8;
+                  tio_raw.c_cc[VMIN] = 1;
+                  tio_raw.c_cc[VTIME] = 0;
 #else
 			cfmakeraw(&tio_raw);
 #endif

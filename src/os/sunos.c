@@ -58,7 +58,7 @@ int forkpty(int *amaster, char *name, void *termp, void *winp) {
 	if (name != NULL) {
 		strcpy(name, pname);
 	}
-	pts = open(name, O_RDWR);
+	pts = open(pname, O_RDWR);
 	ioctl(pts, I_PUSH, "ptem");
 	ioctl(pts, I_PUSH, "ldterm");
 	ioctl(pts, I_PUSH, "ttcompat");
