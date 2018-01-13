@@ -59,7 +59,7 @@ void send_email(struct user_record *user) {
 	subject = strdup(buffer);
 
 	// post a message
-	msg = external_editor(user, user->loginname, recipient, NULL, 0, NULL, subject, 1);
+	msg = external_editor(user, user->loginname, recipient, NULL, 0, NULL, subject, 1, 0);
 
 	if (msg != NULL) {
 		sprintf(buffer, "%s/email.sq3", conf.bbs_path);
@@ -278,7 +278,7 @@ void show_email(struct user_record *user, int msgno, int email_count, struct ema
 			subject = (char *)malloc(strlen(buffer) + 1);
 			strcpy(subject, buffer);
 
-			replybody = external_editor(user, user->loginname, emails[msgno]->from, emails[msgno]->body, strlen(emails[msgno]->body), emails[msgno]->from, subject, 1);
+			replybody = external_editor(user, user->loginname, emails[msgno]->from, emails[msgno]->body, strlen(emails[msgno]->body), emails[msgno]->from, subject, 1, 0);
 			if (replybody != NULL) {
 				 sprintf(buffer, "%s/email.sq3", conf.bbs_path);
 

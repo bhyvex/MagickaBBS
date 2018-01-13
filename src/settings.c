@@ -13,6 +13,7 @@ void settings_menu(struct user_record *user) {
 	char *hash;
 	int new_arc;
 	int i;
+	char *sig;
 
 	while (!dosettings) {
 		s_printf(get_string(149));
@@ -36,6 +37,8 @@ void settings_menu(struct user_record *user) {
 		}
 		s_printf(get_string(222), buffer);
 		s_printf(get_string(235), (user->bwavestyle ? "mo?,tu? ..." : "000-999"));
+		s_printf(get_string(245));
+		s_printf(get_string(246), (user->autosig ? "TRUE" : "FALSE"));
 		s_printf(get_string(153));
 		s_printf(get_string(154));
 
@@ -151,6 +154,25 @@ void settings_menu(struct user_record *user) {
 				{
 					user->bwavepktno = 0;
 					user->bwavestyle = !user->bwavestyle;
+					save_user(user);
+				}
+				break;
+			case 's':
+				{
+					// set signature
+					if (user->signature != NULL) {
+						free(user->signature);
+					}
+					sig = external_editor(user, "No-One", "No-One", NULL, 0, "No-One", "Signature Editor", 0, 1);
+					if (sig != NULL) {
+						user->signature = sig;
+						save_user(user);
+					}
+				}
+				break;
+			case 't':
+				{
+					user->autosig = !user->autosig;
 					save_user(user);
 				}
 				break;

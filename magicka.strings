@@ -243,3 +243,5 @@ File exists!\r\n
 \r\nLastname may not begin or end with a space\r\n
 \r\nFirst & Last Name combination in use!\r\n
 \r\nSpaces not allowed\r\n
+\e[0;36mS. \e[1;37mSet Signature...\r\n
+\e[0;36mT. \e[1;37mToggle Auto-Signature (\e[1;33m%s\e[1;37m)\r\n

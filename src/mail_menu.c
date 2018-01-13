@@ -355,7 +355,7 @@ struct msg_headers *read_message_headers(int msgconf, int msgarea, struct user_r
 	return msghs;
 }
 
-char *external_editor(struct user_record *user, char *to, char *from, char *quote, int qlen, char *qfrom, char *subject, int email) {
+char *external_editor(struct user_record *user, char *to, char *from, char *quote, int qlen, char *qfrom, char *subject, int email, int sig) {
 	char c;
 	FILE *fptr;
 	char *body = NULL;
@@ -423,11 +423,16 @@ char *external_editor(struct user_record *user, char *to, char *from, char *quot
 				fprintf(fptr, "E-Mail\r\n");
 				fprintf(fptr, "YES\r\n");
 			} else {
-				fprintf(fptr, "%s\r\n", conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->name);
-				if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NETMAIL_AREA){
-					fprintf(fptr, "YES\r\n");
+				if (!sig) {
+					fprintf(fptr, "%s\r\n", conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->name);
+					if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NETMAIL_AREA){
+						fprintf(fptr, "YES\r\n");
+					} else {
+						fprintf(fptr, "NO\r\n");
+					}
 				} else {
-					fprintf(fptr, "NO\r\n");
+					fprintf(fptr, "None\r\n");
+					fprintf(fptr, "NO\r\n");					
 				}
 			}
 			fclose(fptr);
@@ -471,24 +476,31 @@ char *external_editor(struct user_record *user, char *to, char *from, char *quot
 				}
 			}
 
-			uname(&name);
+			if (!sig) {
+				uname(&name);
 
-
-			if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_FIDO && !email) {
-				if (conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point == 0) {
-					snprintf(buffer, 256, "\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s (%d:%d/%d)\r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline, conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
-																																						  conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
-																																						  conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node);
+				if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_FIDO && !email) {
+					if (conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point == 0) {
+						snprintf(buffer, 256, "\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s (%d:%d/%d)\r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline, conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
+																																							conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
+																																							conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node);
+					} else {
+						snprintf(buffer, 256, "\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s (%d:%d/%d.%d)\r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline, conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
+																																							conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
+																																							conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node,
+																																							conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point);
+					}
 				} else {
-					snprintf(buffer, 256, "\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s (%d:%d/%d.%d)\r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline, conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
-																																						  conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
-																																						  conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node,
-																																						  conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point);
+					snprintf(buffer, 256, "\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s \r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline);
+				}
+				if (user->autosig) {
+					body2 = (char *)malloc(totlen + 3 + strlen(buffer) + strlen(user->signature));
+				} else {
+					body2 = (char *)malloc(totlen + 2 + strlen(buffer));
 				}
 			} else {
-				snprintf(buffer, 256, "\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s \r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline);
+				body2 = (char *)malloc(totlen + 1);
 			}
-			body2 = (char *)malloc(totlen + 2 + strlen(buffer));
 
 			j = 0;
 
@@ -502,18 +514,23 @@ char *external_editor(struct user_record *user, char *to, char *from, char *quot
 				body2[j] = '\0';
 			}
 
-
-			strcat(body2, buffer);
+			if (!sig) {
+				if (user->autosig) {
+					strcat(body2, "\r");
+					strcat(body2, user->signature);
+				}
+				strcat(body2, buffer);
+			}
 
 			free(body);
 
 			return body2;
 		}
 	}
-	return editor(user, quote, qlen, qfrom, email);
+	return editor(user, quote, qlen, qfrom, email, sig);
 }
 
-char *editor(struct user_record *user, char *quote, int quotelen, char *from, int email) {
+char *editor(struct user_record *user, char *quote, int quotelen, char *from, int email, int sig) {
 	int lines = 0;
 	char buffer[256];
 	char linebuffer[80];
@@ -594,23 +611,32 @@ char *editor(struct user_record *user, char *quote, int quotelen, char *from, in
 				} else {
 					tagline = conf.default_tagline;
 				}
-				uname(&name);
-				if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_FIDO && !email) {
-					if (conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point == 0) {
-						snprintf(buffer, 256, "\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s (%d:%d/%d)\r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline, conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
-																																							  conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
-																																							  conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node);
+				if (!sig) {
+					uname(&name);
+					if (conf.mail_conferences[user->cur_mail_conf]->nettype == NETWORK_FIDO && !email) {
+						if (conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point == 0) {
+							snprintf(buffer, 256, "\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s (%d:%d/%d)\r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline, conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
+																																								conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
+																																								conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node);
+						} else {
+							snprintf(buffer, 256, "\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s (%d:%d/%d.%d)\r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline, conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
+																																								conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
+																																								conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node,
+																																								conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point);
+						}
 					} else {
-						snprintf(buffer, 256, "\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s (%d:%d/%d.%d)\r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline, conf.mail_conferences[user->cur_mail_conf]->fidoaddr->zone,
-																																							  conf.mail_conferences[user->cur_mail_conf]->fidoaddr->net,
-																																							  conf.mail_conferences[user->cur_mail_conf]->fidoaddr->node,
-																																							  conf.mail_conferences[user->cur_mail_conf]->fidoaddr->point);
+						snprintf(buffer, 256, "\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s \r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline);
+					}
+					if (user->autosig) {
+						size += 3;
+						size += strlen(buffer) + strlen(user->signature);
+					} else {
+						size += 2;
+						size += strlen(buffer);
 					}
 				} else {
-					snprintf(buffer, 256, "\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s \r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline);
+					size += 1;
 				}
-				size += 2;
-				size += strlen(buffer);
 
 				msg = (char *)malloc(size);
 				memset(msg, 0, size);
@@ -620,7 +646,13 @@ char *editor(struct user_record *user, char *quote, int quotelen, char *from, in
 					free(content[i]);
 				}
 
-				strcat(msg, buffer);
+				if (!sig) {
+					if (user->autosig) {
+						strcat(msg, "\r");
+						strcat(msg, user->signature);
+					}
+					strcat(msg, buffer);
+				}
 
 				free(content);
 				if (quote != NULL) {
@@ -1664,7 +1696,7 @@ int read_message(struct user_record *user, struct msg_headers *msghs, int mailno
 					to = (char *)malloc(strlen(buffer) + 1);
 					strcpy(to, buffer);
 				}
-				replybody = external_editor(user, to, from, body, z2, msghs->msgs[mailno]->from, subject, 0);
+				replybody = external_editor(user, to, from, body, z2, msghs->msgs[mailno]->from, subject, 0, 0);
 				if (replybody != NULL) {
 
 					jb = open_jam_base(conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->path);
@@ -2092,7 +2124,7 @@ void post_message(struct user_record *user) {
 		from = (char *)malloc(strlen(user->firstname) + strlen(user->lastname) + 2);
 		sprintf(from, "%s %s", user->firstname, user->lastname);
 	}
-	msg = external_editor(user, to, from, NULL, 0, NULL, subject, 0);
+	msg = external_editor(user, to, from, NULL, 0, NULL, subject, 0, 0);
 
 	free(from);
 
