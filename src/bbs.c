@@ -296,14 +296,20 @@ void s_displayansi_pause(char *file, int pause) {
 	char c;
 	char ch;
 	int lines = 0;
-	
+	char lastch = 0;
+
 	fptr = fopen(file, "r");
 	if (!fptr) {
 		return;
 	}
 	c = fgetc(fptr);
 	while (!feof(fptr) && c != 0x1a) {
+		if (c == '\n' && lastch != '\r') {
+			s_putchar('\r');
+		}
 		s_putchar(c);
+
+		lastch = c;
 		
 		if (pause) {
 			if (c == '\n') {
