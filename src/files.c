@@ -1441,37 +1441,6 @@ void choose_subdir() {
 	free(sub_tmp);
 }
 
-/*
-void choose_subdir(struct user_record *user) {
-	int i;
-	char c;
-	int j;
-	char prompt[6];
-
-	s_printf(get_string(81));
-	for (i=0;i<conf.file_directories[user->cur_file_dir]->file_sub_count;i++) {
-		s_printf("  %d. %s\r\n", i, conf.file_directories[user->cur_file_dir]->file_subs[i]->name);
-
-		if (i != 0 && i % 20 == 0) {
-			s_printf(get_string(6));
-			c = s_getc();
-		}
-	}
-	s_printf(get_string(82));
-	s_readstring(prompt, 5);
-	if (tolower(prompt[0]) != 'q') {
-		j = atoi(prompt);
-		if (j < 0 || j >= conf.file_directories[user->cur_file_dir]->file_sub_count) {
-			s_printf(get_string(83));
-		} else {
-			s_printf("\r\n");
-			user->cur_file_sub = j;
-		}
-	}
-}
-*/
-
-
 struct dir_tmp_t {
 	struct file_directory *dir;
 	int index;
@@ -1572,37 +1541,7 @@ void choose_directory() {
 	}
 	free(dir_tmp);
 }
-/*
-void choose_directory(struct user_record *user) {
-	int i;
-	char c;
-	int j;
-	char prompt[6];
-					
-	s_printf(get_string(77));
-	for (i=0;i<conf.file_directory_count;i++) {
-		if (conf.file_directories[i]->sec_level <= user->sec_level) {
-			s_printf(get_string(78), i, conf.file_directories[i]->name);
-		}
-		if (i != 0 && i % 20 == 0) {
-			s_printf(get_string(6));
-			c = s_getc();
-		}
-	}
-	s_printf(get_string(79));
-	s_readstring(prompt, 5);
-	if (tolower(prompt[0]) != 'q') {
-		j = atoi(prompt);
-		if (j < 0 || j >= conf.file_directory_count || conf.file_directories[j]->sec_level > user->sec_level) {
-			s_printf(get_string(80));
-		} else {
-			s_printf("\r\n");
-			user->cur_file_dir = j;
-			user->cur_file_sub = 0;
-		}
-	}
-}
-*/
+
 void clear_tagged_files() {
 	int i;
 	// Clear tagged files

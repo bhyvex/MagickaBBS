@@ -189,7 +189,7 @@ void show_email(struct user_record *user, int msgno, int email_count, struct ema
         should_break = 0;
        
         while (!should_break) {
-            s_printf("\e[5;1H\e[0J");
+            s_printf("\e[5;1H");
             for (z=position;z<msg_line_count;z++) {
                 
                 s_printf("%s\e[K\r\n", msg_lines[z]);
@@ -220,7 +220,7 @@ void show_email(struct user_record *user, int msgno, int email_count, struct ema
                         }
                     } else if (c == 66) {
                         position++;
-                        if (position + 17 > msg_line_count) {
+                        if (position + 17 >= msg_line_count) {
                             position--;
                         }
                     } else if (c == 67) {
