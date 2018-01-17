@@ -1341,6 +1341,107 @@ void list_files(struct user_record *user) {
 	do_list_files(files_e, files_c);
 }
 
+struct subdir_tmp_t {
+	struct file_sub *sub;
+	int index;
+};
+
+void choose_subdir() {
+	int i;
+	int list_tmp = 0;
+	struct subdir_tmp_t **sub_tmp;
+	int redraw = 1;
+	int start = 0;
+	int selected = 0;
+	char c;
+
+	for (i=0;i<conf.file_directories[gUser->cur_file_dir]->file_sub_count;i++) {
+		if (conf.file_directories[gUser->cur_file_dir]->file_subs[i]->download_sec_level <= gUser->sec_level) {
+			if (list_tmp == 0) {
+				sub_tmp = (struct subdir_tmp_t **)malloc(sizeof(struct subdir_tmp_t *));
+			} else {
+				sub_tmp = (struct subdir_tmp_t **)realloc(sub_tmp, sizeof(struct subdir_tmp_t *) * (list_tmp + 1));
+			}
+
+			sub_tmp[list_tmp] = (struct subdir_tmp_t *)malloc(sizeof(struct subdir_tmp_t));
+			sub_tmp[list_tmp]->sub = conf.file_directories[gUser->cur_file_dir]->file_subs[i];
+			sub_tmp[list_tmp]->index = i;
+			list_tmp++;
+		}
+	}
+
+	while (1) {
+		if (redraw) {
+			s_printf("\e[2J\e[1;1H");
+			s_printf(get_string(252), conf.file_directories[gUser->cur_file_dir]->name);
+			s_printf(get_string(248));
+			for (i=start;i<start+22 && i < list_tmp;i++) {
+				if (i == selected) {
+					s_printf(get_string(249), i - start + 2, sub_tmp[i]->index, sub_tmp[i]->sub->name);
+				} else {
+					s_printf(get_string(250), i - start + 2, sub_tmp[i]->index, sub_tmp[i]->sub->name);
+				}
+			}
+			redraw = 0;
+		}
+		c = s_getchar();
+		if (tolower(c) == 'q') {
+			break;
+		} else if (c == 27) {
+			c = s_getchar();
+			if (c == 91) {
+				c = s_getchar();
+				if (c == 66) {
+					// down
+					if (selected + 1 > start + 22) {
+						start += 22;
+						if (start >= list_tmp) {
+							start = list_tmp - 22;
+						}
+						redraw = 1;
+					}
+					selected++;
+					if (selected >= list_tmp) {
+						selected = list_tmp - 1;
+					} else {
+						if (!redraw) {		
+							s_printf(get_string(250), selected - start + 1, sub_tmp[selected - 1]->index, sub_tmp[selected - 1]->sub->name);
+							s_printf(get_string(249), selected - start + 2, sub_tmp[selected]->index, sub_tmp[selected]->sub->name);
+						}
+					}
+				} else if (c == 65) {
+					// up
+					if (selected - 1 < start) {
+						start -= 22;
+						if (start < 0) {
+							start = 0;
+						}
+						redraw = 1;
+					}
+					selected--;
+					if (selected < 0) {
+						selected = 0;
+					} else {
+						if (!redraw) {		
+							s_printf(get_string(249), selected - start + 2, sub_tmp[selected]->index, sub_tmp[selected]->sub->name);
+							s_printf(get_string(250), selected - start + 3, sub_tmp[selected + 1]->index, sub_tmp[selected + 1]->sub->name);
+						}	
+					}
+				}
+			}
+		} else if (c == 13) {
+			gUser->cur_file_sub = sub_tmp[selected]->index;
+			break;
+		}
+	}
+
+	for (i=0;i<list_tmp;i++) {
+		free(sub_tmp[i]);
+	}
+	free(sub_tmp);
+}
+
+/*
 void choose_subdir(struct user_record *user) {
 	int i;
 	char c;
@@ -1368,7 +1469,110 @@ void choose_subdir(struct user_record *user) {
 		}
 	}
 }
+*/
 
+
+struct dir_tmp_t {
+	struct file_directory *dir;
+	int index;
+};
+
+void choose_directory() {
+	int i;
+	int list_tmp = 0;
+	struct dir_tmp_t **dir_tmp;
+	int redraw = 1;
+	int start = 0;
+	int selected = 0;
+	char c;
+
+	for (i=0;i<conf.file_directory_count;i++) {
+		if (conf.file_directories[i]->sec_level <= gUser->sec_level) {
+			if (list_tmp == 0) {
+				dir_tmp = (struct dir_tmp_t **)malloc(sizeof(struct dir_tmp_t *));
+			} else {
+				dir_tmp = (struct dir_tmp_t **)realloc(dir_tmp, sizeof(struct dir_tmp_t *) * (list_tmp + 1));
+			}
+
+			dir_tmp[list_tmp] = (struct dir_tmp_t *)malloc(sizeof(struct dir_tmp_t));
+			dir_tmp[list_tmp]->dir = conf.file_directories[i];
+			dir_tmp[list_tmp]->index = i;
+			list_tmp++;
+		}
+	}
+
+	while (1) {
+		if (redraw) {
+			s_printf("\e[2J\e[1;1H");
+			s_printf(get_string(253));
+			s_printf(get_string(248));
+			for (i=start;i<start+22 && i < list_tmp;i++) {
+				if (i == selected) {
+					s_printf(get_string(249), i - start + 2, dir_tmp[i]->index, dir_tmp[i]->dir->name);
+				} else {
+					s_printf(get_string(250), i - start + 2, dir_tmp[i]->index, dir_tmp[i]->dir->name);
+				}
+			}
+			redraw = 0;
+		}
+		c = s_getchar();
+		if (tolower(c) == 'q') {
+			break;
+		} else if (c == 27) {
+			c = s_getchar();
+			if (c == 91) {
+				c = s_getchar();
+				if (c == 66) {
+					// down
+					if (selected + 1 > start + 22) {
+						start += 22;
+						if (start >= list_tmp) {
+							start = list_tmp - 22;
+						}
+						redraw = 1;
+					}
+					selected++;
+					if (selected >= list_tmp) {
+						selected = list_tmp - 1;
+					} else {
+						if (!redraw) {		
+							s_printf(get_string(250), selected - start + 1, dir_tmp[selected - 1]->index, dir_tmp[selected - 1]->dir->name);
+							s_printf(get_string(249), selected - start + 2, dir_tmp[selected]->index, dir_tmp[selected]->dir->name);
+						}
+					}
+				} else if (c == 65) {
+					// up
+					if (selected - 1 < start) {
+						start -= 22;
+						if (start < 0) {
+							start = 0;
+						}
+						redraw = 1;
+					}
+					selected--;
+					if (selected < 0) {
+						selected = 0;
+					} else {
+						if (!redraw) {		
+							s_printf(get_string(249), selected - start + 2, dir_tmp[selected]->index, dir_tmp[selected]->dir->name);
+							s_printf(get_string(250), selected - start + 3, dir_tmp[selected + 1]->index, dir_tmp[selected + 1]->dir->name);
+						}	
+					}
+				}
+			}
+		} else if (c == 13) {
+			gUser->cur_file_dir = dir_tmp[selected]->index;
+			gUser->cur_file_sub = 0;
+			break;
+		}
+	}
+
+	for (i=0;i<list_tmp;i++) {
+		free(dir_tmp[i]);
+	}
+	free(dir_tmp);
+}
+/*
 void choose_directory(struct user_record *user) {
 	int i;
 	char c;
@@ -1398,7 +1602,7 @@ void choose_directory(struct user_record *user) {
 		}
 	}
 }
-
+*/
 void clear_tagged_files() {
 	int i;
 	// Clear tagged files

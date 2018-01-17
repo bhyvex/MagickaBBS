@@ -2756,36 +2756,6 @@ void choose_area() {
 }
 
 
-/*
-void choose_area(struct user_record *user) {
-	int i;
-	int j;
-	char c;
-	char buffer[6];
-
-	s_printf(get_string(135));
-	for (i=0;i<conf.mail_conferences[user->cur_mail_conf]->mail_area_count;i++) {
-		if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[i]->read_sec_level <= user->sec_level) {
-			s_printf(get_string(136), i, conf.mail_conferences[user->cur_mail_conf]->mail_areas[i]->name);
-		}
-		if (i != 0 && i % 20 == 0) {
-			s_printf(get_string(6));
-			c = s_getc();
-		}
-	}
-	s_printf(get_string(137));
-	s_readstring(buffer, 5);
-	if (tolower(buffer[0]) != 'q') {
-		j = atoi(buffer);
-		if (j < 0 || j >= conf.mail_conferences[user->cur_mail_conf]->mail_area_count || conf.mail_conferences[user->cur_mail_conf]->mail_areas[j]->read_sec_level > user->sec_level) {
-			s_printf(get_string(138));
-		} else {
-			s_printf("\r\n");
-			user->cur_mail_area = j;
-		}
-	}
-}
-*/
 void next_mail_conf(struct user_record *user) {
 	int i;
 	

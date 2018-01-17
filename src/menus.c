@@ -451,10 +451,10 @@ int menu_system(char *menufile) {
                             bwave_upload_reply();
                             break;
                         case MENU_CHOOSEFILEDIR:
-                            choose_directory(gUser);
+                            choose_directory();
                             break;
                         case MENU_CHOOSEFILESUB:
-                            choose_subdir(gUser);
+                            choose_subdir();
                             break;
                         case MENU_LISTFILES:
                             list_files(gUser);
