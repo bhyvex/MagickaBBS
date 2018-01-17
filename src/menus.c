@@ -421,10 +421,10 @@ int menu_system(char *menufile) {
                             post_message(gUser);
                             break;
                         case MENU_CHOOSEMAILCONF:
-                            choose_conference(gUser);
+                            choose_conference();
                             break;
                         case MENU_CHOOSEMAILAREA:
-                            choose_area(gUser);
+                            choose_area();
                             break;
                         case MENU_SENDEMAIL:
                             send_email(gUser);

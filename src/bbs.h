@@ -276,8 +276,8 @@ extern int msg_is_from(struct user_record *user, char *addressed_from, char *add
 extern unsigned long generate_msgid();
 extern void read_mail(struct user_record *user);
 extern void list_messages(struct user_record *user);
-extern void choose_conference(struct user_record *user);
-extern void choose_area(struct user_record *user);
+extern void choose_conference();
+extern void choose_area();
 extern void next_mail_conf(struct user_record *user);
 extern void prev_mail_conf(struct user_record *user);
 extern void next_mail_area(struct user_record *user);

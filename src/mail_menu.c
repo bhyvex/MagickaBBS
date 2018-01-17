@@ -2554,37 +2554,209 @@ void list_messages(struct user_record *user) {
 	}
 }
 
-void choose_conference(struct user_record *user) {
+struct conf_tmp_t {
+	struct mail_conference *conference;
+	int index;
+};
+
+void choose_conference() {
 	int i;
-	int j;
+	int list_tmp = 0;
+	struct conf_tmp_t **conf_tmp;
+	int redraw = 1;
+	int start = 0;
+	int selected = 0;
 	char c;
-	char buffer[6];
 
-
-	s_printf(get_string(131));
 	for (i=0;i<conf.mail_conference_count;i++) {
-		if (conf.mail_conferences[i]->sec_level <= user->sec_level) {
-			s_printf(get_string(132), i, conf.mail_conferences[i]->name);
-		}
-		if (i != 0 && i % 20 == 0) {
-			s_printf(get_string(6));
-			c = s_getc();
-		}
-	}
-	s_printf(get_string(133));
-	s_readstring(buffer, 5);
-	if (tolower(buffer[0]) != 'q') {
-		j = atoi(buffer);
-		if (j < 0 || j >= conf.mail_conference_count || conf.mail_conferences[j]->sec_level > user->sec_level) {
-			s_printf(get_string(134));
-		} else {
-			s_printf("\r\n");
-			user->cur_mail_conf = j;
-			user->cur_mail_area = 0;
+		if (conf.mail_conferences[i]->sec_level <= gUser->sec_level) {
+			if (list_tmp == 0) {
+				conf_tmp = (struct conf_tmp_t **)malloc(sizeof(struct conf_tmp_t *));
+			} else {
+				conf_tmp = (struct conf_tmp_t **)realloc(conf_tmp, sizeof(struct conf_tmp_t *) * (list_tmp + 1));
+			}
+
+			conf_tmp[list_tmp] = (struct conf_tmp_t *)malloc(sizeof(struct conf_tmp_t));
+			conf_tmp[list_tmp]->conference = conf.mail_conferences[i];
+			conf_tmp[list_tmp]->index = i;
+			list_tmp++;
 		}
 	}
+
+	while (1) {
+		if (redraw) {
+			s_printf("\e[2J\e[1;1H");
+			s_printf(get_string(247));
+			s_printf(get_string(248));
+			for (i=start;i<start+22 && i < list_tmp;i++) {
+				if (i == selected) {
+					s_printf(get_string(249), i - start + 2, conf_tmp[i]->index, conf_tmp[i]->conference->name);
+				} else {
+					s_printf(get_string(250), i - start + 2, conf_tmp[i]->index, conf_tmp[i]->conference->name);
+				}
+			}
+			redraw = 0;
+		}
+		c = s_getchar();
+		if (tolower(c) == 'q') {
+			break;
+		} else if (c == 27) {
+			c = s_getchar();
+			if (c == 91) {
+				c = s_getchar();
+				if (c == 66) {
+					// down
+					if (selected + 1 > start + 22) {
+						start += 22;
+						if (start >= list_tmp) {
+							start = list_tmp - 22;
+						}
+						redraw = 1;
+					}
+					selected++;
+					if (selected >= list_tmp) {
+						selected = list_tmp - 1;
+					} else {
+						if (!redraw) {		
+							s_printf(get_string(250), selected - start + 1, conf_tmp[selected - 1]->index, conf_tmp[selected - 1]->conference->name);
+							s_printf(get_string(249), selected - start + 2, conf_tmp[selected]->index, conf_tmp[selected]->conference->name);
+						}
+					}
+				} else if (c == 65) {
+					// up
+					if (selected - 1 < start) {
+						start -= 22;
+						if (start < 0) {
+							start = 0;
+						}
+						redraw = 1;
+					}
+					selected--;
+					if (selected < 0) {
+						selected = 0;
+					} else {
+						if (!redraw) {		
+							s_printf(get_string(249), selected - start + 2, conf_tmp[selected]->index, conf_tmp[selected]->conference->name);
+							s_printf(get_string(250), selected - start + 3, conf_tmp[selected + 1]->index, conf_tmp[selected + 1]->conference->name);
+						}	
+					}
+				}
+			}
+		} else if (c == 13) {
+			gUser->cur_mail_conf = conf_tmp[selected]->index;
+			gUser->cur_mail_area = 0;
+			break;
+		}
+	}
+
+	for (i=0;i<list_tmp;i++) {
+		free(conf_tmp[i]);
+	}
+	free(conf_tmp);
 }
 
+struct area_tmp_t {
+	struct mail_area *area;
+	int index;
+};
+
+void choose_area() {
+	int i;
+	int list_tmp = 0;
+	struct area_tmp_t **area_tmp;
+	int redraw = 1;
+	int start = 0;
+	int selected = 0;
+	char c;
+
+	for (i=0;i<conf.mail_conferences[gUser->cur_mail_conf]->mail_area_count;i++) {
+		if (conf.mail_conferences[gUser->cur_mail_conf]->mail_areas[i]->read_sec_level <= gUser->sec_level) {
+			if (list_tmp == 0) {
+				area_tmp = (struct area_tmp_t **)malloc(sizeof(struct area_tmp_t *));
+			} else {
+				area_tmp = (struct area_tmp_t **)realloc(area_tmp, sizeof(struct area_tmp_t *) * (list_tmp + 1));
+			}
+
+			area_tmp[list_tmp] = (struct area_tmp_t *)malloc(sizeof(struct area_tmp_t));
+			area_tmp[list_tmp]->area = conf.mail_conferences[gUser->cur_mail_conf]->mail_areas[i];
+			area_tmp[list_tmp]->index = i;
+			list_tmp++;
+		}
+	}
+
+	while (1) {
+		if (redraw) {
+			s_printf("\e[2J\e[1;1H");
+			s_printf(get_string(251), conf.mail_conferences[gUser->cur_mail_conf]->name);
+			s_printf(get_string(248));
+			for (i=start;i<start+22 && i < list_tmp;i++) {
+				if (i == selected) {
+					s_printf(get_string(249), i - start + 2, area_tmp[i]->index, area_tmp[i]->area->name);
+				} else {
+					s_printf(get_string(250), i - start + 2, area_tmp[i]->index, area_tmp[i]->area->name);
+				}
+			}
+			redraw = 0;
+		}
+		c = s_getchar();
+		if (tolower(c) == 'q') {
+			break;
+		} else if (c == 27) {
+			c = s_getchar();
+			if (c == 91) {
+				c = s_getchar();
+				if (c == 66) {
+					// down
+					if (selected + 1 > start + 22) {
+						start += 22;
+						if (start >= list_tmp) {
+							start = list_tmp - 22;
+						}
+						redraw = 1;
+					}
+					selected++;
+					if (selected >= list_tmp) {
+						selected = list_tmp - 1;
+					} else {
+						if (!redraw) {		
+							s_printf(get_string(250), selected - start + 1, area_tmp[selected - 1]->index, area_tmp[selected - 1]->area->name);
+							s_printf(get_string(249), selected - start + 2, area_tmp[selected]->index, area_tmp[selected]->area->name);
+						}
+					}
+				} else if (c == 65) {
+					// up
+					if (selected - 1 < start) {
+						start -= 22;
+						if (start < 0) {
+							start = 0;
+						}
+						redraw = 1;
+					}
+					selected--;
+					if (selected < 0) {
+						selected = 0;
+					} else {
+						if (!redraw) {		
+							s_printf(get_string(249), selected - start + 2, area_tmp[selected]->index, area_tmp[selected]->area->name);
+							s_printf(get_string(250), selected - start + 3, area_tmp[selected + 1]->index, area_tmp[selected + 1]->area->name);
+						}	
+					}
+				}
+			}
+		} else if (c == 13) {
+			gUser->cur_mail_area = area_tmp[selected]->index;
+			break;
+		}
+	}
+
+	for (i=0;i<list_tmp;i++) {
+		free(area_tmp[i]);
+	}
+	free(area_tmp);
+}
+
+
+/*
 void choose_area(struct user_record *user) {
 	int i;
 	int j;
@@ -2613,7 +2785,7 @@ void choose_area(struct user_record *user) {
 		}
 	}
 }
-
+*/
 void next_mail_conf(struct user_record *user) {
 	int i;
 	

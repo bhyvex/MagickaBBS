@@ -245,3 +245,8 @@ File exists!\r\n
 \r\nSpaces not allowed\r\n
 \e[0;36mS. \e[1;37mSet Signature...\r\n
 \e[0;36mT. \e[1;37mToggle Auto-Signature (\e[1;33m%s\e[1;37m)\r\n
+\e[1;37;44mChoose a Conference\e[K
+\e[24;1H\e[1;37;44mUp / Down to Select, Enter to Confirm\e[K
+\e[%d;1H\e[1;30;40m[\e[1;34;44m%.4d\e[1;30;40m] \e[1;37m%s\e[K
+\e[%d;1H\e[1;30;40m[\e[1;34m%.4d\e[1;30;40m] \e[1;37m%s\e[K
+\e[1;37;44mChoose an Area in %s\e[K
