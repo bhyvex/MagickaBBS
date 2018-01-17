@@ -1382,6 +1382,7 @@ void choose_subdir() {
 					s_printf(get_string(250), i - start + 2, sub_tmp[i]->index, sub_tmp[i]->sub->name);
 				}
 			}
+			s_printf("\e[%d;5H", selected - start + 2);
 			redraw = 0;
 		}
 		c = s_getchar();
@@ -1393,7 +1394,7 @@ void choose_subdir() {
 				c = s_getchar();
 				if (c == 66) {
 					// down
-					if (selected + 1 > start + 22) {
+					if (selected + 1 >= start + 22) {
 						start += 22;
 						if (start >= list_tmp) {
 							start = list_tmp - 22;
@@ -1407,6 +1408,7 @@ void choose_subdir() {
 						if (!redraw) {		
 							s_printf(get_string(250), selected - start + 1, sub_tmp[selected - 1]->index, sub_tmp[selected - 1]->sub->name);
 							s_printf(get_string(249), selected - start + 2, sub_tmp[selected]->index, sub_tmp[selected]->sub->name);
+							s_printf("\e[%d;5H", selected - start + 2);
 						}
 					}
 				} else if (c == 65) {
@@ -1425,6 +1427,7 @@ void choose_subdir() {
 						if (!redraw) {		
 							s_printf(get_string(249), selected - start + 2, sub_tmp[selected]->index, sub_tmp[selected]->sub->name);
 							s_printf(get_string(250), selected - start + 3, sub_tmp[selected + 1]->index, sub_tmp[selected + 1]->sub->name);
+							s_printf("\e[%d;5H", selected - start + 2);
 						}	
 					}
 				}
@@ -1482,6 +1485,7 @@ void choose_directory() {
 					s_printf(get_string(250), i - start + 2, dir_tmp[i]->index, dir_tmp[i]->dir->name);
 				}
 			}
+			s_printf("\e[%d;5H", selected - start + 2);
 			redraw = 0;
 		}
 		c = s_getchar();
@@ -1493,7 +1497,7 @@ void choose_directory() {
 				c = s_getchar();
 				if (c == 66) {
 					// down
-					if (selected + 1 > start + 22) {
+					if (selected + 1 >= start + 22) {
 						start += 22;
 						if (start >= list_tmp) {
 							start = list_tmp - 22;
@@ -1507,6 +1511,7 @@ void choose_directory() {
 						if (!redraw) {		
 							s_printf(get_string(250), selected - start + 1, dir_tmp[selected - 1]->index, dir_tmp[selected - 1]->dir->name);
 							s_printf(get_string(249), selected - start + 2, dir_tmp[selected]->index, dir_tmp[selected]->dir->name);
+							s_printf("\e[%d;5H", selected - start + 2);
 						}
 					}
 				} else if (c == 65) {
@@ -1525,6 +1530,7 @@ void choose_directory() {
 						if (!redraw) {		
 							s_printf(get_string(249), selected - start + 2, dir_tmp[selected]->index, dir_tmp[selected]->dir->name);
 							s_printf(get_string(250), selected - start + 3, dir_tmp[selected + 1]->index, dir_tmp[selected + 1]->dir->name);
+							s_printf("\e[%d;5H", selected - start + 2);
 						}	
 					}
 				}

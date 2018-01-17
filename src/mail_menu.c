@@ -2595,6 +2595,7 @@ void choose_conference() {
 					s_printf(get_string(250), i - start + 2, conf_tmp[i]->index, conf_tmp[i]->conference->name);
 				}
 			}
+			s_printf("\e[%d;5H", selected - start + 2);
 			redraw = 0;
 		}
 		c = s_getchar();
@@ -2606,7 +2607,7 @@ void choose_conference() {
 				c = s_getchar();
 				if (c == 66) {
 					// down
-					if (selected + 1 > start + 22) {
+					if (selected + 1 >= start + 22) {
 						start += 22;
 						if (start >= list_tmp) {
 							start = list_tmp - 22;
@@ -2620,6 +2621,7 @@ void choose_conference() {
 						if (!redraw) {		
 							s_printf(get_string(250), selected - start + 1, conf_tmp[selected - 1]->index, conf_tmp[selected - 1]->conference->name);
 							s_printf(get_string(249), selected - start + 2, conf_tmp[selected]->index, conf_tmp[selected]->conference->name);
+							s_printf("\e[%d;5H", selected - start + 2);
 						}
 					}
 				} else if (c == 65) {
@@ -2638,6 +2640,7 @@ void choose_conference() {
 						if (!redraw) {		
 							s_printf(get_string(249), selected - start + 2, conf_tmp[selected]->index, conf_tmp[selected]->conference->name);
 							s_printf(get_string(250), selected - start + 3, conf_tmp[selected + 1]->index, conf_tmp[selected + 1]->conference->name);
+							s_printf("\e[%d;5H", selected - start + 2);
 						}	
 					}
 				}
@@ -2696,6 +2699,7 @@ void choose_area() {
 					s_printf(get_string(250), i - start + 2, area_tmp[i]->index, area_tmp[i]->area->name);
 				}
 			}
+			s_printf("\e[%d;5H", selected - start + 2);
 			redraw = 0;
 		}
 		c = s_getchar();
@@ -2707,7 +2711,7 @@ void choose_area() {
 				c = s_getchar();
 				if (c == 66) {
 					// down
-					if (selected + 1 > start + 22) {
+					if (selected + 1 >= start + 22) {
 						start += 22;
 						if (start >= list_tmp) {
 							start = list_tmp - 22;
@@ -2721,6 +2725,7 @@ void choose_area() {
 						if (!redraw) {		
 							s_printf(get_string(250), selected - start + 1, area_tmp[selected - 1]->index, area_tmp[selected - 1]->area->name);
 							s_printf(get_string(249), selected - start + 2, area_tmp[selected]->index, area_tmp[selected]->area->name);
+							s_printf("\e[%d;5H", selected - start + 2);
 						}
 					}
 				} else if (c == 65) {
@@ -2739,6 +2744,7 @@ void choose_area() {
 						if (!redraw) {		
 							s_printf(get_string(249), selected - start + 2, area_tmp[selected]->index, area_tmp[selected]->area->name);
 							s_printf(get_string(250), selected - start + 3, area_tmp[selected + 1]->index, area_tmp[selected + 1]->area->name);
+							s_printf("\e[%d;5H", selected - start + 2);
 						}	
 					}
 				}
