@@ -25,49 +25,49 @@ If you want to install Magicka BBS, follow these steps.
 
 4. Make a directory for logs.
 
-	mkdir logs
+   `mkdir logs`
 
 5. Copy the config-default directory to a config directory.
 
-    cp -r dist/config config
+   `cp -r dist/config config`
 
 6. Edit the config files and update essential information, like system paths and BBS name etc
 7. Copy the ansi-default directory to the one specified in your system path
 
    eg.
 
-    cp -r dist/ansis ansis
+   `cp -r dist/ansis ansis`
 
 8. Copy the menus-default directory to the one specified in your system path
 
    eg.
 
-    cp -r dist/menus menus
+   `cp -r dist/menus menus`
 
 9. Magicka also include optional lua scripts for menus and login / logoff. If you want to use these, copy
 the scripts-examples to the one specified in your system path.
 
    eg.
    
-    cp -r dist/scripts scripts
+   `cp -r dist/scripts scripts`
 
 10. Make a link to the magicka.strings (or copy it if you want to modify it)
 
-   eg.
+    eg.
 
-    ln -s dist/magicka.strings magicka.strings
+    `ln -s dist/magicka.strings magicka.strings`
 
 11. If you are going to run SSH, you will need to create keys. To do this
 
-    mkdir keys
+    `mkdir keys`
 
-	ssh-keygen -f keys/ssh_host_rsa_key -N '' -t rsa
+	`ssh-keygen -f keys/ssh_host_rsa_key -N '' -t rsa`
 	
-	ssh-keygen -f keys/ssh_host_dsa_key -N '' -t dsa
+	`ssh-keygen -f keys/ssh_host_dsa_key -N '' -t dsa`
 
 12. Run Magicka BBS on a port over 1024 (Below require root, and we're not ready for that).
 
-    ./magicka config/bbs.ini
+    `./magicka config/bbs.ini`
 
 13. Your BBS is now running on the port you specified in the config.ini, log in and create yourself an account! (By default there is only one security level, you can add more,
 but you will need to use an SQLite Manager to modify users.sq3 and set security levels, as there is no user editor yet.
