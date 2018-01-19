@@ -18,6 +18,10 @@ endif
 ifeq ($(OS), SunOS)
   MAKEFILE=Makefile.sunos
 endif
+ifeq ($(OS), OpenBSD)
+  MAKEFILE=Makefile.openbsd
+endif
+
 all: magicka
 
 .PHONY: magicka www clean cleanwww

@@ -7,6 +7,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#if defined(__OpenBSD__)
+#  include <sys/select.h>
+#endif
 #include "../../deps/jsmn/jsmn.h"
 
 struct chat_msg {

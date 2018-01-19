@@ -7,6 +7,9 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#if defined(__OpenBSD__)
+#  include <sys/select.h>
+#endif
 #include "../deps/jsmn/jsmn.h"
 #include "bbs.h"
 

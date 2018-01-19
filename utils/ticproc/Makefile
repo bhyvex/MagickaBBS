@@ -15,6 +15,11 @@ ifeq ($(OS), NetBSD)
   CFLAGS=-I/usr/pkg/include
   LDFLAGS=-R/usr/pkg/lib -L/usr/pkg/lib
 endif
+ifeq ($(OS), OpenBSD)
+  CC=cc
+  CFLAGS=-I/usr/local/include
+  LDFLAGS=-L/usr/local/lib
+endif
 ifeq ($(OS), Linux)
   CC=gcc
   CFLAGS=
