@@ -146,6 +146,12 @@ static int handler(void* user, const char* section, const char* name, const char
             cfg->min_passive_port = atoi(value);
         } else if (strcasecmp(name, "max passive port") == 0) {
             cfg->max_passive_port = atoi(value);
+        } else if (strcasecmp(name, "enable ipv6") == 0) {
+            if (strcasecmp(value, "true") == 0) {
+                cfg->ipv6 = 1;
+            } else {
+                cfg->ipv6 = 0;
+            }
         }
 	}
 	return 1;
@@ -213,29 +219,56 @@ void close_tcp_connection(struct ftpclient* client) {
 }
 
 int open_tcp_connection(struct ftpserver *cfg, struct ftpclient *client) {
-    if (strlen(client->data_ip) != 0) {
-        client->data_socket = socket(AF_INET6, SOCK_STREAM, 0);
-		struct sockaddr_in6 servaddr;
-		servaddr.sin6_family = AF_INET6;
-		servaddr.sin6_port = htons(client->data_port);
-        if (inet_pton(AF_INET6, client->data_ip, &(servaddr.sin6_addr)) <= 0) {
-            fprintf(stderr, "Error in port command\n");
-			return 0;
-		}
-		if (connect(client->data_socket, (struct sockaddr *) &servaddr, sizeof(servaddr)) == -1) {
-            perror("Connect");
-            fprintf(stderr, "Error connecting to client\n");
-			return 0;
-		}
-    } else if (client->data_srv_socket != 0) {
-        socklen_t sock = sizeof(struct sockaddr);
-		struct sockaddr_in6 data_client;
-		client->data_socket = accept(client->data_srv_socket, (struct sockaddr*) &data_client, &sock);
+    if (client->ipver == 6) {
+        if (strlen(client->data_ip) != 0) {
+            client->data_socket = socket(AF_INET6, SOCK_STREAM, 0);
+            struct sockaddr_in6 servaddr;
+            servaddr.sin6_family = AF_INET6;
+            servaddr.sin6_port = htons(client->data_port);
+            if (inet_pton(AF_INET6, client->data_ip, &(servaddr.sin6_addr)) <= 0) {
+                fprintf(stderr, "Error in port command\n");
+                return 0;
+            }
+            if (connect(client->data_socket, (struct sockaddr *) &servaddr, sizeof(servaddr)) == -1) {
+                perror("Connect");
+                fprintf(stderr, "Error connecting to client\n");
+                return 0;
+            }
+        } else if (client->data_srv_socket != 0) {
+            socklen_t sock = sizeof(struct sockaddr);
+            struct sockaddr_in6 data_client;
+            client->data_socket = accept(client->data_srv_socket, (struct sockaddr*) &data_client, &sock);
 
-		if (client->data_socket < 0) {
-			fprintf(stderr, "Accept Error\n");
-            return 0;
-		} 
+            if (client->data_socket < 0) {
+                fprintf(stderr, "Accept Error\n");
+                return 0;
+            } 
+        }
+    } else {
+        if (strlen(client->data_ip) != 0) {
+            client->data_socket = socket(AF_INET, SOCK_STREAM, 0);
+            struct sockaddr_in servaddr;
+            servaddr.sin_family = AF_INET;
+            servaddr.sin_port = htons(client->data_port);
+            if (inet_pton(AF_INET, client->data_ip, &(servaddr.sin_addr)) <= 0) {
+                fprintf(stderr, "Error in port command\n");
+                return 0;
+            }
+            if (connect(client->data_socket, (struct sockaddr *) &servaddr, sizeof(servaddr)) == -1) {
+                perror("Connect");
+                fprintf(stderr, "Error connecting to client\n");
+                return 0;
+            }
+        } else if (client->data_srv_socket != 0) {
+            socklen_t sock = sizeof(struct sockaddr);
+            struct sockaddr_in data_client;
+            client->data_socket = accept(client->data_srv_socket, (struct sockaddr*) &data_client, &sock);
+
+            if (client->data_socket < 0) {
+                fprintf(stderr, "Accept Error\n");
+                return 0;
+            } 
+        }    
     }
     return 1;
 }
@@ -319,6 +352,10 @@ void handle_STOR(struct ftpserver *cfg, struct ftpclient *client, char *path) {
 }
 
 void handle_EPSV(struct ftpserver *cfg, struct ftpclient *client) {
+    struct sockaddr_in6 server;
+    struct sockaddr_in server4;
+    void *server_p;
+
     if (client->data_socket > 0) {
 		close(client->data_socket);
 		client->data_socket = -1;
@@ -328,14 +365,25 @@ void handle_EPSV(struct ftpserver *cfg, struct ftpclient *client) {
 		close(client->data_srv_socket);
 	}
 
-	client->data_srv_socket = socket(AF_INET6, SOCK_STREAM, 0);
+    if (client->ipver == 6) {
+	    client->data_srv_socket = socket(AF_INET6, SOCK_STREAM, 0);
+    } else {
+        client->data_srv_socket = socket(AF_INET, SOCK_STREAM, 0);
+    }
 	if (client->data_srv_socket < 0) {
 		send_msg(client, "500 EPSV failure.\r\n");
 		return;
 	}
-	struct sockaddr_in6 server;
-	server.sin6_family = AF_INET6;
-	server.sin6_addr = in6addr_any;
+	
+    if (client->ipver == 6) {
+    	server.sin6_family = AF_INET6;
+	    server.sin6_addr = in6addr_any;
+        server_p = &server;
+    } else {
+        server4.sin_family = AF_INET;
+        server4.sin_addr.s_addr = INADDR_ANY;
+        server_p = &server;
+    }
 
     cfg->last_passive_port++;
     if (cfg->last_passive_port == cfg->max_passive_port) {
@@ -344,21 +392,27 @@ void handle_EPSV(struct ftpserver *cfg, struct ftpclient *client) {
 
     int port = cfg->last_passive_port;
 
-	server.sin6_port = htons(port);
+    if (client->ipver == 6) {
+    	server.sin6_port = htons(port);
+        if (bind(client->data_srv_socket, (struct sockaddr*) &server, sizeof(server)) < 0) {
+            send_msg(client, "500 EPSV failure\r\n");
+            return;
+        }        
+    } else {
+        server4.sin_port = htons(port);
+        if (bind(client->data_srv_socket, (struct sockaddr*) &server4, sizeof(server4)) < 0) {
+    		send_msg(client, "500 EPSV failure\r\n");
+	    	return;
+	    }
+    }
 
-	if (bind(client->data_srv_socket, (struct sockaddr*) &server, sizeof(server)) < 0) {
-		send_msg(client, "500 EPSV failure\r\n");
-		return;
-	}
+
 
 	if (listen(client->data_srv_socket, 1) < 0) {
 		send_msg(client, "500 EPSV failure\r\n");
         return;
 	}
 	
-    struct sockaddr_in6 file_addr;
-	socklen_t file_sock_len = sizeof(struct sockaddr);
-	getsockname(client->data_srv_socket, (struct sockaddr*) &file_addr, &file_sock_len);
     char buffer[256];
     sprintf(buffer, "229 Entering Extended Passive Mode (|||%d|)\r\n", port);
 
@@ -378,14 +432,14 @@ void handle_PASV(struct ftpserver *cfg, struct ftpclient *client) {
 		close(client->data_srv_socket);
 	}
 
-	client->data_srv_socket = socket(AF_INET6, SOCK_STREAM, 0);
+	client->data_srv_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (client->data_srv_socket < 0) {
 		send_msg(client, "426 PASV failure.\r\n");
 		return;
 	}
-	struct sockaddr_in6 server;
-	server.sin6_family = AF_INET6;
-	server.sin6_addr = in6addr_any;
+	struct sockaddr_in server;
+	server.sin_family = AF_INET;
+	server.sin_addr.s_addr = INADDR_ANY;
 
     cfg->last_passive_port++;
     if (cfg->last_passive_port == cfg->max_passive_port) {
@@ -394,7 +448,7 @@ void handle_PASV(struct ftpserver *cfg, struct ftpclient *client) {
 
     int port = cfg->last_passive_port;
 
-	server.sin6_port = htons(port);
+	server.sin_port = htons(port);
 
 	if (bind(client->data_srv_socket, (struct sockaddr*) &server, sizeof(server)) < 0) {
 		send_msg(client, "426 PASV failure\r\n");
@@ -406,12 +460,12 @@ void handle_PASV(struct ftpserver *cfg, struct ftpclient *client) {
         return;
 	}
 	
-    struct sockaddr_in6 file_addr;
-	socklen_t file_sock_len = sizeof(struct sockaddr_in6);
+    struct sockaddr_in file_addr;
+	socklen_t file_sock_len = sizeof(struct sockaddr_in);
 	getsockname(client->data_srv_socket, (struct sockaddr*) &file_addr, &file_sock_len);
 
-    fprintf(stderr, "%s\n", &client->hostip[7]);
-    ipcpy = strdup(&client->hostip[7]);
+    fprintf(stderr, "%s\n", client->hostip);
+    ipcpy = strdup(client->hostip);
 
     ipptr = strtok(ipcpy, ".");
 
@@ -556,7 +610,7 @@ void handle_PORT(struct ftpserver *cfg, struct ftpclient *client, char *arg) {
     int a,b,c,d,e,f;
 
     sscanf(arg, "%d,%d,%d,%d,%d,%d", &a, &b, &c, &d, &e, &f);
-    sprintf(client->data_ip, "::ffff:%d.%d.%d.%d", a, b, c, d);
+    sprintf(client->data_ip, "%d.%d.%d.%d", a, b, c, d);
     client->data_port = e * 256 + f;
     send_msg(client, "200 PORT command successful.\r\n");
 }
@@ -580,7 +634,7 @@ void handle_EPRT(struct ftpserver *cfg, struct ftpclient *client, char *arg) {
             //ipv4
             ptr = strtok(NULL, delim);
             if (ptr != NULL) {
-                sprintf(client->data_ip, "::ffff:%s", ptr);
+                sprintf(client->data_ip, "%s", ptr);
                 ptr = strtok(NULL, delim);
                 if (ptr != NULL) {
                     client->data_port = atoi(ptr);
@@ -805,8 +859,9 @@ int handle_client(struct ftpserver *cfg, struct ftpclient *client, char *buf, in
 }
 
 void init(struct ftpserver *cfg) {
-    int server_socket;
+    int ipv6_socket, ipv4_socket;
     struct sockaddr_in6 server, client, host_addr;
+    struct sockaddr_in server4, client4, host_addr4;
     fd_set master, read_fds;
     int fdmax = 0;
     socklen_t c;
@@ -814,28 +869,70 @@ void init(struct ftpserver *cfg) {
     char buf[1024];
     int new_fd;
     int nbytes;
-	server_socket = socket(AF_INET6, SOCK_STREAM, 0);
-	if (server_socket == -1) {
-		fprintf(stderr, "Couldn't create socket..\n");
-		exit(-1);
-	}
-
-	server.sin6_family = AF_INET6;
-	server.sin6_addr = in6addr_any;
-	server.sin6_port = htons(cfg->port);
-
-	if (bind(server_socket, (struct sockaddr *)&server, sizeof(server)) < 0) {
-		perror("Bind Failed, Error\n");
-		exit(1);
-	}
-
-    listen(server_socket, 3);
+	int on = 1;
 
     FD_ZERO(&master);
-    FD_SET(server_socket, &master);
-    fdmax = server_socket;
 
-    c = sizeof(struct sockaddr_in6);
+    if (cfg->ipv6) {
+        ipv6_socket = socket(AF_INET6, SOCK_STREAM, 0);
+        if (ipv6_socket == -1) {
+            fprintf(stderr, "Couldn't create socket..\n");
+            exit(-1);
+        }
+	    if (setsockopt(ipv6_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(on)) < 0) {
+		    fprintf(stderr, "setsockopt(SO_REUSEADDR) failed");
+		    exit(1);
+	    }		
+        if (setsockopt(ipv6_socket, IPPROTO_IPV6, IPV6_V6ONLY, (void *)&on, sizeof(on)) < 0) {
+			fprintf(stderr, "setsockopt(IPV6_V6ONLY) failed");
+		}
+
+        server.sin6_family = AF_INET6;
+        server.sin6_addr = in6addr_any;
+        server.sin6_port = htons(cfg->port);
+
+        if (bind(ipv6_socket, (struct sockaddr *)&server, sizeof(server)) < 0) {
+            perror("Bind Failed, Error\n");
+            exit(1);
+        }
+
+        listen(ipv6_socket, 3);
+        FD_SET(ipv6_socket, &master);
+    }
+
+    ipv4_socket = socket(AF_INET, SOCK_STREAM, 0);
+
+    if (ipv4_socket == -1) {
+        fprintf(stderr, "Couldn't create socket..\n");
+        exit(-1);
+    }
+	if (setsockopt(ipv4_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(on)) < 0) {
+	    fprintf(stderr, "setsockopt(SO_REUSEADDR) failed");
+	    exit(1);
+	}	
+    server4.sin_family = AF_INET;
+    server4.sin_addr.s_addr = INADDR_ANY;
+    server4.sin_port = htons(cfg->port);
+
+    if (bind(ipv4_socket, (struct sockaddr *)&server4, sizeof(server4)) < 0) {
+        perror("Bind Failed, Error\n");
+        exit(1);
+    }
+
+    listen(ipv4_socket, 3);
+    FD_SET(ipv4_socket, &master);
+
+    if (cfg->ipv6) {
+        if (ipv4_socket > ipv6_socket) {
+            fdmax = ipv4_socket;
+        } else {
+            fdmax = ipv6_socket;
+        }
+    } else {
+        fdmax = ipv4_socket;
+    }
+
+//    c = sizeof(struct sockaddr_in6);
 
     while (1) {
         read_fds = master;
@@ -849,8 +946,9 @@ void init(struct ftpserver *cfg) {
 
         for(i = 0; i <= fdmax; i++) {
             if (FD_ISSET(i, &read_fds)) {
-                if (i == server_socket) {
-                    new_fd = accept(server_socket, (struct sockaddr *)&client, (socklen_t *)&c);
+                if (cfg->ipv6 && i == ipv6_socket) {
+                    c = sizeof(struct sockaddr_in6);
+                    new_fd = accept(ipv6_socket, (struct sockaddr *)&client, (socklen_t *)&c);
 					if (new_fd == -1) {
                         perror("accept");
                     } else {
@@ -890,7 +988,59 @@ void init(struct ftpserver *cfg) {
                         clients[client_count]->seclevel = 0;
                         memset(clients[client_count]->name, 0, 16);
                         memset(clients[client_count]->password, 0, 32);
+                        clients[client_count]->ipver = 6;
+                        client_count++;
 
+                        FD_SET(new_fd, &master); 
+                        if (new_fd > fdmax) {
+                            fdmax = new_fd;
+                        }
+
+                        send_msg(clients[client_count - 1], "220 magiftpd Ready\r\n");
+                    }
+                } else if (i == ipv4_socket) {
+                    c = sizeof(struct sockaddr_in);
+                    new_fd = accept(ipv4_socket, (struct sockaddr *)&client, (socklen_t *)&c);
+					if (new_fd == -1) {
+                        perror("accept");
+                    } else {
+                        if (client_count == 0) {
+                            clients = (struct ftpclient **)malloc(sizeof(struct ftpclient *));
+                        } else {
+                            clients = (struct ftpclient **)realloc(clients, sizeof(struct ftpclient *) * (client_count + 1));
+                        }
+
+                        if (!clients) {
+                            fprintf(stderr, "Out of memory!\n");
+                            exit(-1);
+                        }
+                        
+                        clients[client_count] = (struct ftpclient *)malloc(sizeof(struct ftpclient));
+
+                        memset(clients[client_count], 0, sizeof(struct ftpclient));
+
+                        if (!clients[client_count]) {
+                            fprintf(stderr, "Out of memory!\n");
+                            exit(-1);                            
+                        }
+
+                        getsockname(new_fd, (struct sockaddr*) &host_addr4, &c);
+                        inet_ntop(AF_INET, &(host_addr4.sin_addr), clients[client_count]->hostip, INET_ADDRSTRLEN);
+                        
+                        getpeername(new_fd, (struct sockaddr *)&client4, &c);
+                        inet_ntop(AF_INET, &(client4.sin_addr), clients[client_count]->ip, INET_ADDRSTRLEN);
+
+                        clients[client_count]->fd = new_fd;
+                        strcpy(clients[client_count]->current_path, "/");
+                        clients[client_count]->data_socket = -1;
+                        clients[client_count]->data_srv_socket = -1;
+                        clients[client_count]->type = 1;
+                        clients[client_count]->status = 0;
+                        clients[client_count]->data_port = 0;
+                        clients[client_count]->seclevel = 0;
+                        memset(clients[client_count]->name, 0, 16);
+                        memset(clients[client_count]->password, 0, 32);
+                        clients[client_count]->ipver = 4;
                         client_count++;
 
                         FD_SET(new_fd, &master); 
@@ -968,6 +1118,7 @@ int main(int argc, char **argv) {
     ftpsrv.fileroot = NULL;
     ftpsrv.min_passive_port = 60000;
     ftpsrv.max_passive_port = 65000;
+    ftpsrv.ipv6 = 0;
 
 	sa.sa_handler = sigchld_handler; // reap all dead processes
 	sigemptyset(&sa.sa_mask);

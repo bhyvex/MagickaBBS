@@ -15,6 +15,7 @@ struct ftpclient {
     int data_srv_socket;
     int status;
     int seclevel;
+    int ipver;
 };
 
 struct ftpserver {
@@ -26,6 +27,7 @@ struct ftpserver {
     int min_passive_port;
     int max_passive_port;
     int last_passive_port;
+    int ipv6;
 };
 
 #endif
