@@ -63,7 +63,7 @@ read -e bbsname
 
 PLATFORM=`uname`
 
-if [[ "$PLATFORM" == 'FreeBSD' ]] || [[ "$PLATFORM" == 'Darwin' ]]; then
+if [[ "$PLATFORM" == 'FreeBSD' ]] || [[ "$PLATFORM" == 'Darwin' ]] || [[ "$PLATFORM" == 'DragonFly' ]]; then
     SED=gsed
 else
     SED=sed
