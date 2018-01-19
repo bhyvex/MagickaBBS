@@ -88,25 +88,58 @@ void raw(char *fmt, ...) {
     write(chat_socket, sbuf, strlen(sbuf));
 }
 
-int hostname_to_ip(char * hostname , char* ip) {
-	struct hostent *he;
-	struct in_addr **addr_list;
-	int i;
+int hostname_to_ip6(char * hostname , char* ip) {
+	struct addrinfo hints, *res, *p;
+	int status;
+	struct sockaddr_in6 *ipv6;
 
-	if ( (he = gethostbyname( hostname ) ) == NULL)
-    {
-		// get the host info
-        return 1;
-    }
+	memset(&hints, 0, sizeof(hints));
 
-	addr_list = (struct in_addr **) he->h_addr_list;
+	hints.ai_family = AF_INET6;
+	hints.ai_socktype = SOCK_STREAM;
 
-	for(i = 0; addr_list[i] != NULL; i++) {
-		strcpy(ip , inet_ntoa(*addr_list[i]) );
-		return 0;
+	if ((status = getaddrinfo(hostname, NULL, &hints, &res)) != 0) {
+		dolog("getaddrinfo: %s\n", gai_strerror(status));
+		return 1;
 	}
 
-    return 1;
+	for (p=res; p!= NULL; p=p->ai_next) {
+		if (p->ai_family == AF_INET6) {
+			ipv6 = (struct sockaddr_in6 *)p->ai_addr;
+			inet_ntop(p->ai_family, &(ipv6->sin6_addr), ip, INET6_ADDRSTRLEN);
+			freeaddrinfo(res);
+			return 0;
+		}
+	}
+	freeaddrinfo(res);
+	return 1;
+}
+
+int hostname_to_ip(char * hostname , char* ip) {
+	struct addrinfo hints, *res, *p;
+	int status;
+	struct sockaddr_in *ipv4;
+
+	memset(&hints, 0, sizeof(hints));
+
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+
+	if ((status = getaddrinfo(hostname, NULL, &hints, &res)) != 0) {
+		dolog("getaddrinfo: %s\n", gai_strerror(status));
+		return 1;
+	}
+
+	for (p=res; p!= NULL; p=p->ai_next) {
+		if (p->ai_family == AF_INET) {
+			ipv4 = (struct sockaddr_in *)p->ai_addr;
+			inet_ntop(p->ai_family, &(ipv4->sin_addr), ip, INET_ADDRSTRLEN);
+			freeaddrinfo(res);
+			return 0;
+		}
+	}
+	freeaddrinfo(res);
+	return 1;
 }
 
 void append_screenbuffer(char *buffer) {
@@ -209,6 +242,7 @@ void append_screenbuffer(char *buffer) {
 
 void chat_system(struct user_record *user) {
 	struct sockaddr_in servaddr;
+	struct sockaddr_in6 servaddr6;
 	fd_set fds;
 	int t;
 	int ret;
@@ -236,6 +270,8 @@ void chat_system(struct user_record *user) {
 	int z;
 	int y;
 	int last_color = 7;
+	int chat_connected = 0;
+
 	if (sshBBS) {
 		chat_in = STDIN_FILENO;
 	} else {
@@ -256,23 +292,75 @@ void chat_system(struct user_record *user) {
 	s_putstring(get_string(50));
 	s_putstring("\e[24;1H");
 
-    memset(&servaddr, 0, sizeof(struct sockaddr_in));
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_port = htons(conf.mgchat_port);
-
-
-    if ( (chat_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        return;
-    }
-    if (inet_pton(AF_INET, conf.mgchat_server, &servaddr.sin_addr) != 1) {
-        hostname_to_ip(conf.mgchat_server, buffer);
-        if (!inet_pton(AF_INET, buffer, &servaddr.sin_addr)) {
-			return;
+	if (conf.ipv6) {
+		memset(&servaddr6, 0, sizeof(struct sockaddr_in6));
+		if (inet_pton(AF_INET6, conf.mgchat_server, &servaddr6.sin6_addr) != 1) {
+			if (!hostname_to_ip6(conf.mgchat_server, buffer)) {
+				if (!inet_pton(AF_INET6, buffer, &servaddr6.sin6_addr)) {
+					chat_connected = 0;
+				} else {
+    				servaddr6.sin6_family = AF_INET6;
+				    servaddr6.sin6_port = htons(conf.mgchat_port);
+				    if ( (chat_socket = socket(AF_INET6, SOCK_STREAM, 0)) < 0) {
+        				chat_connected = 0;
+    				} else {
+						if (connect(chat_socket, (struct sockaddr*)&servaddr6, sizeof(servaddr6)) < 0 ) {
+        					chat_connected = 0;
+						} else {
+							chat_connected = 1;
+						}
+					}
+				}
+			} else {
+				chat_connected = 0;
+			}
+		} else {
+    		servaddr6.sin6_family = AF_INET6;
+			servaddr6.sin6_port = htons(conf.mgchat_port);
+			if ( (chat_socket = socket(AF_INET6, SOCK_STREAM, 0)) < 0) {
+        		chat_connected = 0;
+    		} else {
+				if (connect(chat_socket, (struct sockaddr*)&servaddr6, sizeof(servaddr6)) < 0 ) {
+        			chat_connected = 0;
+				} else {
+					chat_connected = 1;
+				}
+			}			
 		}
-    }
-    if (connect(chat_socket, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0 ) {
-        return;
-    }
+	}
+
+	if (!chat_connected) {
+		memset(&servaddr, 0, sizeof(struct sockaddr_in));
+		if (inet_pton(AF_INET, conf.mgchat_server, &servaddr.sin_addr) != 1) {
+			if (!hostname_to_ip(conf.mgchat_server, buffer)) {
+				if (!inet_pton(AF_INET, buffer, &servaddr.sin_addr)) {
+					return;
+				} else {
+    				servaddr.sin_family = AF_INET;
+				    servaddr.sin_port = htons(conf.mgchat_port);
+				    if ( (chat_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        				return;
+    				}
+    				if (connect(chat_socket, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0 ) {
+        				return;
+    				}
+				}
+			} else {
+				return;
+			}
+		} else {
+    		servaddr.sin_family = AF_INET;
+			servaddr.sin_port = htons(conf.mgchat_port);
+			if ( (chat_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        		return;
+    		}
+    		if (connect(chat_socket, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0 ) {
+        		return;
+    		}			
+		}
+	}
+
+
 
 	memset(buffer, 0, 513);
 

@@ -39,8 +39,9 @@ static int jsoneq(const char *json, jsmntok_t *tok, const char *s) {
 
 int main(int argc, char **argv) {
     int port;
-    int server_socket;
+    int server_socket, server_socket6;
     struct sockaddr_in server, client;
+    struct sockaddr_in6 server6, client6;
     fd_set master, read_fds;
     int fdmax;
     int c;
@@ -55,10 +56,16 @@ int main(int argc, char **argv) {
     int r;
     int nbytes;
     FILE *fptr;
-    
+    int ipv6 = 0;
+	int on = 1;
+
     if (argc < 2) {
-        printf("Usage: magichat [port]\n");
+        printf("Usage: magichat [port] [ipv6(true/false)]\n");
         return 0;
+    }
+
+    if (argc > 2 && strcasecmp(argv[2], "true") == 0) {
+        ipv6 = 1;
     }
 
     port = atoi(argv[1]);
@@ -68,12 +75,44 @@ int main(int argc, char **argv) {
         return 0;
     }
 
+    FD_ZERO(&master);
+
+    if (ipv6) {
+        server_socket6 = socket(AF_INET6, SOCK_STREAM, 0);
+        if (server_socket6 == -1) {
+            fprintf(stderr, "Couldn't create socket (ipv6)..\n");
+            exit(1);
+        }
+
+	    if (setsockopt(server_socket6, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(on)) < 0) {
+		    fprintf(stderr, "setsockopt(SO_REUSEADDR) failed");
+		    exit(1);
+	    }		
+        if (setsockopt(server_socket6, IPPROTO_IPV6, IPV6_V6ONLY, (void *)&on, sizeof(on)) < 0) {
+			fprintf(stderr, "setsockopt(IPV6_V6ONLY) failed");
+		}
+
+        server6.sin6_family = AF_INET6;
+        server6.sin6_addr = in6addr_any;
+        server6.sin6_port = htons(port);
+
+        if (bind(server_socket6, (struct sockaddr *)&server6, sizeof(server6)) < 0) {
+            perror("Bind Failed, Error\n");
+            exit(1);
+        }
+
+        listen(server_socket6, 3);
+        FD_SET(server_socket6, &master);
+    }
 	server_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (server_socket == -1) {
 		fprintf(stderr, "Couldn't create socket..\n");
 		exit(1);
 	}
-
+	if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(on)) < 0) {
+	    fprintf(stderr, "setsockopt(SO_REUSEADDR) failed");
+	    exit(1);
+	}	
 	server.sin_family = AF_INET;
 	server.sin_addr.s_addr = INADDR_ANY;
 	server.sin_port = htons(port);
@@ -84,12 +123,19 @@ int main(int argc, char **argv) {
 	}
 
 	listen(server_socket, 3);
-    FD_ZERO(&master);
-
     FD_SET(server_socket, &master);
-    fdmax = server_socket;
 
-    c = sizeof(struct sockaddr_in);
+    if (ipv6) {
+        if (server_socket6 > server_socket) {
+            fdmax = server_socket6;
+        } else {
+            fdmax = server_socket;
+        }
+    } else {
+        fdmax = server_socket;
+    }
+
+    
 
 
     while (1) {
@@ -102,6 +148,7 @@ int main(int argc, char **argv) {
         for(i = 0; i <= fdmax; i++) {
             if (FD_ISSET(i, &read_fds)) {
                 if (i == server_socket) {
+                    c = sizeof(struct sockaddr_in);
                     new_fd = accept(server_socket, (struct sockaddr *)&client, (socklen_t *)&c);
 					if (new_fd == -1) {
                         perror("accept");
@@ -134,7 +181,42 @@ int main(int argc, char **argv) {
                         if (new_fd > fdmax) {
                             fdmax = new_fd;
                         }
-                    }                    
+                    }  
+                } else if (ipv6 && i == server_socket6) {
+                    c = sizeof(struct sockaddr_in6);
+                    new_fd = accept(server_socket6, (struct sockaddr *)&client6, (socklen_t *)&c);
+					if (new_fd == -1) {
+                        perror("accept");
+                    } else {
+                        if (client_count == 0) {
+                            clients = (struct client **)malloc(sizeof(struct client *));
+                        } else {
+                            clients = (struct client **)realloc(clients, sizeof(struct client *) * (client_count + 1));
+                        }
+
+                        if (!clients) {
+                            fprintf(stderr, "Out of memory!\n");
+                            return -1;
+                        }
+                        
+                        clients[client_count] = (struct client *)malloc(sizeof(struct client));
+
+                        if (!clients[client_count]) {
+                            fprintf(stderr, "Out of memory!\n");
+                            return -1;                            
+                        }
+
+                        sprintf(clients[client_count]->bbstag, "UNKNOWN");
+                        sprintf(clients[client_count]->nick, "UNKNOWN");
+                        clients[client_count]->fd = new_fd;
+                        
+                        client_count++;
+
+                        FD_SET(new_fd, &master); 
+                        if (new_fd > fdmax) {
+                            fdmax = new_fd;
+                        }
+                    }                                       
                 } else {
                     if ((nbytes = recv(i, buf, sizeof buf, 0)) <= 0) {
                         for (k=0;k<client_count;k++) {
@@ -143,10 +225,18 @@ int main(int argc, char **argv) {
                                     snprintf(buffer, 1024, "{\"bbs\": \"SYSTEM\", \"nick\": \"SYSTEM\", \"msg\": \"%s (%s) has left the chat\" }\n", clients[k]->nick, clients[k]->bbstag);
                                     for (j=0;j<=fdmax;j++) {
                                         if (FD_ISSET(j, &master)) {
-                                            if (j != server_socket && j != clients[k]->fd) {
-                                                if (send(j, buffer, strlen(buffer), 0) == -1) {
-                                                    perror("send");
+                                            if (ipv6) {
+                                                if (j != server_socket && j != server_socket6 && j != clients[k]->fd) {
+                                                    if (send(j, buffer, strlen(buffer), 0) == -1) {
+                                                        perror("send");
+                                                    }
                                                 }
+                                            } else {
+                                                if (j != server_socket && j != clients[k]->fd) {
+                                                    if (send(j, buffer, strlen(buffer), 0) == -1) {
+                                                        perror("send");
+                                                    }
+                                                }                                                
                                             }
                                         }
                                     }
