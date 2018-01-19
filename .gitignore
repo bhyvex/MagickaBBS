@@ -64,3 +64,14 @@ utils/magimail/bin/magimail
 utils/magimail/bin/magimaint
 utils/magimail/bin/magistats
 utils/magimail/bin/magiwrite
+keys/ssh_host_dsa_key
+magicka.strings
+www
+keys/ssh_host_dsa_key.pub
+keys/ssh_host_rsa_key
+keys/ssh_host_rsa_key.pub
+menus/doors.mnu
+menus/file.mnu
+menus/logoff.mnu
+menus/mail.mnu
+menus/main.mnu

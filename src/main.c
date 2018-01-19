@@ -410,6 +410,12 @@ static int handler(void* user, const char* section, const char* name,
 				conf->ssh_server = 1;
 			} else {
 				conf->ssh_server = 0;
+			}			
+		} else if (strcasecmp(name, "enable ipv6") == 0) {
+			if (strcasecmp(value, "true") == 0) {
+				conf->ipv6 = 1;
+			} else {
+				conf->ipv6 = 0;
 			}
 		} else if (strcasecmp(name, "enable www") == 0) {
 			if (strcasecmp(value, "true") == 0) {
@@ -680,7 +686,7 @@ struct ssh_channel_callbacks_struct ssh_cb = {
 	.userdata = NULL
 };
 
-void serverssh(int port) {
+void serverssh(int port, int ipv6) {
 	ssh_session p_ssh_session;
 	ssh_bind p_ssh_bind;
 	int err;
@@ -698,6 +704,8 @@ void serverssh(int port) {
 	char buffer[1024];
 	FILE *fptr;
 	struct sockaddr_in6 server, client;
+	struct sockaddr_in server4, client4;
+	void *server_p, *client_p;
 	int ssh_sock, csock, c;
 	int on = 1;
 	char str[INET6_ADDRSTRLEN];
@@ -722,8 +730,11 @@ void serverssh(int port) {
 	ssh_bind_options_set(p_ssh_bind, SSH_BIND_OPTIONS_RSAKEY, conf.ssh_rsa_key);
 
 	//ssh_bind_listen(p_ssh_bind);
-
-	ssh_sock = socket(AF_INET6, SOCK_STREAM, 0);
+	if (ipv6) {
+		ssh_sock = socket(AF_INET6, SOCK_STREAM, 0);
+	} else {
+		ssh_sock = socket(AF_INET, SOCK_STREAM, 0);
+	}
 	if (ssh_sock == -1) {
 		fprintf(stderr, "Error starting SSH server.\n");
 		exit(-1);
@@ -735,20 +746,43 @@ void serverssh(int port) {
 		exit(-1);
 	}
 
-	memset(&server, 0, sizeof(server));
+	if (ipv6) {
+		if (setsockopt(ssh_sock, IPPROTO_IPV6, IPV6_V6ONLY, (void *)&on, sizeof(on)) < 0) {
+			fprintf(stderr, "setsockopt(IPV6_V6ONLY) failed");
+		}
+		
+		memset(&server, 0, sizeof(server));
+		server.sin6_family = AF_INET6;
+		server.sin6_addr = in6addr_any;
+		server.sin6_port = htons(port);
 
-	server.sin6_family = AF_INET6;
-	server.sin6_addr = in6addr_any;
-	server.sin6_port = htons(port);
+		server_p = &server;
+		client_p = &client;
 
-	if (bind(ssh_sock, (struct sockaddr *)&server, sizeof(server)) < 0) {
-		perror("Bind Failed, Error\n");
-		exit(1);
+		if (bind(ssh_sock, (struct sockaddr *)server_p, sizeof(struct sockaddr_in6)) < 0) {
+			perror("Bind Failed, Error\n");
+			exit(1);
+		}
+		c = sizeof(struct sockaddr_in6);
+	} else {
+		memset(&server4, 0, sizeof(server4));
+		server4.sin_family = AF_INET;
+		server4.sin_addr.s_addr = INADDR_ANY;
+		server4.sin_port = htons(port);
+
+		server_p = &server4;
+		client_p = &client4;
+
+		if (bind(ssh_sock, (struct sockaddr *)server_p, sizeof(struct sockaddr_in)) < 0) {
+			perror("Bind Failed, Error\n");
+			exit(1);
+		}
+		c = sizeof(struct sockaddr_in);
 	}
 
 	listen(ssh_sock, 3);
-	c = sizeof(struct sockaddr_in6);
-	while ((csock = accept(ssh_sock, (struct sockaddr *)&client, (socklen_t *)&c))) {
+	
+	while ((csock = accept(ssh_sock, (struct sockaddr *)client_p, (socklen_t *)&c))) {
 		p_ssh_session = ssh_new();
 		if (p_ssh_session == NULL) {
 			fprintf(stderr, "Error starting SSH session.\n");
@@ -756,8 +790,11 @@ void serverssh(int port) {
 			continue;
 		}		
 		if (ssh_bind_accept_fd(p_ssh_bind, p_ssh_session, csock) == SSH_OK) {
-			ip = strdup(inet_ntop(AF_INET6, &client.sin6_addr, str, sizeof(str)));
-			
+			if (ipv6) {
+				ip = strdup(inet_ntop(AF_INET6, &((struct sockaddr_in6 *)client_p)->sin6_addr, str, sizeof(str)));
+			} else {
+				ip = strdup(inet_ntop(AF_INET, &((struct sockaddr_in *)client_p)->sin_addr, str, sizeof(str)));
+			}		
 			if (conf.ipguard_enable) {
 				i = hashmap_get(ip_guard_map, ip, (void **)(&ip_guard));
 					
@@ -778,7 +815,7 @@ void serverssh(int port) {
 							ip_guard->connection_count++;
 							if (ip_guard->connection_count == conf.ipguard_tries) {
 								ip_guard->status = IP_STATUS_BLACKLISTED;
-								snprintf(buffer, 1024, "%s/blacklist.ip", conf.bbs_path);
+								snprintf(buffer, 1024, "%s/blacklist.ip%d", conf.bbs_path, (ipv6 ? 6 : 4));
 								fptr = fopen(buffer, "a");
 								fprintf(fptr, "%s\n", ip);
 								fclose(fptr);
@@ -910,7 +947,7 @@ void serverssh(int port) {
 	}
 }
 
-void server(int port) {
+void server(int port, int ipv6) {
 	struct sigaction sa;
 	struct sigaction st;
 	struct sigaction sq;
@@ -918,6 +955,8 @@ void server(int port) {
 	int pid;
 	char *ip;
 	struct sockaddr_in6 server, client;
+	struct sockaddr_in server4, client4;
+	void *client_p, *server_p;
 	FILE *fptr;
 	char buffer[1024];
 	struct ip_address_guard *ip_guard;
@@ -929,25 +968,11 @@ void server(int port) {
 	www_daemon = NULL;
 #endif
 
-	if (!conf.fork) {
-		printf("Magicka BBS Server Starting....\n");
-	}
-
-	for (i=1;i<=conf.nodes;i++) {
-		snprintf(buffer, 1024, "%s/nodeinuse.%d", conf.bbs_path, i);
-		if (stat(buffer, &s) == 0) {
-			if (!conf.fork) {
-				printf(" - Removing stale file: nodeinuse.%d\n", i);
-			}
-			unlink(buffer);
-		}
-	}
-
 	if (conf.ipguard_enable) {
 
 		ip_guard_map = hashmap_new();
 		
-		snprintf(buffer, 1024, "%s/whitelist.ip", conf.bbs_path);
+		snprintf(buffer, 1024, "%s/whitelist.ip%d", conf.bbs_path, (ipv6 ? 6 : 4));
 		
 		fptr = fopen(buffer, "r");
 		if (fptr) {
@@ -970,7 +995,7 @@ void server(int port) {
 			}
 			fclose(fptr);
 		}
-		snprintf(buffer, 1024, "%s/blacklist.ip", conf.bbs_path);
+		snprintf(buffer, 1024, "%s/blacklist.ip%d", conf.bbs_path, (ipv6 ? 6 : 4));
 		
 		fptr = fopen(buffer, "r");
 		if (fptr) {
@@ -1023,7 +1048,7 @@ void server(int port) {
 
 	if (conf.ssh_server) {
 		if (!conf.fork) {
-			printf(" - SSH Starting on Port %d\n", conf.ssh_port);
+			printf(" - SSH Starting on Port %d (IPv%d)\n", conf.ssh_port, (ipv6 ? 6 : 4));
 		}
 
 		// fork ssh server
@@ -1031,7 +1056,7 @@ void server(int port) {
 
 		if (ssh_pid == 0) {
 			ssh_pid = -1;
-			serverssh(conf.ssh_port);
+			serverssh(conf.ssh_port, ipv6);
 			exit(0);
 		}
 		if (ssh_pid < 0) {
@@ -1042,20 +1067,29 @@ void server(int port) {
 #if defined(ENABLE_WWW) 
 	if (conf.www_server && conf.www_path != NULL) {
 		if (!conf.fork) {
-			printf(" - HTTP Starting on Port %d\n", conf.www_port);
+			printf(" - HTTP Starting on Port %d (IPv%d)\n", conf.www_port, (ipv6 ? 6 : 4));
 		}
 		www_init();
-		www_daemon = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION|MHD_USE_DUAL_STACK, conf.www_port, NULL, NULL, &www_handler, NULL, MHD_OPTION_NOTIFY_COMPLETED, &www_request_completed, NULL, MHD_OPTION_URI_LOG_CALLBACK, &www_logger, NULL, MHD_OPTION_END);
+		if (ipv6) {
+			www_daemon = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION|MHD_USE_IPv6, conf.www_port, NULL, NULL, &www_handler, NULL, MHD_OPTION_NOTIFY_COMPLETED, &www_request_completed, NULL, MHD_OPTION_URI_LOG_CALLBACK, &www_logger, NULL, MHD_OPTION_END);
+		} else {
+			www_daemon = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION, conf.www_port, NULL, NULL, &www_handler, NULL, MHD_OPTION_NOTIFY_COMPLETED, &www_request_completed, NULL, MHD_OPTION_URI_LOG_CALLBACK, &www_logger, NULL, MHD_OPTION_END);
+		}
 	}
 #endif
 
-	server_socket = socket(AF_INET6, SOCK_STREAM, 0);
+	if (ipv6) {
+		server_socket = socket(AF_INET6, SOCK_STREAM, 0);
+	} else {
+		server_socket = socket(AF_INET, SOCK_STREAM, 0);
+	}
+
 	if (server_socket == -1) {
 		remove(conf.pid_file);
 		fprintf(stderr, "Couldn't create socket..\n");
 		exit(1);
 	}
-
+	
 
 	if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(on)) < 0) {
 		remove(conf.pid_file);
@@ -1063,28 +1097,55 @@ void server(int port) {
 		exit(1);
 	}
 
-	memset(&server, 0, sizeof(server));
-
-	server.sin6_family = AF_INET6;
-	server.sin6_addr = in6addr_any;
-	server.sin6_port = htons(port);
-
 	if (!conf.fork) {
-		printf(" - Telnet Starting on Port %d\n", port);
+		printf(" - Telnet Starting on Port %d (IPv%d)\n", port, (ipv6 ? 6 : 4));
 	}
 
-	if (bind(server_socket, (struct sockaddr *)&server, sizeof(server)) < 0) {
-		perror("Bind Failed, Error\n");
-		remove(conf.pid_file);
-		exit(1);
+
+	if (ipv6) {
+		if (setsockopt(server_socket, IPPROTO_IPV6, IPV6_V6ONLY, (void *)&on, sizeof(on)) < 0) {
+			fprintf(stderr, "setsockopt(IPV6_V6ONLY) failed");
+		}
+		memset(&server, 0, sizeof(server));
+
+		server.sin6_family = AF_INET6;
+		server.sin6_addr = in6addr_any;
+		server.sin6_port = htons(port);
+
+		if (bind(server_socket, (struct sockaddr *)&server, sizeof(server)) < 0) {
+			perror("Bind Failed, Error\n");
+			remove(conf.pid_file);
+			exit(1);
+		}
+		c = sizeof(struct sockaddr_in6);
+		server_p = &server;
+		client_p = &client;
+	} else {
+		memset(&server4, 0, sizeof(server4));
+
+		server4.sin_family = AF_INET;
+		server4.sin_addr.s_addr = INADDR_ANY;
+		server4.sin_port = htons(port);
+
+		if (bind(server_socket, (struct sockaddr *)&server4, sizeof(server4)) < 0) {
+			perror("Bind Failed, Error\n");
+			remove(conf.pid_file);
+			exit(1);
+		}
+		c = sizeof(struct sockaddr_in);
+		server_p = &server4;
+		client_p = &client4;
 	}
 
 	listen(server_socket, 3);
 
-	c = sizeof(struct sockaddr_in6);
 
-	while ((client_sock = accept(server_socket, (struct sockaddr *)&client, (socklen_t *)&c))) {
-		ip = strdup(inet_ntop(AF_INET6, &client.sin6_addr, str, sizeof(str)));
+	while ((client_sock = accept(server_socket, (struct sockaddr *)client_p, (socklen_t *)&c))) {
+		if (ipv6) {
+			ip = strdup(inet_ntop(AF_INET6, &((struct sockaddr_in6 *)client_p)->sin6_addr, str, sizeof(str)));
+		} else {
+			ip = strdup(inet_ntop(AF_INET, &((struct sockaddr_in *)client_p)->sin_addr, str, sizeof(str)));
+		}
 		if (client_sock == -1) {
 			if (errno == EINTR) {
 				continue;
@@ -1114,7 +1175,7 @@ void server(int port) {
 						ip_guard->connection_count++;
 						if (ip_guard->connection_count == conf.ipguard_tries) {
 							ip_guard->status = IP_STATUS_BLACKLISTED;
-							snprintf(buffer, 1024, "%s/blacklist.ip", conf.bbs_path);
+							snprintf(buffer, 1024, "%s/blacklist.ip%d", conf.bbs_path, (ipv6 ? 6 : 4));
 							fptr = fopen(buffer, "a");
 							fprintf(fptr, "%s\n", ip);
 							fclose(fptr);
@@ -1153,7 +1214,7 @@ void server(int port) {
 
 int main(int argc, char **argv) {
 	int i;
-	int main_pid;
+	int main_pid, ipv6_pid;
 	FILE *fptr;
 	struct stat s;
 	char buffer[1024];
@@ -1191,7 +1252,8 @@ int main(int argc, char **argv) {
 	conf.protocol_count = 0;	
 	conf.codepage = 0;
 	conf.date_style = 0;
-	
+	conf.ipv6 = 0;
+
 	// Load BBS data
 	if (ini_parse(argv[1], handler, &conf) <0) {
 		fprintf(stderr, "Unable to load configuration ini (%s)!\n", argv[1]);
@@ -1266,9 +1328,48 @@ int main(int argc, char **argv) {
 				fclose(fptr);
 			}
 		} else {
-			server(conf.telnet_port);
+			for (i=1;i<=conf.nodes;i++) {
+				snprintf(buffer, 1024, "%s/nodeinuse.%d", conf.bbs_path, i);
+				if (stat(buffer, &s) == 0) {
+					unlink(buffer);
+				}
+			}
+			if (conf.ipv6) {
+				ipv6_pid = fork();
+				if (ipv6_pid < 0) {
+					fprintf(stderr, "Error forking.\n");
+					exit(-1);					
+				} else if (ipv6_pid > 0) {
+					server(conf.telnet_port, 0);
+				} else {
+					server(conf.telnet_port, 1);
+				}
+			} else {
+				server(conf.telnet_port, 0);
+			}
 		}
 	} else {
-		server(conf.telnet_port);
+		printf("Magicka BBS Server Starting....\n");
+
+		for (i=1;i<=conf.nodes;i++) {
+			snprintf(buffer, 1024, "%s/nodeinuse.%d", conf.bbs_path, i);
+			if (stat(buffer, &s) == 0) {
+				printf(" - Removing stale file: nodeinuse.%d\n", i);
+				unlink(buffer);
+			}
+		}		
+		if (conf.ipv6) {
+			ipv6_pid = fork();
+			if (ipv6_pid < 0) {
+				fprintf(stderr, "Error forking.\n");
+				exit(-1);					
+			} else if (ipv6_pid > 0) {
+				server(conf.telnet_port, 0);
+			} else {
+				server(conf.telnet_port, 1);
+			}
+		} else {
+			server(conf.telnet_port, 0);
+		}
 	}
 }

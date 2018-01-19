@@ -61,15 +61,23 @@ printstuff "Please enter the name of your BBS:"
 
 read -e bbsname 
 
-sed -i "s@/home/andrew/MagickaBBS@${PWD}@g" config/bbs.ini
-sed -i "s/BBS Name = Magicka BBS/BBS Name = ${bbsname}/g" config/bbs.ini
-sed -i "s/Sysop Name = sysop/Sysop Name = ${handle}/g" config/bbs.ini
-sed -i "s@/home/andrew/MagickaBBS@${PWD}@g" config/localmail.ini
-sed -i "s@/home/andrew/MagickaBBS@${PWD}@g" config/filesgen.ini
-sed -i "s@/home/andrew/MagickaBBS@${PWD}@g" config/illusionnet.ini
-sed -i "s@/home/andrew/MagickaBBS@${PWD}@g" utils/magiedit/magiedit.sh
-sed -i "s@/home/andrew/MagickaBBS@${PWD}@g" scripts/login_stanza.lua
-sed -i "s/MagiChat Server = localhost/; MagiChat Server = localhost/g" config/bbs.ini
-sed -i "s/Default Tagline = Brought to you by Another Magicka BBS!/Default Tagline = ${bbsname}/g" config/bbs.ini
-sed -i "s/echomail.out/mail.out/g" config/bbs.ini
-sed -i "s/netmail.out/mail.out/g" config/bbs.ini
+PLATFORM=`uname`
+
+if [[ "$PLATFORM" == 'FreeBSD' ]] || [[ "$PLATFORM" == 'Darwin' ]] || [[ "$PLATFORM" == 'DragonFly' ]]; then
+    SED=gsed
+else
+    SED=sed
+fi
+
+$SED -i "s@/home/andrew/MagickaBBS@${PWD}@g" config/bbs.ini
+$SED -i "s/BBS Name = Magicka BBS/BBS Name = ${bbsname}/g" config/bbs.ini
+$SED -i "s/Sysop Name = sysop/Sysop Name = ${handle}/g" config/bbs.ini
+$SED -i "s@/home/andrew/MagickaBBS@${PWD}@g" config/localmail.ini
+$SED -i "s@/home/andrew/MagickaBBS@${PWD}@g" config/filesgen.ini
+$SED -i "s@/home/andrew/MagickaBBS@${PWD}@g" config/illusionnet.ini
+$SED -i "s@/home/andrew/MagickaBBS@${PWD}@g" utils/magiedit/magiedit.sh
+$SED -i "s@/home/andrew/MagickaBBS@${PWD}@g" scripts/login_stanza.lua
+$SED -i "s/MagiChat Server = localhost/; MagiChat Server = localhost/g" config/bbs.ini
+$SED -i "s/Default Tagline = Brought to you by Another Magicka BBS!/Default Tagline = ${bbsname}/g" config/bbs.ini
+$SED -i "s/echomail.out/mail.out/g" config/bbs.ini
+$SED -i "s/netmail.out/mail.out/g" config/bbs.ini

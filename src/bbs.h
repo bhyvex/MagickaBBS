@@ -12,7 +12,7 @@
 #include "jamlib/jam.h"
 
 #define VERSION_MAJOR 0
-#define VERSION_MINOR 7
+#define VERSION_MINOR 8
 #define VERSION_STR "alpha"
 
 #define NETWORK_FIDO 1
@@ -115,6 +115,7 @@ struct ip_address_guard {
 
 struct bbs_config {
 	int codepage;
+	int ipv6;
 	char *bbs_name;
 	char *bwave_name;
 	char *sysop_name;
