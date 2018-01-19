@@ -64,9 +64,9 @@ read -e bbsname
 PLATFORM=`uname`
 
 if [[ "$PLATFORM" == 'FreeBSD' ]] || [[ "$PLATFORM" == 'Darwin' ]]; then
-    SED = gsed
+    SED=gsed
 else
-    SED = sed
+    SED=sed
 fi
 
 $SED -i "s@/home/andrew/MagickaBBS@${PWD}@g" config/bbs.ini
