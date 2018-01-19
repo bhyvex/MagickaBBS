@@ -82,8 +82,14 @@ The webserver will use templates in the www/ folder to create internal webpages 
 
 # Misc Notes:
 
-* FreeBSD requires libiconv to be installed from ports in addition to other dependencies. It also requires `ipv6_ipv4mapping="YES"` to be set in rc.conf
+* FreeBSD requires libiconv to be installed from ports in addition to other dependencies.
 
 * macOS makefiles are intended to be built with dependencies provided by macports, homebrew support will require significant changes.
 
-* NetBSD requires libiconv to be installed from pkgsrc in addition to other dependencies. It also requires `net.inet6.ip6.v6only=0` to be set in sysctl.conf
+* NetBSD requires libiconv to be installed from pkgsrc in addition to other dependencies. 
+
+* OpenBSD as of 6.2 does not have libmicrohttpd in ports, but current does. Requires libiconv.
+
+* OpenIndiana does not have libssh in packages, so it needs to be built separately. Requires libiconv.
+
+* DragonFlyBSD also requires libiconv.
