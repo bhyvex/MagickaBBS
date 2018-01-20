@@ -562,6 +562,41 @@ void list_emails(struct user_record *user) {
 						}												
 						s_printf("\e[%d;5H", position - start + 3);
 					}											
+				} else if (c == 75) {
+					// END KEY
+					position = email_count - 1;
+					start = email_count - 22;
+					if (start < 0) {
+						start = 0;
+					}
+					redraw = 1;
+				} else if (c == 72) {
+					// HOME KEY
+					position = 0;
+					start = 0;
+					redraw = 1;
+				} else if (c == 86 || c == '5') {
+					if (c == '5') {
+						s_getchar();
+					}
+					// PAGE UP
+					position = position - 22;
+					if (position < 0) {
+						position = 0;
+					}
+					start = position;
+					redraw = 1;
+				} else if (c == 85 || c == '6') {
+					if (c == '6') {
+						s_getchar();
+					}
+					// PAGE DOWN
+					position = position + 22;
+					if (position >= email_count) {
+						position = email_count -1;
+					}
+					start = position;
+					redraw = 1;
 				}
 			}
 		} else if (c == 13) {

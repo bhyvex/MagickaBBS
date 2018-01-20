@@ -1430,6 +1430,41 @@ void choose_subdir() {
 							s_printf("\e[%d;5H", selected - start + 2);
 						}	
 					}
+				} else if (c == 75) {
+					// END KEY
+					selected = list_tmp - 1;
+					start = list_tmp - 22;
+					if (start < 0) {
+						start = 0;
+					}
+					redraw = 1;
+				} else if (c == 72) {
+					// HOME KEY
+					selected = 0;
+					start = 0;
+					redraw = 1;
+				} else if (c == 86 || c == '5') {
+					if (c == '5') {
+						s_getchar();
+					}
+					// PAGE UP
+					selected = selected - 22;
+					if (selected < 0) {
+						selected = 0;
+					}
+					start = selected;
+					redraw = 1;
+				} else if (c == 85 || c == '6') {
+					if (c == '6') {
+						s_getchar();
+					}
+					// PAGE DOWN
+					selected = selected + 22;
+					if (selected >= list_tmp) {
+						selected = list_tmp -1;
+					}
+					start = selected;
+					redraw = 1;
 				}
 			}
 		} else if (c == 13) {
@@ -1533,6 +1568,41 @@ void choose_directory() {
 							s_printf("\e[%d;5H", selected - start + 2);
 						}	
 					}
+				} else if (c == 75) {
+					// END KEY
+					selected = list_tmp - 1;
+					start = list_tmp - 22;
+					if (start < 0) {
+						start = 0;
+					}
+					redraw = 1;
+				} else if (c == 72) {
+					// HOME KEY
+					selected = 0;
+					start = 0;
+					redraw = 1;
+				} else if (c == 86 || c == '5') {
+					if (c == '5') {
+						s_getchar();
+					}
+					// PAGE UP
+					selected = selected - 22;
+					if (selected < 0) {
+						selected = 0;
+					}
+					start = selected;
+					redraw = 1;
+				} else if (c == 85 || c == '6') {
+					if (c == '6') {
+						s_getchar();
+					}
+					// PAGE DOWN
+					selected = selected + 22;
+					if (selected >= list_tmp) {
+						selected = list_tmp -1;
+					}
+					start = selected;
+					redraw = 1;
 				}
 			}
 		} else if (c == 13) {

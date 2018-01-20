@@ -669,6 +669,7 @@ void runbbs_real(int socket, char *ip, int ssh) {
 	int i;
 	char iac_echo[] = {255, 251, 1, '\0'};
 	char iac_sga[] = {255, 251, 3, '\0'};
+	char iac_binary[] = {255, 251, 0, '\0'};
 	struct user_record *user;
 	struct tm thetime;
 	struct tm oldtime;
@@ -696,6 +697,10 @@ void runbbs_real(int socket, char *ip, int ssh) {
 			dolog("Failed to send iac_sga");
 			exit(0);
 		}
+		if (write(socket, iac_binary, 3) != 3) {
+			dolog("Failed to send iac_binary");
+			exit(0);
+		}		
 	} else {
 		sshBBS = 1;
 	}
