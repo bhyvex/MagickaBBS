@@ -40,8 +40,14 @@ struct connection_info_s {
 };
 
 void *www_logger(void * cls, const char * uri, struct MHD_Connection *con) {
-	struct sockaddr_in *so = (struct sockaddr_in *)MHD_get_connection_info(con, MHD_CONNECTION_INFO_CLIENT_ADDRESS)->client_addr;
-	ipaddress = strdup(inet_ntoa(so->sin_addr));
+	struct sockaddr *so = (struct sockaddr *)MHD_get_connection_info(con, MHD_CONNECTION_INFO_CLIENT_ADDRESS)->client_addr;
+	if (so->sa_family == AF_INET) {
+		ipaddress = (char *)malloc(INET_ADDRSTRLEN + 1);
+		inet_ntop(AF_INET, &((struct sockaddr_in *)so)->sin_addr, ipaddress, INET_ADDRSTRLEN);
+	} else if (so->sa_family == AF_INET6) {
+		ipaddress = (char *)malloc(INET6_ADDRSTRLEN + 1);
+		inet_ntop(AF_INET6, &((struct sockaddr_in6 *)so)->sin6_addr, ipaddress, INET6_ADDRSTRLEN);
+	}
 	dolog("%s", uri);
 	free(ipaddress);
 	ipaddress = NULL;	
@@ -78,6 +84,7 @@ void www_request_completed(void *cls, struct MHD_Connection *connection, void **
 		free(con_info->user->email);
 		free(con_info->user->location);
 		free(con_info->user->sec_info);
+		free(con_info->user->signature);
 		free(con_info->user);
 	}	
 	
@@ -181,7 +188,7 @@ char *www_get_mime_type(const char *extension) {
 
 int www_401(char *header, char *footer, struct MHD_Connection * connection) {
 	char buffer[4096];
-	char *page;
+	char *page, *page_tmp;
 	struct stat s;
 	char *whole_page;
 	struct MHD_Response *response;
@@ -190,32 +197,35 @@ int www_401(char *header, char *footer, struct MHD_Connection * connection) {
 		
 	snprintf(buffer, 4096, "%s/401.tpl", conf.www_path);
 			
-	page = NULL;
+	page_tmp = NULL;
 			
 	if (stat(buffer, &s) == 0) {
-		page = (char *)malloc(s.st_size + 1);
-		if (page == NULL) {
+		page_tmp = (char *)malloc(s.st_size + 1);
+		if (page_tmp == NULL) {
 			return -1;
 		}
-		memset(page, 0, s.st_size + 1);
+		memset(page_tmp, 0, s.st_size + 1);
 		fptr = fopen(buffer, "r");
 		if (fptr) {
-			fread(page, s.st_size, 1, fptr);
+			fread(page_tmp, s.st_size, 1, fptr);
 			fclose(fptr);
 		} else {
-			free(page);
-			page = NULL;
+			free(page_tmp);
+			page_tmp = NULL;
 		}
 	}
 			
-	if (page == NULL) {
-		page = (char *)malloc(16);
-		if (page == NULL) {
+	if (page_tmp == NULL) {
+		page_tmp = (char *)malloc(16);
+		if (page_tmp == NULL) {
 			return -1;
 		}
-		sprintf(page, "Missing Content");
+		sprintf(page_tmp, "Missing Content");
 	}
-				
+
+	page = str_replace(page_tmp, "@@WWW_URL@@", conf.www_url);
+	free(page_tmp);
+
 	whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
 			
 	sprintf(whole_page, "%s%s%s", header, page, footer);
@@ -233,7 +243,7 @@ int www_401(char *header, char *footer, struct MHD_Connection * connection) {
 
 int www_404(char *header, char *footer, struct MHD_Connection * connection) {
 	char buffer[4096];
-	char *page;
+	char *page, *page_tmp;
 	struct stat s;
 	char *whole_page;
 	struct MHD_Response *response;
@@ -242,32 +252,35 @@ int www_404(char *header, char *footer, struct MHD_Connection * connection) {
 		
 	snprintf(buffer, 4096, "%s/404.tpl", conf.www_path);
 			
-	page = NULL;
+	page_tmp = NULL;
 			
 	if (stat(buffer, &s) == 0) {
-		page = (char *)malloc(s.st_size + 1);
-		if (page == NULL) {
+		page_tmp = (char *)malloc(s.st_size + 1);
+		if (page_tmp == NULL) {
 			return -1;
 		}
-		memset(page, 0, s.st_size + 1);
+		memset(page_tmp, 0, s.st_size + 1);
 		fptr = fopen(buffer, "r");
 		if (fptr) {
-			fread(page, s.st_size, 1, fptr);
+			fread(page_tmp, s.st_size, 1, fptr);
 			fclose(fptr);
 		} else {
-			free(page);
+			free(page_tmp);
 			page = NULL;
 		}
 	}
 			
-	if (page == NULL) {
-		page = (char *)malloc(16);
-		if (page == NULL) {
+	if (page_tmp == NULL) {
+		page_tmp = (char *)malloc(16);
+		if (page_tmp == NULL) {
 			return -1;
 		}
-		sprintf(page, "Missing Content");
+		sprintf(page_tmp, "Missing Content");
 	}
-				
+
+	page = str_replace(page_tmp, "@@WWW_URL@@", conf.www_url);
+	free(page_tmp);
+
 	whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
 			
 	sprintf(whole_page, "%s%s%s", header, page, footer);
@@ -283,7 +296,7 @@ int www_404(char *header, char *footer, struct MHD_Connection * connection) {
 
 int www_403(char *header, char *footer, struct MHD_Connection * connection) {
 	char buffer[4096];
-	char *page;
+	char *page, *page_tmp;
 	struct stat s;
 	char *whole_page;
 	struct MHD_Response *response;
@@ -292,32 +305,35 @@ int www_403(char *header, char *footer, struct MHD_Connection * connection) {
 	
 	snprintf(buffer, 4096, "%s/403.tpl", conf.www_path);
 			
-	page = NULL;
+	page_tmp = NULL;
 			
 	if (stat(buffer, &s) == 0) {
-		page = (char *)malloc(s.st_size + 1);
-		if (page == NULL) {
+		page_tmp = (char *)malloc(s.st_size + 1);
+		if (page_tmp == NULL) {
 			return -1;
 		}
-		memset(page, 0, s.st_size + 1);
+		memset(page_tmp, 0, s.st_size + 1);
 		fptr = fopen(buffer, "r");
 		if (fptr) {
-			fread(page, s.st_size, 1, fptr);
+			fread(page_tmp, s.st_size, 1, fptr);
 			fclose(fptr);
 		} else {
-			free(page);
-			page = NULL;
+			free(page_tmp);
+			page_tmp = NULL;
 		}
 	}
 			
-	if (page == NULL) {
-		page = (char *)malloc(16);
-		if (page == NULL) {
+	if (page_tmp == NULL) {
+		page_tmp = (char *)malloc(16);
+		if (page_tmp == NULL) {
 			return -1;
 		}
-		sprintf(page, "Missing Content");
+		sprintf(page_tmp, "Missing Content");
 	}
-				
+
+	page = str_replace(page_tmp, "@@WWW_URL@@", conf.www_url);
+	free(page_tmp);
+
 	whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
 			
 	sprintf(whole_page, "%s%s%s", header, page, footer);
@@ -376,11 +392,11 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 	struct MHD_Response *response;
 	
 	int ret;
-	char *page;
+	char *page, *page_tmp;
 	char buffer[4096];
 	struct stat s;
-	char *header;
-	char *footer;
+	char *header, *header_tmp;
+	char *footer, *footer_tmp;
 	char *whole_page;
 	FILE *fptr;
 	char *mime;
@@ -432,97 +448,106 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 	
 	snprintf(buffer, 4096, "%s/header.tpl", conf.www_path);
 	
-	header = NULL;
+	header_tmp = NULL;
 	
 	if (stat(buffer, &s) == 0) {
-		header = (char *)malloc(s.st_size + 1);
-		if (header == NULL) {
+		header_tmp = (char *)malloc(s.st_size + 1);
+		if (header_tmp == NULL) {
 			return MHD_NO;
 		}
-		memset(header, 0, s.st_size + 1);
+		memset(header_tmp, 0, s.st_size + 1);
 		fptr = fopen(buffer, "r");
 		if (fptr) {
-			fread(header, s.st_size, 1, fptr);
+			fread(header_tmp, s.st_size, 1, fptr);
 			fclose(fptr);
 		} else {
-			free(header);
-			header = NULL;
+			free(header_tmp);
+			header_tmp = NULL;
 		}
 	}
 	
-	if (header == NULL) {
-		header = (char *)malloc(strlen(conf.bbs_name) * 2 + 61);
-		if (header == NULL) {
+	if (header_tmp == NULL) {
+		header_tmp = (char *)malloc(strlen(conf.bbs_name) * 2 + 61);
+		if (header_tmp == NULL) {
 			return MHD_NO;
 		}
-		sprintf(header, "<HTML>\n<HEAD>\n<TITLE>%s</TITLE>\n</HEAD>\n<BODY>\n<H1>%s</H1><HR />", conf.bbs_name, conf.bbs_name);
+		sprintf(header_tmp, "<HTML>\n<HEAD>\n<TITLE>%s</TITLE>\n</HEAD>\n<BODY>\n<H1>%s</H1><HR />", conf.bbs_name, conf.bbs_name);
 	}
 	
+	header = str_replace(header_tmp, "@@WWW_URL@@", conf.www_url);
+	free(header_tmp);
+
 	snprintf(buffer, 4096, "%s/footer.tpl", conf.www_path);
 	
 	footer = NULL;
 	
 	if (stat(buffer, &s) == 0) {
-		footer = (char *)malloc(s.st_size + 1);
-		if (footer == NULL) {
+		footer_tmp = (char *)malloc(s.st_size + 1);
+		if (footer_tmp == NULL) {
 			free(header);
 			return MHD_NO;
 		}
-		memset(footer, 0, s.st_size + 1);
+		memset(footer_tmp, 0, s.st_size + 1);
 		fptr = fopen(buffer, "r");
 		if (fptr) {
-			fread(footer, s.st_size, 1, fptr);
+			fread(footer_tmp, s.st_size, 1, fptr);
 			fclose(fptr);
 		} else {
-			free(footer);
-			footer = NULL;
+			free(footer_tmp);
+			footer_tmp = NULL;
 		}
 	}
 	
-	if (footer == NULL) {
-		footer = (char *)malloc(43);
-		if (footer == NULL) {
+	if (footer_tmp == NULL) {
+		footer_tmp = (char *)malloc(43);
+		if (footer_tmp == NULL) {
 			free(header);
 			return MHD_NO;
 		}
-		sprintf(footer, "<HR />Powered by Magicka BBS</BODY></HTML>");
+		sprintf(footer_tmp, "<HR />Powered by Magicka BBS</BODY></HTML>");
 	}
-	
+
+	footer = str_replace(footer_tmp, "@@WWW_URL@@", conf.www_url);
+	free(footer_tmp);
+
 	if (strcmp(method, "GET") == 0) {
 		if (strcasecmp(url, "/") == 0) {
 
 			snprintf(buffer, 4096, "%s/index.tpl", conf.www_path);
 			
-			page = NULL;
+			page_tmp = NULL;
 			
 			if (stat(buffer, &s) == 0) {
-				page = (char *)malloc(s.st_size + 1);
-				if (page == NULL) {
+				page_tmp = (char *)malloc(s.st_size + 1);
+				if (page_tmp == NULL) {
 					free(header);
 					free(footer);
 					return MHD_NO;
 				}
-				memset(page, 0, s.st_size + 1);
+				memset(page_tmp, 0, s.st_size + 1);
 				fptr = fopen(buffer, "r");
 				if (fptr) {
-					fread(page, s.st_size, 1, fptr);
+					fread(page_tmp, s.st_size, 1, fptr);
 					fclose(fptr);
 				} else {
-					free(page);
-					page = NULL;
+					free(page_tmp);
+					page_tmp = NULL;
 				}
 			}
 			
-			if (page == NULL) {
-				page = (char *)malloc(16);
-				if (page == NULL) {
+			if (page_tmp == NULL) {
+				page_tmp = (char *)malloc(16);
+				if (page_tmp == NULL) {
 					free(header);
 					free(footer);					
 					return MHD_NO;
 				}
-				sprintf(page, "Missing Content");
+				sprintf(page_tmp, "Missing Content");
 			}
-				
+		
+			page = str_replace(page_tmp, "@@WWW_URL@@", conf.www_url);
+			free(page_tmp);
+
 			whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
 			
 			sprintf(whole_page, "%s%s%s", header, page, footer);
@@ -756,7 +781,7 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 					MHD_destroy_response (response);
 					free(header);
 					free(footer);
-					return MHD_YES;				
+					return ret;				
 				} else {
 					if (www_403(header, footer, connection) != 0) {
 						free(header);
@@ -864,7 +889,8 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 			to = NULL;
 			body = NULL;
 			replyid = NULL;
-
+			conference = -1;
+			area = -1;
 			
 			for (i=0;i<con_inf->count;i++) {
 				if (strcmp(con_inf->keys[i], "recipient") == 0) {
@@ -881,8 +907,9 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 					replyid = con_inf->values[i];
 				}
 			}
+
 			if (!www_send_msg(con_inf->user, to, subj, conference, area, replyid, body)) {
-				page = (char *)malloc(50);
+				page = (char *)malloc(31);
 				if (page == NULL) {
 					free(header);
 					free(footer);					
@@ -890,7 +917,7 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 				}
 				sprintf(page, "<h1>Error Sending Message</h1>");
 			} else {
-				page = (char *)malloc(21);
+				page = (char *)malloc(23);
 				if (page == NULL) {
 					free(header);
 					free(footer);					

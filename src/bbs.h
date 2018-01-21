@@ -12,7 +12,7 @@
 #include "jamlib/jam.h"
 
 #define VERSION_MAJOR 0
-#define VERSION_MINOR 8
+#define VERSION_MINOR 9
 #define VERSION_STR "alpha"
 
 #define NETWORK_FIDO 1
@@ -128,6 +128,7 @@ struct bbs_config {
 	char *netmail_sem;
 	char *default_tagline;
 	int telnet_port;
+	char *www_url;
 	int www_server;
 	int www_port;
 	char *www_path;
@@ -227,6 +228,8 @@ struct msg_headers {
 	struct jam_msg **msgs;
 	int msg_count;
 };
+
+extern char *str_replace(char *orig, char *rep, char *with);
 extern int copy_file(char *src, char *dest);
 extern int recursive_delete(const char *dir);
 extern void automessage_write(struct user_record *user);
