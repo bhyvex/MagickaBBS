@@ -566,7 +566,7 @@ char *www_email_summary(struct user_record *user) {
 	strcat(page, buffer);
 	len += strlen(buffer);
 	
-	sprintf(buffer, "<div class=\"button\"><a href=\"/email/new\">New Email</a></div>\n");
+	sprintf(buffer, "<div class=\"button\"><a href=\"%semail/new\">New Email</a></div>\n", config.www_url);
 	if (len + strlen(buffer) > max_len - 1) {
 		max_len += 4096;
 		page = (char *)realloc(page, max_len);
