@@ -41,16 +41,17 @@ struct connection_info_s {
 
 void *www_logger(void * cls, const char * uri, struct MHD_Connection *con) {
 	struct sockaddr *so = (struct sockaddr *)MHD_get_connection_info(con, MHD_CONNECTION_INFO_CLIENT_ADDRESS)->client_addr;
+	char *ipaddr;
 	if (so->sa_family == AF_INET) {
-		ipaddress = (char *)malloc(INET_ADDRSTRLEN + 1);
-		inet_ntop(AF_INET, &((struct sockaddr_in *)so)->sin_addr, ipaddress, INET_ADDRSTRLEN);
+		ipaddr = (char *)malloc(INET_ADDRSTRLEN + 1);
+		inet_ntop(AF_INET, &((struct sockaddr_in *)so)->sin_addr, ipaddr, INET_ADDRSTRLEN);
 	} else if (so->sa_family == AF_INET6) {
-		ipaddress = (char *)malloc(INET6_ADDRSTRLEN + 1);
-		inet_ntop(AF_INET6, &((struct sockaddr_in6 *)so)->sin6_addr, ipaddress, INET6_ADDRSTRLEN);
+		ipaddr = (char *)malloc(INET6_ADDRSTRLEN + 1);
+		inet_ntop(AF_INET6, &((struct sockaddr_in6 *)so)->sin6_addr, ipaddr, INET6_ADDRSTRLEN);
 	}
-	dolog("%s", uri);
-	free(ipaddress);
-	ipaddress = NULL;	
+	dolog_www(ipaddr, "%s", uri);
+	free(ipaddr);
+
 	return NULL;
 }
 
@@ -133,18 +134,18 @@ static int iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char 
 
 void www_init() {
 	FILE *fptr;
-	char buffer[4096];
+	char buffer[PATH_MAX];
 	int i;
 	
 	mime_types_count = 0;
 	
-	sprintf(buffer, "%s/mime.types", conf.www_path);
+	snprintf(buffer, PATH_MAX, "%s/mime.types", conf.www_path);
 	
 	fptr = fopen(buffer, "r");
 	if (!fptr) {
 		return;
 	}
-	fgets(buffer, 4096, fptr);
+	fgets(buffer, 256, fptr);
 	while (!feof(fptr)) {
 		chomp(buffer);
 		
@@ -167,7 +168,7 @@ void www_init() {
 			}
 		}
 		
-		fgets(buffer, 4096, fptr);
+		fgets(buffer, 256, fptr);
 	}
 	
 	fclose(fptr);
@@ -177,7 +178,10 @@ char *www_get_mime_type(const char *extension) {
 	int i;
 	static char default_mime_type[] = "application/octet-stream";
 	
-	
+	if (extension == NULL) {
+		return default_mime_type;
+	}
+
 	for (i=0;i<mime_types_count;i++) {
 		if (strcasecmp(extension, mime_types[i]->ext) == 0) {
 			return mime_types[i]->mime;
@@ -187,7 +191,7 @@ char *www_get_mime_type(const char *extension) {
 }
 
 int www_401(char *header, char *footer, struct MHD_Connection * connection) {
-	char buffer[4096];
+	char buffer[PATH_MAX];
 	char *page, *page_tmp;
 	struct stat s;
 	char *whole_page;
@@ -195,7 +199,7 @@ int www_401(char *header, char *footer, struct MHD_Connection * connection) {
 	int ret;
 	FILE *fptr;
 		
-	snprintf(buffer, 4096, "%s/401.tpl", conf.www_path);
+	snprintf(buffer, PATH_MAX, "%s/401.tpl", conf.www_path);
 			
 	page_tmp = NULL;
 			
@@ -242,7 +246,7 @@ int www_401(char *header, char *footer, struct MHD_Connection * connection) {
 }
 
 int www_404(char *header, char *footer, struct MHD_Connection * connection) {
-	char buffer[4096];
+	char buffer[PATH_MAX];
 	char *page, *page_tmp;
 	struct stat s;
 	char *whole_page;
@@ -250,7 +254,7 @@ int www_404(char *header, char *footer, struct MHD_Connection * connection) {
 	int ret;
 	FILE *fptr;
 		
-	snprintf(buffer, 4096, "%s/404.tpl", conf.www_path);
+	snprintf(buffer, PATH_MAX, "%s/404.tpl", conf.www_path);
 			
 	page_tmp = NULL;
 			
@@ -295,7 +299,7 @@ int www_404(char *header, char *footer, struct MHD_Connection * connection) {
 }
 
 int www_403(char *header, char *footer, struct MHD_Connection * connection) {
-	char buffer[4096];
+	char buffer[PATH_MAX];
 	char *page, *page_tmp;
 	struct stat s;
 	char *whole_page;
@@ -303,7 +307,7 @@ int www_403(char *header, char *footer, struct MHD_Connection * connection) {
 	int ret;
 	FILE *fptr;
 	
-	snprintf(buffer, 4096, "%s/403.tpl", conf.www_path);
+	snprintf(buffer, PATH_MAX, "%s/403.tpl", conf.www_path);
 			
 	page_tmp = NULL;
 			
@@ -393,7 +397,7 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 	
 	int ret;
 	char *page, *page_tmp;
-	char buffer[4096];
+	char buffer[PATH_MAX];
 	struct stat s;
 	char *header, *header_tmp;
 	char *footer, *footer_tmp;
@@ -411,7 +415,8 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 	const char *val;
 	int skip;
 	char *replyid;
-	
+//	char *static_buffer;
+
 	if (strcmp(method, "GET") == 0) {
 		if (*ptr == NULL) {
 			con_inf = (struct connection_info_s *)malloc(sizeof(struct connection_info_s));
@@ -446,7 +451,7 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 	
 	con_inf = *ptr;
 	
-	snprintf(buffer, 4096, "%s/header.tpl", conf.www_path);
+	snprintf(buffer, PATH_MAX, "%s/header.tpl", conf.www_path);
 	
 	header_tmp = NULL;
 	
@@ -477,9 +482,9 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 	header = str_replace(header_tmp, "@@WWW_URL@@", conf.www_url);
 	free(header_tmp);
 
-	snprintf(buffer, 4096, "%s/footer.tpl", conf.www_path);
+	snprintf(buffer, PATH_MAX, "%s/footer.tpl", conf.www_path);
 	
-	footer = NULL;
+	footer_tmp = NULL;
 	
 	if (stat(buffer, &s) == 0) {
 		footer_tmp = (char *)malloc(s.st_size + 1);
@@ -513,7 +518,7 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 	if (strcmp(method, "GET") == 0) {
 		if (strcasecmp(url, "/") == 0) {
 
-			snprintf(buffer, 4096, "%s/index.tpl", conf.www_path);
+			snprintf(buffer, PATH_MAX, "%s/index.tpl", conf.www_path);
 			
 			page_tmp = NULL;
 			
@@ -760,22 +765,40 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 		} else if (strncasecmp(url, "/static/", 8) == 0) {
 			// sanatize path
 			if (strstr(url, "/..") != NULL) {
+				free(header);
+				free(footer);
 				return MHD_NO;
 			}
+
+			mime = NULL;
 			// get mimetype
 			for (i=strlen(url);i>0;--i) {
 				if (url[i] == '.') {
 					mime = www_get_mime_type(&url[i+1]);
 					break;
 				}
+				if (url[i] == '/') {
+					mime = www_get_mime_type(NULL);
+					break;
+				}
 			}
+
+			if (mime = NULL) {
+				mime = www_get_mime_type(NULL);
+			}
+
+
 			// load file
 			
 			sprintf(buffer, "%s%s", conf.www_path, url);
 			if (stat(buffer, &s) == 0 && S_ISREG(s.st_mode)) {
 				fno = open(buffer, O_RDONLY);
 				if (fno != -1) {
+
+					//static_buffer = (char *)malloc(s.st_size + 1);
+					//read(fno, static_buffer, s.st_size);
 					response = MHD_create_response_from_fd(s.st_size, fno);
+					//response = MHD_create_response_from_buffer (s.st_size, (void*) static_buffer, MHD_RESPMEM_MUST_FREE);
 					MHD_add_response_header(response, MHD_HTTP_HEADER_CONTENT_TYPE, mime);
 					ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
 					MHD_destroy_response (response);

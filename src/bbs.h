@@ -229,12 +229,13 @@ struct msg_headers {
 	int msg_count;
 };
 
-extern char *str_replace(char *orig, char *rep, char *with);
+extern char *str_replace(const char *orig, const char *rep, const char *with);
 extern int copy_file(char *src, char *dest);
 extern int recursive_delete(const char *dir);
 extern void automessage_write(struct user_record *user);
 extern void automessage_display();
 extern void dolog(char *fmt, ...);
+extern void dolog_www(char *ipaddr, char *fmt, ...);
 extern void runbbs_ssh(char *ipaddress);
 extern void runbbs(int sock, char *ipaddress);
 extern struct fido_addr *parse_fido_addr(const char *str);

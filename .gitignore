@@ -76,3 +76,5 @@ menus/logoff.mnu
 menus/mail.mnu
 menus/main.mnu
 .vscode/settings.json
+core
+.vscode/launch.json
