@@ -36,7 +36,13 @@ struct file_entry {
 	time_t uploaddate;
 };
 
-char **tagged_files;
+struct tagged_file {
+	char *filename;
+	int dir;
+	int sub;
+};
+
+struct tagged_file **tagged_files;
 int tagged_count = 0;
 
 int ttySetRaw(int fd, struct termios *prevTermios) {
@@ -803,9 +809,9 @@ void download(struct user_record *user) {
 
 	for (i=0;i<tagged_count;i++) {
 
-		do_download(user, tagged_files[i]);
+		do_download(user, tagged_files[i]->filename);
 
-		sprintf(buffer, "%s/%s.sq3", conf.bbs_path, conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->database);
+		sprintf(buffer, "%s/%s.sq3", conf.bbs_path, conf.file_directories[tagged_files[i]->dir]->file_subs[tagged_files[i]->sub]->database);
 
 		rc = sqlite3_open(buffer, &db);
 
@@ -818,7 +824,7 @@ void download(struct user_record *user) {
 		rc = sqlite3_prepare_v2(db, ssql, -1, &res, 0);
 
 		if (rc == SQLITE_OK) {
-			sqlite3_bind_text(res, 1, tagged_files[i], -1, 0);
+			sqlite3_bind_text(res, 1, tagged_files[i]->filename, -1, 0);
 		} else {
 			dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
 		}
@@ -854,6 +860,7 @@ void download(struct user_record *user) {
 
 
 	for (i=0;i<tagged_count;i++) {
+		free(tagged_files[i]->filename);
 		free(tagged_files[i]);
 	}
 	free(tagged_files);
@@ -920,18 +927,21 @@ void do_list_files(struct file_entry **files_e, int files_c) {
 								if (conf.file_directories[files_e[z]->dir]->file_subs[files_e[z]->sub]->download_sec_level <= gUser->sec_level) {
 									match = 0;
 									for (k=0;k<tagged_count;k++) {
-										if (strcmp(tagged_files[k], files_e[z]->filename) == 0) {
+										if (strcmp(tagged_files[k]->filename, files_e[z]->filename) == 0) {
 											match = 1;
 											break;
 										}
 									}
 									if (match == 0) {
 										if (tagged_count == 0) {
-											tagged_files = (char **)malloc(sizeof(char *));
+											tagged_files = (struct tagged_file **)malloc(sizeof(struct tagged_file *));
 										} else {
-											tagged_files = (char **)realloc(tagged_files, sizeof(char *) * (tagged_count + 1));
+											tagged_files = (struct tagged_file **)realloc(tagged_files, sizeof(struct tagged_file *) * (tagged_count + 1));
 										}
-										tagged_files[tagged_count] = strdup(files_e[z]->filename);
+										tagged_files[tagged_count] = (struct tagged_file *)malloc(sizeof(struct tagged_file));
+										tagged_files[tagged_count]->filename = strdup(files_e[z]->filename);
+										tagged_files[tagged_count]->dir = files_e[z]->dir;
+										tagged_files[tagged_count]->sub = files_e[z]->sub;
 										tagged_count++;
 										s_printf(get_string(71), basename(files_e[z]->filename));
 									} else {
@@ -974,18 +984,21 @@ void do_list_files(struct file_entry **files_e, int files_c) {
 						if (conf.file_directories[files_e[z]->dir]->file_subs[files_e[z]->sub]->download_sec_level <= gUser->sec_level) {
 							match = 0;
 							for (k=0;k<tagged_count;k++) {
-								if (strcmp(tagged_files[k], files_e[z]->filename) == 0) {
+								if (strcmp(tagged_files[k]->filename, files_e[z]->filename) == 0) {
 									match = 1;
 									break;
 								}
 							}
 							if (match == 0) {
 								if (tagged_count == 0) {
-									tagged_files = (char **)malloc(sizeof(char *));
+									tagged_files = (struct tagged_file **)malloc(sizeof(struct tagged_file *));
 								} else {
-									tagged_files = (char **)realloc(tagged_files, sizeof(char *) * (tagged_count + 1));
+									tagged_files = (struct tagged_file **)realloc(tagged_files, sizeof(struct tagged_file *) * (tagged_count + 1));
 								}
-								tagged_files[tagged_count] = strdup(files_e[z]->filename);
+								tagged_files[tagged_count] = (struct tagged_file *)malloc(sizeof(struct tagged_file));
+								tagged_files[tagged_count]->filename = strdup(files_e[z]->filename);
+								tagged_files[tagged_count]->dir = files_e[z]->dir;
+								tagged_files[tagged_count]->sub = files_e[z]->sub;
 								tagged_count++;
 								s_printf(get_string(71), basename(files_e[z]->filename));
 							} else {
@@ -1017,18 +1030,21 @@ void do_list_files(struct file_entry **files_e, int files_c) {
 				if (conf.file_directories[files_e[z]->dir]->file_subs[files_e[z]->sub]->download_sec_level <= gUser->sec_level) {
 					match = 0;
 					for (k=0;k<tagged_count;k++) {
-						if (strcmp(tagged_files[k], files_e[z]->filename) == 0) {
+						if (strcmp(tagged_files[k]->filename, files_e[z]->filename) == 0) {
 							match = 1;
 							break;
 						}
 					}
 					if (match == 0) {
 						if (tagged_count == 0) {
-							tagged_files = (char **)malloc(sizeof(char *));
+							tagged_files = (struct tagged_file **)malloc(sizeof(struct tagged_file *));
 						} else {
-							tagged_files = (char **)realloc(tagged_files, sizeof(char *) * (tagged_count + 1));
+							tagged_files = (struct tagged_file **)realloc(tagged_files, sizeof(struct tagged_file *) * (tagged_count + 1));
 						}
-						tagged_files[tagged_count] = strdup(files_e[z]->filename);
+						tagged_files[tagged_count] = (struct tagged_file *)malloc(sizeof(struct tagged_file));
+						tagged_files[tagged_count]->filename = strdup(files_e[z]->filename);
+						tagged_files[tagged_count]->dir = files_e[z]->dir;
+						tagged_files[tagged_count]->sub = files_e[z]->sub;
 						tagged_count++;
 						s_printf(get_string(71), basename(files_e[z]->filename));
 					} else {
@@ -1623,6 +1639,7 @@ void clear_tagged_files() {
 	// Clear tagged files
 	if (tagged_count > 0) {
 		for (i=0;i<tagged_count;i++) {
+			free(tagged_files[i]->filename);
 			free(tagged_files[i]);
 		}
 		free(tagged_files);
