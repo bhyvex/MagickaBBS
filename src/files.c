@@ -27,6 +27,7 @@ extern time_t userlaston;
 extern struct user_record *gUser;
 
 struct file_entry {
+	int fid;
 	int dir;
 	int sub;
 	char *filename;
@@ -40,6 +41,7 @@ struct tagged_file {
 	char *filename;
 	int dir;
 	int sub;
+	int fid;
 };
 
 struct tagged_file **tagged_files;
@@ -846,7 +848,7 @@ void download(struct user_record *user) {
 
 		if (rc == SQLITE_OK) {
 			sqlite3_bind_int(res, 1, dloads);
-			sqlite3_bind_text(res, 2, tagged_files[i], -1, 0);
+			sqlite3_bind_text(res, 2, tagged_files[i]->filename, -1, 0);
 		} else {
 			dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
 		}
@@ -942,6 +944,7 @@ void do_list_files(struct file_entry **files_e, int files_c) {
 										tagged_files[tagged_count]->filename = strdup(files_e[z]->filename);
 										tagged_files[tagged_count]->dir = files_e[z]->dir;
 										tagged_files[tagged_count]->sub = files_e[z]->sub;
+										tagged_files[tagged_count]->fid = files_e[z]->fid;
 										tagged_count++;
 										s_printf(get_string(71), basename(files_e[z]->filename));
 									} else {
@@ -999,6 +1002,7 @@ void do_list_files(struct file_entry **files_e, int files_c) {
 								tagged_files[tagged_count]->filename = strdup(files_e[z]->filename);
 								tagged_files[tagged_count]->dir = files_e[z]->dir;
 								tagged_files[tagged_count]->sub = files_e[z]->sub;
+								tagged_files[tagged_count]->fid = files_e[z]->fid;
 								tagged_count++;
 								s_printf(get_string(71), basename(files_e[z]->filename));
 							} else {
@@ -1045,6 +1049,7 @@ void do_list_files(struct file_entry **files_e, int files_c) {
 						tagged_files[tagged_count]->filename = strdup(files_e[z]->filename);
 						tagged_files[tagged_count]->dir = files_e[z]->dir;
 						tagged_files[tagged_count]->sub = files_e[z]->sub;
+						tagged_files[tagged_count]->fid = files_e[z]->fid;
 						tagged_count++;
 						s_printf(get_string(71), basename(files_e[z]->filename));
 					} else {
@@ -1118,21 +1123,21 @@ void file_search() {
 		ptr = strtok(NULL, " ");
 	}
 	if (stype == 0) {
-		snprintf(sqlbuffer, 1024, "select filename, description, size, dlcount, uploaddate from files where approved=1 AND (filename LIKE ?");
+		snprintf(sqlbuffer, 1024, "select id, filename, description, size, dlcount, uploaddate from files where approved=1 AND (filename LIKE ?");
 		for (i=1; i < searchterm_count; i++) {
 			strncat(sqlbuffer, " OR filename LIKE ?", 1024);
 		}
 		strncat(sqlbuffer, ")", 1024);
 	}
 	if (stype == 1) {
-		snprintf(sqlbuffer, 1024, "select filename, description, size, dlcount, uploaddate from files where approved=1 AND (description LIKE ?");
+		snprintf(sqlbuffer, 1024, "select id, filename, description, size, dlcount, uploaddate from files where approved=1 AND (description LIKE ?");
 		for (i=1; i < searchterm_count; i++) {
 			strncat(sqlbuffer, " OR description LIKE ?", 1024);
 		}
 		strncat(sqlbuffer, ")", 1024);
 	}
 	if (stype == 2) {
-		snprintf(sqlbuffer, 1024, "select filename, description, size, dlcount, uploaddate from files where approved=1 AND (filename LIKE ?");
+		snprintf(sqlbuffer, 1024, "select id, filename, description, size, dlcount, uploaddate from files where approved=1 AND (filename LIKE ?");
 		for (i=1; i < searchterm_count; i++) {
 			strncat(sqlbuffer, " OR filename LIKE ?", 1024);
 		}
@@ -1187,11 +1192,12 @@ void file_search() {
 				files_e = (struct file_entry **)realloc(files_e, sizeof(struct file_entry *) * (files_c + 1));
 			}
 			files_e[files_c] = (struct file_entry *)malloc(sizeof(struct file_entry));
-			files_e[files_c]->filename = strdup((char *)sqlite3_column_text(res, 0));
-			files_e[files_c]->description = strdup((char *)sqlite3_column_text(res, 1));
-			files_e[files_c]->size = sqlite3_column_int(res, 2);
-			files_e[files_c]->dlcount = sqlite3_column_int(res, 3);
-			files_e[files_c]->uploaddate = sqlite3_column_int(res, 4);
+			files_e[files_c]->fid = sqlite3_column_int(res, 0);
+			files_e[files_c]->filename = strdup((char *)sqlite3_column_text(res, 1));
+			files_e[files_c]->description = strdup((char *)sqlite3_column_text(res, 2));
+			files_e[files_c]->size = sqlite3_column_int(res, 3);
+			files_e[files_c]->dlcount = sqlite3_column_int(res, 4);
+			files_e[files_c]->uploaddate = sqlite3_column_int(res, 5);
 			files_e[files_c]->dir = gUser->cur_file_dir;
 			files_e[files_c]->sub = gUser->cur_file_sub;
 			files_c++;
@@ -1248,11 +1254,12 @@ void file_search() {
 						files_e = (struct file_entry **)realloc(files_e, sizeof(struct file_entry *) * (files_c + 1));
 					}
 					files_e[files_c] = (struct file_entry *)malloc(sizeof(struct file_entry));
-					files_e[files_c]->filename = strdup((char *)sqlite3_column_text(res, 0));
-					files_e[files_c]->description = strdup((char *)sqlite3_column_text(res, 1));
-					files_e[files_c]->size = sqlite3_column_int(res, 2);
-					files_e[files_c]->dlcount = sqlite3_column_int(res, 3);
-					files_e[files_c]->uploaddate = sqlite3_column_int(res, 4);
+					files_e[files_c]->fid = sqlite3_column_int(res, 0);
+					files_e[files_c]->filename = strdup((char *)sqlite3_column_text(res, 1));
+					files_e[files_c]->description = strdup((char *)sqlite3_column_text(res, 2));
+					files_e[files_c]->size = sqlite3_column_int(res, 3);
+					files_e[files_c]->dlcount = sqlite3_column_int(res, 4);
+					files_e[files_c]->uploaddate = sqlite3_column_int(res, 5);
 					files_e[files_c]->dir = gUser->cur_file_dir;
 					files_e[files_c]->sub = gUser->cur_file_sub;
 					files_c++;
@@ -1273,10 +1280,10 @@ void file_search() {
 }
 
 void list_files(struct user_record *user) {
-	char *dsql = "select filename, description, size, dlcount, uploaddate from files where approved=1 ORDER BY uploaddate DESC";
-	char *fsql = "select filename, description, size, dlcount, uploaddate from files where approved=1 ORDER BY filename";
-	char *psql = "select filename, description, size, dlcount, uploaddate from files where approved=1 ORDER BY dlcount DESC";
-	char *nsql = "select filename, description, size, dlcount, uploaddate from files where approved=1 ORDER BY uploaddate DESC WHERE uploaddate > ?";
+	char *dsql = "select id, filename, description, size, dlcount, uploaddate from files where approved=1 ORDER BY uploaddate DESC";
+	char *fsql = "select id, filename, description, size, dlcount, uploaddate from files where approved=1 ORDER BY filename";
+	char *psql = "select id, filename, description, size, dlcount, uploaddate from files where approved=1 ORDER BY dlcount DESC";
+	char *nsql = "select id, filename, description, size, dlcount, uploaddate from files where approved=1 ORDER BY uploaddate DESC WHERE uploaddate > ?";
 	char *sql;
 	char buffer[PATH_MAX];
 	sqlite3 *db;
@@ -1337,11 +1344,12 @@ void list_files(struct user_record *user) {
 			files_e = (struct file_entry **)realloc(files_e, sizeof(struct file_entry *) * (files_c + 1));
 		}
 		files_e[files_c] = (struct file_entry *)malloc(sizeof(struct file_entry));
-		files_e[files_c]->filename = strdup((char *)sqlite3_column_text(res, 0));
-		files_e[files_c]->description = strdup((char *)sqlite3_column_text(res, 1));
-		files_e[files_c]->size = sqlite3_column_int(res, 2);
-		files_e[files_c]->dlcount = sqlite3_column_int(res, 3);
-		files_e[files_c]->uploaddate = sqlite3_column_int(res, 4);
+		files_e[files_c]->fid = sqlite3_column_int(res, 0);
+		files_e[files_c]->filename = strdup((char *)sqlite3_column_text(res, 1));
+		files_e[files_c]->description = strdup((char *)sqlite3_column_text(res, 2));
+		files_e[files_c]->size = sqlite3_column_int(res, 3);
+		files_e[files_c]->dlcount = sqlite3_column_int(res, 4);
+		files_e[files_c]->uploaddate = sqlite3_column_int(res, 5);
 		files_e[files_c]->dir = user->cur_file_dir;
 		files_e[files_c]->sub = user->cur_file_sub;
 		files_c++;
