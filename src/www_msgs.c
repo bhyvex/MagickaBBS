@@ -923,6 +923,7 @@ int www_send_msg(struct user_record *user, char *to, char *subj, int conference,
 			
 		return 1;
 	}
+	return 0;
 }
 
 char *www_new_msg(struct user_record *user, int conference, int area) {

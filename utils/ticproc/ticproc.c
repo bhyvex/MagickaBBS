@@ -88,6 +88,7 @@ static int handler(void* user, const char* section, const char* name,
 		conf.filearea_count++;
 		return 1;
 	}
+	return 1;
 }
 
 void chomp(char *string) {
