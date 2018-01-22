@@ -301,7 +301,12 @@ struct msg_headers *read_message_headers(int msgconf, int msgarea, struct user_r
 			if (jamm->subject == NULL) {
 				jamm->subject = strdup("(No Subject)");
 			}
-
+			if (jamm->from == NULL) {
+				jamm->from = strdup("(No Sender)");
+			}
+			if (jamm->to == NULL) {
+				jamm->to = strdup("(No Recipient)");
+			}			
 			if (jmh.Attribute & JAM_MSG_PRIVATE) {
 				if (!msg_is_to(user, jamm->to, jamm->daddress, conf.mail_conferences[msgconf]->nettype, conf.mail_conferences[msgconf]->realnames, msgconf) &&
 				    !msg_is_from(user, jamm->from, jamm->oaddress, conf.mail_conferences[msgconf]->nettype, conf.mail_conferences[msgconf]->realnames, msgconf) &&

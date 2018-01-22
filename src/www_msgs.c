@@ -402,6 +402,14 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		if (subject == NULL) {
 			subject = strdup("(No Subject)");
 		}
+
+		if (from == NULL) {
+			from = strdup("(No Sender)");
+		}
+
+		if (to == NULL) {
+			to = strdup("(No Recipient)");
+		}
 		
 		if (jmh.Attribute & JAM_MSG_PRIVATE) {
 			if (!msg_is_to(user, to, daddress, conf.mail_conferences[conference]->nettype, conf.mail_conferences[conference]->realnames, conference) &&
@@ -485,7 +493,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		len += strlen(buffer);
 
 		from_s = www_sanitize(from);
-		if (conf.mail_conferences[conference]->mail_areas[area]->type != TYPE_LOCAL_AREA) {
+		if (conf.mail_conferences[conference]->mail_areas[area]->type != TYPE_LOCAL_AREA && oaddress != NULL) {
 			sprintf(buffer, "<div class=\"msg-view-from\">From: %s (%s)</div>\n", from_s, oaddress);
 		} else {
 			sprintf(buffer, "<div class=\"msg-view-from\">From: %s</div>\n", from_s);
