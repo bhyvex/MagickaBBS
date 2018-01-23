@@ -353,6 +353,7 @@ extern char *www_new_msg(struct user_record *user, int conference, int area);
 extern char *www_last10();
 extern void www_expire_old_links();
 extern char *www_create_link(int dir, int sub, int fid);
+extern char *www_decode_hash(char *hash);
 #endif
 extern int menu_system(char *menufile);
 #endif
