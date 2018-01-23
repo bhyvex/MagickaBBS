@@ -831,7 +831,7 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 			filename = www_decode_hash(&url[7]);
 			if (filename != NULL) {
 				if (stat(filename, &s) == 0 && S_ISREG(s.st_mode)) {
-					fno = open(buffer, O_RDONLY);
+					fno = open(filename, O_RDONLY);
 					if (fno != -1) {
 					
 						response = MHD_create_response_from_fd(s.st_size, fno);
@@ -844,6 +844,7 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 						MHD_destroy_response (response);
 						free(header);
 						free(footer);
+						free(filename);
 						return ret;
 					}
 				}
