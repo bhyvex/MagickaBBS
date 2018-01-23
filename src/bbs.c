@@ -895,6 +895,9 @@ tryagain:
 		unlink(buffer);
 	}
 
+#if defined(ENABLE_WWW)
+	www_expire_old_links();
+#endif
 	// do post-login
 	dolog("%s logged in, on node %d", user->loginname, mynode);
 	broadcast("%s logged in, on node %d", user->loginname, mynode);

@@ -252,3 +252,8 @@ File exists!\r\n
 \e[1;37;44mChoose an Area in %s\e[K
 \e[1;37;44mChoose an Subdir in %s\e[K
 \e[1;37;44mChoose a Directory\e[K
+\r\n\e[1;37mSending file %s...\r\n
+\r\n\e[1;34mFilename\e[1;30m: \e[1;37m%s\e[0m\r\n
+     \e[1;34mURL\e[1;30m: \e[1;37m%s\e[0m\r\n
+\r\n\e[1;31mError creating URL!\e[0m\r\n
+\e[1;33mSorry this BBS does not have the webserver enabled.\e[0m\r\n

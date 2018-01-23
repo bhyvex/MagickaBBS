@@ -798,6 +798,42 @@ void download_zmodem(struct user_record *user, char *filename) {
 	}
 }
 
+
+void genurls() {
+#if defined(ENABLE_WWW)	
+	int i;
+	char *url;
+	for (i=0;i<tagged_count;i++) {
+		if (i % 6) {
+			// pause
+			s_printf(get_string(6));
+			s_getc();			
+		}
+
+		url = www_create_link(tagged_files[i]->dir, tagged_files[i]->sub, tagged_files[i]->fid);
+
+		if (url != NULL) {
+			s_printf(get_string(255), basename(tagged_files[i]->filename));
+			s_printf(get_string(256), url);
+			free(url);
+		} else {
+			s_printf(get_string(257));
+		}
+	}
+	for (i=0;i<tagged_count;i++) {
+		free(tagged_files[i]->filename);
+		free(tagged_files[i]);
+	}
+	free(tagged_files);
+	tagged_count = 0;	
+#else
+	s_printf(get_string(258));
+	s_printf(get_string(6));
+	s_getc();
+#endif	
+}
+
+
 void download(struct user_record *user) {
 	int i;
 	char *ssql = "select dlcount from files where filename like ?";
@@ -810,6 +846,7 @@ void download(struct user_record *user) {
 
 
 	for (i=0;i<tagged_count;i++) {
+		s_printf(get_string(254), basename(tagged_files[i]->filename));
 
 		do_download(user, tagged_files[i]->filename);
 
@@ -1324,15 +1361,15 @@ void list_files(struct user_record *user) {
     }
 	sqlite3_busy_timeout(db, 5000);
     rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
-	if (sql == nsql) {
-		sqlite3_bind_int(res, 1, userlaston);
-	}
     if (rc != SQLITE_OK) {
-        sqlite3_finalize(res);
 		sqlite3_close(db);
 		s_printf(get_string(68));
 		return;
     }
+	if (sql == nsql) {
+		sqlite3_bind_int(res, 1, userlaston);
+	}
+
 
 
     files_c = 0;

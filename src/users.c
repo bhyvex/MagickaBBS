@@ -266,7 +266,7 @@ int inst_user(struct user_record *user) {
 						"exteditor INTEGER,"
 						"bwavestyle INTEGER,"
 						"signature TEXT,"
-						"autosig INT);";
+						"autosig INTEGER);";
 
 	char *insert_sql = "INSERT INTO users (loginname, password, salt, firstname,"
 					   "lastname, email, location, sec_level, last_on, time_left, cur_mail_conf, cur_mail_area, cur_file_dir, cur_file_sub, times_on, bwavepktno, archiver, protocol, nodemsgs, codepage, exteditor, bwavestyle, signature, autosig) VALUES(?,?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";

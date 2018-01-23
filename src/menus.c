@@ -54,6 +54,7 @@
 #define MENU_FILESEARCH			44
 #define MENU_DISPTXTFILE		45
 #define MENU_DISPTXTFILEPAUSE	46
+#define MENU_GENWWWURLS         47
 
 extern struct bbs_config conf;
 extern struct user_record *gUser;
@@ -212,7 +213,9 @@ int menu_system(char *menufile) {
 				menu[menu_items-1]->command = MENU_DISPTXTFILE;
 			} else if (strncasecmp(&buffer[8], "DISPLAYTXTPAUSE", 15) == 0) {
 				menu[menu_items-1]->command = MENU_DISPTXTFILEPAUSE;
-			} 
+			} else if (strncasecmp(&buffer[8], "GENWWWURLS", 10) == 0) {
+                menu[menu_items-1]->command = MENU_GENWWWURLS;
+            }
         } else if (strncasecmp(buffer, "SECLEVEL", 8) == 0) {
             menu[menu_items-1]->seclevel = atoi(&buffer[9]);
         } else if (strncasecmp(buffer, "DATA", 4) == 0) {
@@ -531,6 +534,9 @@ int menu_system(char *menufile) {
 							s_printf(get_string(6));
 							s_getc();
 							break;
+                        case MENU_GENWWWURLS:
+                            genurls();
+                            break;
                         default:
                             break;     
                     }

@@ -415,6 +415,7 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 	const char *val;
 	int skip;
 	char *replyid;
+	char *filename;
 //	char *static_buffer;
 
 	if (strcmp(method, "GET") == 0) {
@@ -826,6 +827,36 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 				return MHD_YES;	
 			}
 			
+		} else if (strncasecmp(url, "/files/", 7) == 0) {
+			filename = www_decode_hash(&url[7]);
+			if (filename != NULL) {
+				if (stat(filename, &s) == 0 && S_ISREG(s.st_mode)) {
+					fno = open(buffer, O_RDONLY);
+					if (fno != -1) {
+					
+						response = MHD_create_response_from_fd(s.st_size, fno);
+						MHD_add_response_header(response, MHD_HTTP_HEADER_CONTENT_TYPE, mime);
+						sprintf(buffer, "%ld", s.st_size);
+						MHD_add_response_header(response, MHD_HTTP_HEADER_CONTENT_LENGTH, buffer);
+						snprintf(buffer, PATH_MAX, "attachment; filename=\"%s\"", basename(filename));
+						MHD_add_response_header(response, MHD_HTTP_HEADER_CONTENT_DISPOSITION, buffer);
+						ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+						MHD_destroy_response (response);
+						free(header);
+						free(footer);
+						return ret;
+					}
+				}
+				free(filename);
+			}
+			if (www_404(header, footer, connection) != 0) {
+				free(header);
+				free(footer);
+				return MHD_NO;	
+			}
+			free(header);
+			free(footer);
+			return MHD_YES;	
 		} else {
 			if (www_404(header, footer, connection) != 0) {
 				free(header);

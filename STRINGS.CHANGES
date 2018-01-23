@@ -1,0 +1,28 @@
+New / Changed Strings in dist/magicka.strings
+--------------------------------------------------------------
+If you are using your own custom strings file, you will need
+to add / modify the new string on the line specified. Be sure
+to remove the start and end quotation marks.
+
+
+Changes from v0.8-alpha -> v0.9-alpha
+--------------------------------------------------------------
+LINE: 255 NEW
+OLDSTRING: (NONE)
+NEWSTRING: "\r\n\e[1;37mSending file %s...\r\n"
+
+LINE 256 NEW
+OLDSTRING: (NONE)
+NEWSTRING: "\r\n\e[1;34mFilename\e[1;30m: \e[1;37m%s\e[0m\r\n"
+
+LINE 257 NEW
+OLDSTRING: (NONE)
+NEWSTRING: "     \e[1;34mURL\e[1;30m: \e[1;37m%s\e[0m\r\n"
+
+LINE 258 NEW
+OLDSTRING: (NONE)
+NEWSTRING: "\r\n\e[1;31mError creating URL!\e[0m\r\n"
+
+LINE 259 NEW
+OLDSTRING: (NONE)
+NEWSTRING: "\e[1;33mSorry this BBS does not have the webserver enabled.\e[0m\r\n"

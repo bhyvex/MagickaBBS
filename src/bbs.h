@@ -323,6 +323,7 @@ extern void next_file_sub(struct user_record *user);
 extern void prev_file_sub(struct user_record *user);
 extern void file_scan();
 extern void file_search();
+extern void genurls();
 
 extern void lua_push_cfunctions(lua_State *L);
 extern void do_lua_script(char *script);
@@ -350,6 +351,8 @@ extern char *www_msgs_messageview(struct user_record *user, int conference, int 
 extern int www_send_msg(struct user_record *user, char *to, char *subj, int conference, int area, char *replyid, char *body);
 extern char *www_new_msg(struct user_record *user, int conference, int area);
 extern char *www_last10();
+extern void www_expire_old_links();
+extern char *www_create_link(int dir, int sub, int fid);
 #endif
 extern int menu_system(char *menufile);
 #endif
