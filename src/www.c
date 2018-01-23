@@ -830,6 +830,23 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 		} else if (strncasecmp(url, "/files/", 7) == 0) {
 			filename = www_decode_hash(&url[7]);
 			if (filename != NULL) {
+				mime = NULL;
+				// get mimetype
+				for (i=strlen(filename);i>0;--i) {
+					if (filename[i] == '.') {
+						mime = www_get_mime_type(&filename[i+1]);
+						break;
+					}
+					if (filename[i] == '/') {
+						mime = www_get_mime_type(NULL);
+						break;
+					}
+				}
+
+				if (mime = NULL) {
+					mime = www_get_mime_type(NULL);
+				}
+				
 				if (stat(filename, &s) == 0 && S_ISREG(s.st_mode)) {
 					fno = open(filename, O_RDONLY);
 					if (fno != -1) {
