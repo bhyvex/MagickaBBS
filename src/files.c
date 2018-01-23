@@ -804,7 +804,7 @@ void genurls() {
 	int i;
 	char *url;
 	for (i=0;i<tagged_count;i++) {
-		if (i % 6) {
+		if (i % 6 == 0 && i != 0) {
 			// pause
 			s_printf(get_string(6));
 			s_getc();			
@@ -826,6 +826,8 @@ void genurls() {
 	}
 	free(tagged_files);
 	tagged_count = 0;	
+	s_printf(get_string(6));
+	s_getc();	
 #else
 	s_printf(get_string(258));
 	s_printf(get_string(6));
