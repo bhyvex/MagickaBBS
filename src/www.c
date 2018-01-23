@@ -8,6 +8,7 @@
 #include <b64/cdecode.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <libgen.h>
 #if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
 #include <netinet/in.h>
 #endif
@@ -855,6 +856,7 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 						MHD_add_response_header(response, MHD_HTTP_HEADER_CONTENT_TYPE, mime);
 						sprintf(buffer, "%ld", s.st_size);
 						MHD_add_response_header(response, MHD_HTTP_HEADER_CONTENT_LENGTH, buffer);
+					
 						snprintf(buffer, PATH_MAX, "attachment; filename=\"%s\"", basename(filename));
 						MHD_add_response_header(response, MHD_HTTP_HEADER_CONTENT_DISPOSITION, buffer);
 						ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
