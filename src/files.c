@@ -803,31 +803,37 @@ void genurls() {
 #if defined(ENABLE_WWW)	
 	int i;
 	char *url;
-	for (i=0;i<tagged_count;i++) {
-		if (i % 6 == 0 && i != 0) {
-			// pause
-			s_printf(get_string(6));
-			s_getc();			
-		}
+	if (conf.www_server) {
+		for (i=0;i<tagged_count;i++) {
+			if (i % 6 == 0 && i != 0) {
+				// pause
+				s_printf(get_string(6));
+				s_getc();			
+			}
 
-		url = www_create_link(tagged_files[i]->dir, tagged_files[i]->sub, tagged_files[i]->fid);
+			url = www_create_link(tagged_files[i]->dir, tagged_files[i]->sub, tagged_files[i]->fid);
 
-		if (url != NULL) {
-			s_printf(get_string(255), basename(tagged_files[i]->filename));
-			s_printf(get_string(256), url);
-			free(url);
-		} else {
-			s_printf(get_string(257));
+			if (url != NULL) {
+				s_printf(get_string(255), basename(tagged_files[i]->filename));
+				s_printf(get_string(256), url);
+				free(url);
+			} else {
+				s_printf(get_string(257));
+			}
 		}
+		for (i=0;i<tagged_count;i++) {
+			free(tagged_files[i]->filename);
+			free(tagged_files[i]);
+		}
+		free(tagged_files);
+		tagged_count = 0;	
+		s_printf(get_string(6));
+		s_getc();
+	} else {
+		s_printf(get_string(258));
+		s_printf(get_string(6));
+		s_getc();
 	}
-	for (i=0;i<tagged_count;i++) {
-		free(tagged_files[i]->filename);
-		free(tagged_files[i]);
-	}
-	free(tagged_files);
-	tagged_count = 0;	
-	s_printf(get_string(6));
-	s_getc();	
 #else
 	s_printf(get_string(258));
 	s_printf(get_string(6));
