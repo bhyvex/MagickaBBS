@@ -2756,9 +2756,17 @@ void choose_area() {
 			s_printf(get_string(248));
 			for (i=start;i<start+22 && i < list_tmp;i++) {
 				if (i == selected) {
-					s_printf(get_string(249), i - start + 2, area_tmp[i]->index, area_tmp[i]->area->name);
+					if (new_messages(gUser, gUser->cur_mail_conf, area_tmp[i]->index)) {
+						s_printf(get_string(259), i - start + 2, area_tmp[i]->index, area_tmp[i]->area->name);
+					} else {
+						s_printf(get_string(249), i - start + 2, area_tmp[i]->index, area_tmp[i]->area->name);
+					}
 				} else {
-					s_printf(get_string(250), i - start + 2, area_tmp[i]->index, area_tmp[i]->area->name);
+					if (new_messages(gUser, gUser->cur_mail_conf, area_tmp[i]->index)) {
+						s_printf(get_string(260), i - start + 2, area_tmp[i]->index, area_tmp[i]->area->name);
+					} else {					
+						s_printf(get_string(250), i - start + 2, area_tmp[i]->index, area_tmp[i]->area->name);
+					}
 				}
 			}
 			s_printf("\e[%d;5H", selected - start + 2);
@@ -2785,8 +2793,16 @@ void choose_area() {
 						selected = list_tmp - 1;
 					} else {
 						if (!redraw) {		
-							s_printf(get_string(250), selected - start + 1, area_tmp[selected - 1]->index, area_tmp[selected - 1]->area->name);
-							s_printf(get_string(249), selected - start + 2, area_tmp[selected]->index, area_tmp[selected]->area->name);
+							if (new_messages(gUser, gUser->cur_mail_conf, area_tmp[selected - 1]->index)) {
+								s_printf(get_string(260), selected - start + 1, area_tmp[selected - 1]->index, area_tmp[selected - 1]->area->name);
+							} else {
+								s_printf(get_string(250), selected - start + 1, area_tmp[selected - 1]->index, area_tmp[selected - 1]->area->name);
+							}
+							if (new_messages(gUser, gUser->cur_mail_conf, area_tmp[selected]->index)) {
+								s_printf(get_string(259), selected - start + 2, area_tmp[selected]->index, area_tmp[selected]->area->name);
+							} else {
+								s_printf(get_string(249), selected - start + 2, area_tmp[selected]->index, area_tmp[selected]->area->name);
+							}
 							s_printf("\e[%d;5H", selected - start + 2);
 						}
 					}
@@ -2803,9 +2819,17 @@ void choose_area() {
 					if (selected < 0) {
 						selected = 0;
 					} else {
-						if (!redraw) {		
-							s_printf(get_string(249), selected - start + 2, area_tmp[selected]->index, area_tmp[selected]->area->name);
-							s_printf(get_string(250), selected - start + 3, area_tmp[selected + 1]->index, area_tmp[selected + 1]->area->name);
+						if (!redraw) {	
+							if (new_messages(gUser, gUser->cur_mail_conf, area_tmp[selected]->index)) {
+								s_printf(get_string(259), selected - start + 2, area_tmp[selected]->index, area_tmp[selected]->area->name);
+							} else {
+								s_printf(get_string(249), selected - start + 2, area_tmp[selected]->index, area_tmp[selected]->area->name);
+							}
+							if (new_messages(gUser, gUser->cur_mail_conf, area_tmp[selected + 1]->index)) {
+								s_printf(get_string(260), selected - start + 3, area_tmp[selected + 1]->index, area_tmp[selected + 1]->area->name);
+							} else {
+								s_printf(get_string(250), selected - start + 3, area_tmp[selected + 1]->index, area_tmp[selected + 1]->area->name);
+							}
 							s_printf("\e[%d;5H", selected - start + 2);
 						}	
 					}
@@ -3232,4 +3256,56 @@ void msgbase_reset_all_pointers() {
 			msgbase_reset_pointers(i, j);
 		}
 	}
+}
+
+int new_messages(struct user_record *user, int conference, int area) {
+	int count = 0;
+	s_JamBase *jb;
+	s_JamBaseHeader jbh;
+	s_JamLastRead jlr;
+	struct msg_headers *msghs;
+		
+	jb = open_jam_base(conf.mail_conferences[conference]->mail_areas[area]->path);
+	if (!jb) {
+		return 0;
+	}
+	if (JAM_ReadMBHeader(jb, &jbh) != 0) {
+		JAM_CloseMB(jb);
+		return 0;
+	}
+	if (JAM_ReadLastRead(jb, user->id, &jlr) == JAM_NO_USER) {
+		if (jbh.ActiveMsgs == 0) {
+			JAM_CloseMB(jb);
+			return 0;
+		}
+		if (conf.mail_conferences[conference]->mail_areas[area]->type == TYPE_NETMAIL_AREA) {
+			msghs = read_message_headers(conference, area, user);
+			if (msghs != NULL) {
+				if (msghs->msg_count > 0) {
+					count = msghs->msg_count;
+				}
+				free_message_headers(msghs);
+			}
+		} else {
+			count = jbh.ActiveMsgs;
+		}
+	} else {
+		if (jlr.HighReadMsg < jbh.ActiveMsgs) {
+			if (conf.mail_conferences[conference]->mail_areas[area]->type == TYPE_NETMAIL_AREA) {
+				msghs = read_message_headers(conference, area, user);
+				if (msghs != NULL) {
+					if (msghs->msg_count > 0) {
+						if (msghs->msgs[msghs->msg_count-1]->msg_h->MsgNum > jlr.HighReadMsg) {
+							count = msghs->msgs[msghs->msg_count-1]->msg_h->MsgNum - jlr.HighReadMsg;
+						}
+					}
+					free_message_headers(msghs);
+				}
+			} else {
+				count = jbh.ActiveMsgs - jlr.HighReadMsg;
+			}
+		}
+	}
+	JAM_CloseMB(jb);
+	return count;
 }

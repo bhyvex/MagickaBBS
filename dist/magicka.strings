@@ -257,3 +257,5 @@ File exists!\r\n
      \e[1;34mURL\e[1;30m: \e[1;37m%s\e[0m\r\n
 \r\n\e[1;31mError creating URL!\e[0m\r\n
 \e[1;33mSorry this BBS does not have the webserver enabled.\e[0m\r\n
+\e[%d;1H\e[1;30;40m[\e[1;34;44m%4d\e[1;30;40m]\e[1;32m*\e[1;37m%s\e[K
+\e[%d;1H\e[1;30;40m[\e[1;34m%4d\e[1;30;40m]\e[1;32m*\e[1;37m%s\e[K

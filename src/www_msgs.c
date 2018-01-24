@@ -13,58 +13,6 @@
 extern char * aha(char *input);
 extern struct bbs_config conf;
 
-static int new_messages(struct user_record *user, int conference, int area) {
-	int count = 0;
-	s_JamBase *jb;
-	s_JamBaseHeader jbh;
-	s_JamLastRead jlr;
-	struct msg_headers *msghs;
-		
-	jb = open_jam_base(conf.mail_conferences[conference]->mail_areas[area]->path);
-	if (!jb) {
-		return 0;
-	}
-	if (JAM_ReadMBHeader(jb, &jbh) != 0) {
-		JAM_CloseMB(jb);
-		return 0;
-	}
-	if (JAM_ReadLastRead(jb, user->id, &jlr) == JAM_NO_USER) {
-		if (jbh.ActiveMsgs == 0) {
-			JAM_CloseMB(jb);
-			return 0;
-		}
-		if (conf.mail_conferences[conference]->mail_areas[area]->type == TYPE_NETMAIL_AREA) {
-			msghs = read_message_headers(conference, area, user);
-			if (msghs != NULL) {
-				if (msghs->msg_count > 0) {
-					count = msghs->msg_count;
-				}
-				free_message_headers(msghs);
-			}
-		} else {
-			count = jbh.ActiveMsgs;
-		}
-	} else {
-		if (jlr.HighReadMsg < jbh.ActiveMsgs) {
-			if (conf.mail_conferences[conference]->mail_areas[area]->type == TYPE_NETMAIL_AREA) {
-				msghs = read_message_headers(conference, area, user);
-				if (msghs != NULL) {
-					if (msghs->msg_count > 0) {
-						if (msghs->msgs[msghs->msg_count-1]->msg_h->MsgNum > jlr.HighReadMsg) {
-							count = msghs->msgs[msghs->msg_count-1]->msg_h->MsgNum - jlr.HighReadMsg;
-						}
-					}
-					free_message_headers(msghs);
-				}
-			} else {
-				count = jbh.ActiveMsgs - jlr.HighReadMsg;
-			}
-		}
-	}
-	JAM_CloseMB(jb);
-	return count;
-}
-
 static char *www_sanitize(char *inp) {
 	int i;
 	char *result;
