@@ -156,7 +156,7 @@ char *www_new_email() {
 	max_len = 4096;
 	len = 0;
 	memset(page, 0, 4096);
-	
+
 	sprintf(buffer, "<div class=\"content-header\"><h2>New Email</h2></div>\n");
 	if (len + strlen(buffer) > max_len - 1) {
 		max_len += 4096;
@@ -165,7 +165,7 @@ char *www_new_email() {
 	strcat(page, buffer);
 	len += strlen(buffer);
 
-	sprintf(buffer, "<form action=\"%semail/\" method=\"POST\" enctype=\"application/x-www-form-urlencoded\">\n", conf.www_url);
+	sprintf(buffer, "<form action=\"%semail/\" method=\"POST\" onsubmit=\"return validate()\" enctype=\"application/x-www-form-urlencoded\">\n", conf.www_url);
 	if (len + strlen(buffer) > max_len - 1) {
 		max_len += 4096;
 		page = (char *)realloc(page, max_len);
@@ -173,7 +173,7 @@ char *www_new_email() {
 	strcat(page, buffer);
 	len += strlen(buffer);
 
-	sprintf(buffer, "To : <input type=\"text\" name=\"recipient\" /><br />\n");
+	sprintf(buffer, "To : <input type=\"text\" name=\"recipient\" id=\"recipient\" /><br />\n");
 	if (len + strlen(buffer) > max_len - 1) {
 		max_len += 4096;
 		page = (char *)realloc(page, max_len);
@@ -181,7 +181,7 @@ char *www_new_email() {
 	strcat(page, buffer);
 	len += strlen(buffer);
 
-	sprintf(buffer, "Subject : <input type=\"text\" name=\"subject\" /><br />\n");
+	sprintf(buffer, "Subject : <input type=\"text\" name=\"subject\" id=\"subject\" /><br />\n");
 	if (len + strlen(buffer) > max_len - 1) {
 		max_len += 4096;
 		page = (char *)realloc(page, max_len);
@@ -189,7 +189,7 @@ char *www_new_email() {
 	strcat(page, buffer);
 	len += strlen(buffer);
 
-	sprintf(buffer, "<textarea name=\"body\" wrap=\"hard\" rows=\"25\" cols=\"79\"></textarea>\n<br />");
+	sprintf(buffer, "<textarea name=\"body\" wrap=\"hard\" rows=\"25\" cols=\"79\" id=\"body\"></textarea>\n<br />");
 	if (len + strlen(buffer) > max_len - 1) {
 		max_len += 4096;
 		page = (char *)realloc(page, max_len);
