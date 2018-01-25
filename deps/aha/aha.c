@@ -359,9 +359,9 @@ char * aha(char *input)
 		else
 		if (c==13)
 		{
-			for (;line<80;line++)
+			//for (;line<80;line++)
 
-               append_output(&output, "&nbsp;", &size, &outat);
+              // append_output(&output, "&nbsp;", &size, &outat);
 			line=0;
 			momline++;
 			append_output(&output, "<br />\n", &size, &outat);
@@ -520,7 +520,7 @@ char * aha(char *input)
                  case '\xda' : append_output(&output, "&#x250C;", &size, &outat); break;
                  case '\xdb' : append_output(&output, "&#x2588;", &size, &outat); break;
                  case '\xdc' : append_output(&output, "&#x2584;", &size, &outat); break;
-                 case '\xdd' : append_output(&output, "&#x25BC;", &size, &outat); break;
+                 case '\xdd' : append_output(&output, "&#x258C;", &size, &outat); break;
                  case '\xde' : append_output(&output, "&#x2590;", &size, &outat); break;
                  case '\xdf' : append_output(&output, "&#x2580;", &size, &outat); break;
                  case '\xe0' : append_output(&output, "&#x03B1;", &size, &outat); break;
