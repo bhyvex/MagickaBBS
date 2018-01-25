@@ -618,7 +618,7 @@ sqlite3_busy_timeout(db, 5000);
 		date = (time_t)sqlite3_column_int(res, 4);
 		localtime_r(&date, &msg_date);
 		if (seen == 0) {
-			sprintf(buffer, "<div class=\"email-summary\"><div class=\"email-id\">%d</div><div class=\"email-subject\"><a href=\"%semail/%d\">%s</a></div><div class=\"email-from\">%s</div><div class=\"email-date\">%.2d:%.2d %.2d-%.2d-%.2d</div><div class=\"email-delete\"><a href=\"%semail/delete/%d\"><img src=\"%sstatic/delete.png\" alt=\"delete\" /></a></div></div>\n", msgid + 1, conf.www_url, msgid + 1, subject, from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100, conf.www_url, id, conf.www_url);
+			sprintf(buffer, "<div class=\"email-summary\"><div class=\"email-id\">%d</div><div class=\"email-subject\"><a href=\"%semail/%d\">%s</a></div><div class=\"email-from\">%s</div><div class=\"email-date\">%.2d:%.2d %.2d-%.2d-%.2d</div><a href=\"%semail/delete/%d\"><div class=\"email-delete\"></div></a></div>\n", msgid + 1, conf.www_url, msgid + 1, subject, from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100, conf.www_url, id);
 			if (len + strlen(buffer) > max_len - 1) {
 				max_len += 4096;
 				page = (char *)realloc(page, max_len);
@@ -626,7 +626,7 @@ sqlite3_busy_timeout(db, 5000);
 			strcat(page, buffer);
 			len += strlen(buffer);
 		} else {
-			sprintf(buffer, "<div class=\"email-summary-seen\"><div class=\"email-id\">%d</div><div class=\"email-subject\"><a href=\"%semail/%d\">%s</a></div><div class=\"email-from\">%s</div><div class=\"email-date\">%.2d:%.2d %.2d-%.2d-%.2d</div><div class=\"email-delete\"><a href=\"%semail/delete/%d\"><img src=\"%sstatic/delete.png\" alt=\"delete\" /></a></div></div>\n", msgid + 1, conf.www_url, msgid + 1, subject, from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100, conf.www_url, id, conf.www_url);
+			sprintf(buffer, "<div class=\"email-summary-seen\"><div class=\"email-id\">%d</div><div class=\"email-subject\"><a href=\"%semail/%d\">%s</a></div><div class=\"email-from\">%s</div><div class=\"email-date\">%.2d:%.2d %.2d-%.2d-%.2d</div><a href=\"%semail/delete/%d\"><div class=\"email-delete\"></div></a></div>\n", msgid + 1, conf.www_url, msgid + 1, subject, from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100, conf.www_url, id);
 			if (len + strlen(buffer) > max_len - 1) {
 				max_len += 4096;
 				page = (char *)realloc(page, max_len);

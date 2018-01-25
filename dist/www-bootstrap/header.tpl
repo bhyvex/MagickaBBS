@@ -12,7 +12,8 @@
 
     <!-- Bootstrap core CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-    <link rel="stylesheet" href="@@WWW_URL@@static/style.css">
+    <link rel="stylesheet" media="(max-width: 767px)" href="@@WWW_URL@@static/style-mobile.css">
+    <link rel="stylesheet" media="(min-width: 768px)" href="@@WWW_URL@@static/style.css">
     <!-- Custom styles for this template -->
     <style>
       body {
@@ -48,7 +49,14 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
       <div class="container">
-        <a class="navbar-brand" href="@@WWW_URL@@"><img class="img-responsive2" src="@@WWW_URL@@static/header.png" /></a>
+        <a class="navbar-brand" href="@@WWW_URL@@">
+        <picture>
+			    <source srcset="@@WWW_URL@@static/header-m.png" media="(max-width: 767px)">
+			    <source srcset="@@WWW_URL@@static/header.png">
+			    <img src="@@WWW_URL@@static/header.png" alt="Magicka BBS" />
+		    </picture>	
+
+        </a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>

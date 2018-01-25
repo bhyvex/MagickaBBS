@@ -8,6 +8,10 @@
 
 }
 
+.navbar-brand img {
+  max-width: 200px;
+}
+
 .footer {
 	font-size: small;
 }
@@ -19,38 +23,33 @@
 }
 
 .email-summary-seen {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-wrap: wrap;
+  flex-wrap: wrap;
 	background-color: #eee;
-        display: -webkit-box;
-        display: -ms-flexbox;
-        display: flex;
-        -ms-flex-wrap: wrap;
-        flex-wrap: wrap;
 }
 
 .email-summary {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-wrap: wrap;
+  flex-wrap: wrap;
 	background-color: #b2ffb0;
-        display: -webkit-box;
-        display: -ms-flexbox;
-        display: flex;
-        -ms-flex-wrap: wrap;
-        flex-wrap: wrap;
 }
 
 .email-id {
-  position: relative;
-  width: 100%;
-  min-height: 1px;
-  padding-right: 15px;
-  padding-left: 15px;
-
-    -webkit-box-flex: 0;
-    -ms-flex: 0 0 5%;
-    flex: 0 0 5%;
-    max-width: 5%;
-
+  font-weight: bold;
+  float: left;
+  width: 15px;
+  padding-left: 5px;
 }
 
 .email-subject {
+  float: left;
+  font-size: large;
   position: relative;
   width: 100%;
   min-height: 1px;
@@ -58,51 +57,55 @@
   padding-left: 15px;
 
     -webkit-box-flex: 0;
-    -ms-flex: 0 0 45%;
-    flex: 0 0 45%;
-    max-width: 45%;
+    -ms-flex: 0 0 50%;
+    flex: 0 0 50%;
+    max-width: 50%;
+
 
 }
 
 .email-from {
+  float: left;
+  font-size: small;
   position: relative;
   width: 100%;
   min-height: 1px;
   padding-right: 15px;
-  padding-left: 15px;
+  padding-left: 30px;
 
     -webkit-box-flex: 0;
-    -ms-flex: 0 0 20%;
-    flex: 0 0 20%;
-    max-width: 20%;
-
+    -ms-flex: 0 0 50%;
+    flex: 0 0 50%;
+    max-width: 50%;
 }
 
 .email-date {
+  font-size: small;
+  font-weight: bold;
   position: relative;
   width: 100%;
   min-height: 1px;
   padding-right: 15px;
-  padding-left: 15px;
+  padding-left: 30px;
 
     -webkit-box-flex: 0;
-    -ms-flex: 0 0 20%;
-    flex: 0 0 20%;
-    max-width: 20%;
+    -ms-flex: 0 0 80%;
+    flex: 0 0 80%;
+    max-width: 80%;
+
 }
 
 .email-delete {
+  float: right;
   position: relative;
   width: 24px;
   min-height: 24px;
-  padding-right: 15px;
-  padding-left: 15px;
-
+  top: -24px;
     -webkit-box-flex: 0;
-    -ms-flex: 0 0 5%;
-    flex: 0 0 5%;
-    max-width: 5%;
-    background: url('/static/delete.png') no-repeat;
+    -ms-flex: 0 0 100%;
+    flex: 0 0 100%;
+    max-width: 100%;
+  background: url('/static/delete.png');
 }
 
 .email-view-header {
@@ -157,19 +160,15 @@
         flex-wrap: wrap;
 }
 .msg-summary-id {
-  position: relative;
-  width: 100%;
-  min-height: 1px;
-  padding-right: 15px;
-  padding-left: 15px;
-
-    -webkit-box-flex: 0;
-    -ms-flex: 0 0 5%;
-    flex: 0 0 5%;
-    max-width: 5%;
+  font-size: xx-small;
+  font-weight: bold;
+  float: left;
+  width: 15px;
+  padding-left: 2px;
 }
 
 .msg-summary-subject {
+  float: left;
   position: relative;
   width: 100%;
   min-height: 1px;
@@ -177,49 +176,54 @@
   padding-left: 15px;
 
     -webkit-box-flex: 0;
-    -ms-flex: 0 0 35%;
-    flex: 0 0 35%;
-    max-width: 35%;
+    -ms-flex: 0 0 50%;
+    flex: 0 0 50%;
+    max-width: 50%;
 }
 
 .msg-summary-from {
+  float: left;
+  font-size: small;
   position: relative;
   width: 100%;
   min-height: 1px;
   padding-right: 15px;
-  padding-left: 15px;
+  padding-left: 30px;
 
     -webkit-box-flex: 0;
-    -ms-flex: 0 0 20%;
-    flex: 0 0 20%;
-    max-width: 20%;
+    -ms-flex: 0 0 50%;
+    flex: 0 0 50%;
+    max-width: 50%;
 }
 
 .msg-summary-to {
+  float: left;
+  font-size: small;
   position: relative;
   width: 100%;
   min-height: 1px;
   padding-right: 15px;
-  padding-left: 15px;
+  padding-left: 30px;
 
     -webkit-box-flex: 0;
-    -ms-flex: 0 0 20%;
-    flex: 0 0 20%;
-    max-width: 20%;
-
+    -ms-flex: 0 0 50%;
+    flex: 0 0 50%;
+    max-width: 50%;
 }
 
 .msg-summary-date {
+  font-size: small;
+  font-weight: bold;
   position: relative;
   width: 100%;
   min-height: 1px;
-  padding-right: 15px;
-  padding-left: 15px;
+  padding-right: 30px;
+  padding-left: 30px;
 
     -webkit-box-flex: 0;
-    -ms-flex: 0 0 20%;
-    flex: 0 0 20%;
-    max-width: 20%;
+    -ms-flex: 0 0 80%;
+    flex: 0 0 80%;
+    max-width: 80%;
 
 }
 
@@ -305,9 +309,9 @@
   padding-left: 15px;
 
     -webkit-box-flex: 0;
-    -ms-flex: 0 0 33.333333%;
-    flex: 0 0 33.333333%;
-    max-width: 33.333333%;
+    -ms-flex: 0 0 100%;
+    flex: 0 0 100%;
+    max-width: 100%;
 }
 
 .last10-location {
@@ -318,12 +322,13 @@
   padding-left: 15px;
 
     -webkit-box-flex: 0;
-    -ms-flex: 0 0 33.333333%;
-    flex: 0 0 33.333333%;
-    max-width: 33.333333%;
+    -ms-flex: 0 0 100%;
+    flex: 0 0 100%;
+    max-width: 100%;
 }
 
 .last10-date {
+  font-size: small;
   position: relative;
   width: 100%;
   min-height: 1px;
@@ -331,15 +336,35 @@
   padding-left: 15px;
 
     -webkit-box-flex: 0;
-    -ms-flex: 0 0 33.333333%;
-    flex: 0 0 33.333333%;
-    max-width: 33.333333%;
+    -ms-flex: 100%;
+    flex: 0 0 100%;
+    max-width: 100%;
 }
 
 #msgbody {
 	background-color: black;
-	color: gray;
+  color: gray;
+  font-size: xx-small;
 	font-family: 'pxplus_ibm_vga8regular';
 	line-height: 1;
-	padding: 5px;
+  padding: 5px;
+  overflow-x: scroll;
+}
+
+.msg-reply-form {
+  max-width: 100%;
+}
+
+.msg-reply-form textarea {
+  padding: 0px;
+  max-width: 100%;
+}
+
+.email-reply-form {
+  max-width: 100%;
+}
+
+.email-reply-form textarea {
+  padding: 0px;
+  max-width: 100%;
 }
