@@ -307,6 +307,7 @@ int www_403(char *header, char *footer, struct MHD_Connection * connection) {
 	struct MHD_Response *response;
 	int ret;
 	FILE *fptr;
+	char *endptr;
 	
 	snprintf(buffer, PATH_MAX, "%s/403.tpl", conf.www_path);
 			
@@ -417,6 +418,8 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 	int skip;
 	char *replyid;
 	char *filename;
+	int email;
+	char *endptr;
 //	char *static_buffer;
 
 	if (strcmp(method, "GET") == 0) {
@@ -613,8 +616,8 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 				free(footer);
 				return MHD_YES;		
 			}
-			
-			if (!www_email_delete(con_inf->user, atoi(&url[14]))) {
+			email = strtol(&url[14], &endptr, 10);
+			if (email == -1 || !www_email_delete(con_inf->user, email)) {
 				page = (char *)malloc(31);
 				if (page == NULL) {
 					free(header);
@@ -648,7 +651,13 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 				free(footer);
 				return MHD_YES;		
 			}
-			page = www_email_display(con_inf->user, atoi(&url[7]));
+			email = strtol(&url[7], &endptr, 10);
+			if (email == -1) {
+				free(header);
+				free(footer);
+				return MHD_NO;						
+			}
+			page = www_email_display(con_inf->user, email);
 			if (page == NULL) {
 				free(header);
 				free(footer);
@@ -690,10 +699,16 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 	
 			aptr = strtok(url_copy, "/");
 			if (aptr != NULL) {
-				conference = atoi(aptr);
+				conference = strtol(aptr, &endptr, 10);
+				if (endptr == aptr) {
+					conference = -1;
+				}
 				aptr = strtok(NULL, "/");
 				if (aptr != NULL) {
-					area = atoi(aptr);
+					area = strtol(aptr, &endptr, 10);
+					if (endptr == aptr) {
+						area = -1;
+					}	
 				}
 			}
 			free(url_copy);
@@ -724,13 +739,22 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 	
 			aptr = strtok(url_copy, "/");
 			if (aptr != NULL) {
-				conference = atoi(aptr);
+				conference = strtol(aptr, &endptr, 10);
+				if (endptr == aptr) {
+					conference = -1;
+				}
 				aptr = strtok(NULL, "/");
 				if (aptr != NULL) {
-					area = atoi(aptr);
+					area = strtol(aptr, &endptr, 10);
+					if (endptr == aptr) {
+						area = -1;
+					}
 					aptr = strtok(NULL, "/");
 					if (aptr != NULL) {
-						msg = atoi(aptr);
+						msg = strtol(aptr, &endptr, 10);
+						if (endptr == aptr) {
+							msg = -1;
+						}						
 					}
 				}
 			}
@@ -974,9 +998,15 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 				} else if (strcmp(con_inf->keys[i], "body") == 0) {
 					body = con_inf->values[i];
 				} else if (strcmp(con_inf->keys[i], "conference") == 0) {
-					conference = atoi(con_inf->values[i]);
+					conference = strtol(con_inf->values[i], &endptr, 10);
+					if (endptr == con_inf->values[i]) {
+						conference = -1;
+					}
 				} else if (strcmp(con_inf->keys[i], "area") == 0) {
-					area = atoi(con_inf->values[i]);
+					area = strtol(con_inf->values[i], &endptr, 10);
+					if (endptr == con_inf->values[i]) {
+						area = -1;
+					}
 				} else if (strcmp(con_inf->keys[i], "replyid") == 0) {
 					replyid = con_inf->values[i];
 				}
