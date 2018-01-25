@@ -422,6 +422,8 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 	char *endptr;
 //	char *static_buffer;
 
+	page = NULL;
+
 	if (strcmp(method, "GET") == 0) {
 		if (*ptr == NULL) {
 			con_inf = (struct connection_info_s *)malloc(sizeof(struct connection_info_s));
