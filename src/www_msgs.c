@@ -586,7 +586,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 			strcat(page, buffer);
 			len += strlen(buffer);
 
-			sprintf(buffer, "<textarea name=\"body\" wrap=\"hard\" rows=\"25\" cols=\"79\" id=\"replybody\">");
+			sprintf(buffer, "<textarea name=\"body\" rows=\"25\" cols=\"79\" wrap=\"soft\" id=\"replybody\">");
 			if (len + strlen(buffer) > max_len - 1) {
 				max_len += 4096;
 				page = (char *)realloc(page, max_len);
@@ -692,6 +692,49 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 	}
 }
 
+static char *www_wordwrap(char *content) {
+	int len = strlen(content);
+	int i;
+	int line_count;
+	char *last_space = NULL;
+	char *ret = (char *)malloc(len + 1);
+	int at = 0;
+
+	if (ret == NULL) {
+		return NULL;
+	}
+
+	for (i=0;i<len;i++) {
+		if (content[i] == '\n') {
+			continue;
+		}
+		if (content[i] != '\r') {
+			ret[at] = content[i];
+			if (content[i] == ' ') {
+				last_space = &ret[at];
+			}
+			at++;
+		} else {
+			ret[at++] = content[i];
+		}
+		ret[at] = '\0';
+		if (content[i] == '\r') {
+			line_count = 0;
+			last_space = NULL;
+		} else if (line_count == 75) {
+			// wrap
+			if (last_space != NULL) {
+				*last_space = '\r';
+				last_space = NULL;
+			}
+			line_count = 0;
+		} else {
+			line_count++;
+		}
+	}
+	return ret;
+}
+
 int www_send_msg(struct user_record *user, char *to, char *subj, int conference, int area, char *replyid, char *body) {
 	s_JamBase *jb;
 	s_JamMsgHeader jmh;
@@ -709,6 +752,7 @@ int www_send_msg(struct user_record *user, char *to, char *subj, int conference,
 	char *tagline;
 	struct utsname name;
 	int pos;
+	char *body3;
 	
 	if (conference < 0 || conference >= conf.mail_conference_count || area < 0 || area >= conf.mail_conferences[conference]->mail_area_count) {
 		return 0;
@@ -828,31 +872,45 @@ int www_send_msg(struct user_record *user, char *to, char *subj, int conference,
 
 		if (conf.mail_conferences[conference]->nettype == NETWORK_FIDO) {
 			if (conf.mail_conferences[conference]->fidoaddr->point == 0) {
-				snprintf(buffer, 256, "\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s (%d:%d/%d)\r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline, conf.mail_conferences[conference]->fidoaddr->zone,
+				snprintf(buffer, 256, "\r\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s (%d:%d/%d)\r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline, conf.mail_conferences[conference]->fidoaddr->zone,
 																																						  conf.mail_conferences[conference]->fidoaddr->net,
 																																						  conf.mail_conferences[conference]->fidoaddr->node);
 			} else {
-				snprintf(buffer, 256, "\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s (%d:%d/%d.%d)\r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline, conf.mail_conferences[conference]->fidoaddr->zone,
+				snprintf(buffer, 256, "\r\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s (%d:%d/%d.%d)\r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline, conf.mail_conferences[conference]->fidoaddr->zone,
 																																						  conf.mail_conferences[conference]->fidoaddr->net,
 																																						  conf.mail_conferences[conference]->fidoaddr->node,
 																																						  conf.mail_conferences[conference]->fidoaddr->point);
 			}
 		} else {
-			snprintf(buffer, 256, "\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s \r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline);
+			snprintf(buffer, 256, "\r\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s \r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline);
 		}
-		body2 = (char *)malloc(strlen(body) + 2 + strlen(buffer));		
-		memset(body2, 0, strlen(body) + 2 + strlen(buffer));
-		pos = 0;
-		for (z =0;z < strlen(body); z++) {
-			if (body[z] != '\n') {
-				body2[pos++] = body[z];
-				body2[pos] = '\0';
-			}
+		body2 = www_wordwrap(body);
+		if (body2 == NULL) {
+			JAM_UnlockMB(jb);
+			JAM_DelSubPacket(jsp);
+			JAM_CloseMB(jb);
+			return 0;
 		}
-		strcat(body2, buffer);
+		body3 = (char *)malloc(strlen(body2) + 2 + strlen(buffer));		
+		if (body3 == NULL) {
+			free(body2);
+			JAM_UnlockMB(jb);
+			JAM_DelSubPacket(jsp);
+			JAM_CloseMB(jb);
+			return 0;
+		}
 		
-		if (JAM_AddMessage(jb, &jmh, jsp, (char *)body2, strlen(body2))) {
-				
+		memset(body3, 0, strlen(body2) + 2 + strlen(buffer));
+		pos = 0;
+		sprintf(body3, "%s%s", body2, buffer);
+		
+		if (JAM_AddMessage(jb, &jmh, jsp, (char *)body3, strlen(body3))) {
+			free(body3);
+			free(body2);
+			JAM_UnlockMB(jb);
+			JAM_DelSubPacket(jsp);
+			JAM_CloseMB(jb);
+			return 0;
 		} else {
 			if (conf.mail_conferences[conference]->mail_areas[area]->type == TYPE_ECHOMAIL_AREA) {
 				if (conf.echomail_sem != NULL) {
@@ -863,6 +921,7 @@ int www_send_msg(struct user_record *user, char *to, char *subj, int conference,
 		}
 
 		free(body2);
+		free(body3);
 
 		JAM_UnlockMB(jb);
 
@@ -940,7 +999,7 @@ char *www_new_msg(struct user_record *user, int conference, int area) {
 	strcat(page, buffer);
 	len += strlen(buffer);
 
-	sprintf(buffer, "<textarea name=\"body\" wrap=\"hard\" rows=\"25\" cols=\"79\" id=\"body\"></textarea>\n<br />");
+	sprintf(buffer, "<textarea name=\"body\" id=\"body\" rows=\"25\" cols=\"79\" wrap=\"soft\"></textarea>\n<br />");
 	if (len + strlen(buffer) > max_len - 1) {
 		max_len += 4096;
 		page = (char *)realloc(page, max_len);
