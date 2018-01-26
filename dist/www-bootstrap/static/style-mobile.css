@@ -355,16 +355,12 @@
   max-width: 100%;
 }
 
-.msg-reply-form textarea {
-  padding: 0px;
-  max-width: 100%;
-}
-
 .email-reply-form {
   max-width: 100%;
 }
 
-.email-reply-form textarea {
+textarea {
   padding: 0px;
   max-width: 100%;
+  overflow-x: none;
 }
