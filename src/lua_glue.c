@@ -349,6 +349,172 @@ int l_tempPath(lua_State *L) {
 	return 1;
 }
 
+int l_postMessage(lua_State *L) {
+	int confr = lua_tointeger(L, 1);
+	int area = lua_tointeger(L, 2);
+	time_t dwritten = time(NULL);
+	char *to = lua_tostring(L, 3);
+	char *from = lua_tostring(L, 4);
+	char *subject = lua_tostring(L, 5);
+	char *body = lua_tostring(L, 6);
+
+	char buffer[256];
+
+	s_JamBase *jb;
+	s_JamMsgHeader jmh;
+	s_JamSubPacket* jsp;
+	s_JamSubfield jsf;
+	int z;
+	int j;
+	int i;
+	char *msg;
+	char *tagline;
+	struct utsname name;
+
+	jb = open_jam_base(conf.mail_conferences[confr]->mail_areas[area]->path);
+	if (!jb) {
+		dolog("Error opening JAM base.. %s", conf.mail_conferences[confr]->mail_areas[area]->path);
+		return 0;
+	}
+
+	JAM_ClearMsgHeader( &jmh );
+	jmh.DateWritten = dwritten;
+	jmh.Attribute |= JAM_MSG_LOCAL;
+
+
+	jsp = JAM_NewSubPacket();
+
+	jsf.LoID   = JAMSFLD_SENDERNAME;
+	jsf.HiID   = 0;
+	jsf.DatLen = strlen(from);
+	jsf.Buffer = (char *)from;
+	JAM_PutSubfield(jsp, &jsf);
+
+	if (conf.mail_conferences[confr]->mail_areas[area]->type == TYPE_NEWSGROUP_AREA) {
+		sprintf(buffer, "ALL");
+		jsf.LoID   = JAMSFLD_RECVRNAME;
+		jsf.HiID   = 0;
+		jsf.DatLen = strlen(buffer);
+		jsf.Buffer = (char *)buffer;
+		JAM_PutSubfield(jsp, &jsf);
+
+	} else {
+		jsf.LoID   = JAMSFLD_RECVRNAME;
+		jsf.HiID   = 0;
+		jsf.DatLen = strlen(to);
+		jsf.Buffer = (char *)to;
+		JAM_PutSubfield(jsp, &jsf);
+	}
+
+	jsf.LoID   = JAMSFLD_SUBJECT;
+	jsf.HiID   = 0;
+	jsf.DatLen = strlen(subject);
+	jsf.Buffer = (char *)subject;
+	JAM_PutSubfield(jsp, &jsf);
+
+	if (conf.mail_conferences[confr]->mail_areas[area]->type == TYPE_ECHOMAIL_AREA || conf.mail_conferences[confr]->mail_areas[area]->type == TYPE_NEWSGROUP_AREA) {
+		jmh.Attribute |= JAM_MSG_TYPEECHO;
+
+		if (conf.mail_conferences[confr]->fidoaddr->point) {
+			sprintf(buffer, "%d:%d/%d.%d", conf.mail_conferences[confr]->fidoaddr->zone,
+											conf.mail_conferences[confr]->fidoaddr->net,
+											conf.mail_conferences[confr]->fidoaddr->node,
+											conf.mail_conferences[confr]->fidoaddr->point);
+		} else {
+			sprintf(buffer, "%d:%d/%d", conf.mail_conferences[confr]->fidoaddr->zone,
+											conf.mail_conferences[confr]->fidoaddr->net,
+											conf.mail_conferences[confr]->fidoaddr->node);
+		}
+		jsf.LoID   = JAMSFLD_OADDRESS;
+		jsf.HiID   = 0;
+		jsf.DatLen = strlen(buffer);
+		jsf.Buffer = (char *)buffer;
+		JAM_PutSubfield(jsp, &jsf);
+
+		sprintf(buffer, "%d:%d/%d.%d %08lx", conf.mail_conferences[confr]->fidoaddr->zone,
+												conf.mail_conferences[confr]->fidoaddr->net,
+												conf.mail_conferences[confr]->fidoaddr->node,
+												conf.mail_conferences[confr]->fidoaddr->point,
+												generate_msgid());
+
+		jsf.LoID   = JAMSFLD_MSGID;
+		jsf.HiID   = 0;
+		jsf.DatLen = strlen(buffer);
+		jsf.Buffer = (char *)buffer;
+		JAM_PutSubfield(jsp, &jsf);
+		jmh.MsgIdCRC = JAM_Crc32(buffer, strlen(buffer));
+
+	} else if (conf.mail_conferences[confr]->mail_areas[confr]->type == TYPE_NETMAIL_AREA) {
+		JAM_DelSubPacket(jsp);
+		JAM_CloseMB(jb);
+		return 0;
+	}
+
+	while (1) {
+		z = JAM_LockMB(jb, 100);
+		if (z == 0) {
+			break;
+		} else if (z == JAM_LOCK_FAILED) {
+			sleep(1);
+		} else {
+			dolog("Failed to lock msg base!");
+			JAM_CloseMB(jb);			
+			return 0;
+		}
+	}
+
+	uname(&name);
+	if (conf.mail_conferences[confr]->tagline != NULL) {
+		tagline = conf.mail_conferences[confr]->tagline;
+	} else {
+		tagline = conf.default_tagline;
+	}
+
+	if (conf.mail_conferences[confr]->nettype == NETWORK_FIDO) {
+		if (conf.mail_conferences[confr]->fidoaddr->point == 0) {
+			snprintf(buffer, 256, "\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s (%d:%d/%d)\r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline, conf.mail_conferences[confr]->fidoaddr->zone,
+																																							conf.mail_conferences[confr]->fidoaddr->net,
+																																							conf.mail_conferences[confr]->fidoaddr->node);
+		} else {
+			snprintf(buffer, 256, "\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s (%d:%d/%d.%d)\r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline, conf.mail_conferences[confr]->fidoaddr->zone,
+																																							conf.mail_conferences[confr]->fidoaddr->net,
+																																							conf.mail_conferences[confr]->fidoaddr->node,
+																																							conf.mail_conferences[confr]->fidoaddr->point);
+		}
+	} else {
+		snprintf(buffer, 256, "\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s \r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline);
+	}
+
+	msg = (char *)malloc(strlen(body) + 2 + strlen(buffer));
+	
+	for (i=0;i<strlen(body);i++) {
+		if (body[i] == '\n') {
+			continue;
+		}
+		msg[j++] = body[i];
+		msg[j] = '\0';
+	}
+
+	strcat(msg, buffer);
+
+	if (JAM_AddMessage(jb, &jmh, jsp, (char *)msg, strlen(msg))) {
+		dolog("Failed to add message");
+		JAM_UnlockMB(jb);
+		
+		JAM_DelSubPacket(jsp);
+		JAM_CloseMB(jb);
+		free(msg);
+		return 0;
+	} else {
+		JAM_UnlockMB(jb);
+
+		JAM_DelSubPacket(jsp);
+		JAM_CloseMB(jb);
+	}
+	free(msg);
+	return 0;
+}
+
 void lua_push_cfunctions(lua_State *L) {
 	lua_pushcfunction(L, l_bbsWString);
 	lua_setglobal(L, "bbs_write_string");
@@ -396,6 +562,8 @@ void lua_push_cfunctions(lua_State *L) {
 	lua_setglobal(L, "bbs_read_message");
 	lua_pushcfunction(L, l_tempPath);
 	lua_setglobal(L, "bbs_temp_path");
+	lua_pushcfunction(L, l_postMessage);
+	lua_setglobal(L, "bbs_post_message");
 }
 
 void do_lua_script(char *script) {
