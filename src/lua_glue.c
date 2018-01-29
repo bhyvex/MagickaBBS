@@ -446,7 +446,7 @@ int l_postMessage(lua_State *L) {
 		JAM_PutSubfield(jsp, &jsf);
 		jmh.MsgIdCRC = JAM_Crc32(buffer, strlen(buffer));
 
-	} else if (conf.mail_conferences[confr]->mail_areas[confr]->type == TYPE_NETMAIL_AREA) {
+	} else if (conf.mail_conferences[confr]->mail_areas[area]->type == TYPE_NETMAIL_AREA) {
 		JAM_DelSubPacket(jsp);
 		JAM_CloseMB(jb);
 		return 0;
