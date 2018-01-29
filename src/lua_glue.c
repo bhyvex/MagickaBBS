@@ -2,6 +2,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include "bbs.h"
 #include "lua/lua.h"
 #include "lua/lauxlib.h"
@@ -357,6 +358,7 @@ int l_postMessage(lua_State *L) {
 	char *from = lua_tostring(L, 4);
 	char *subject = lua_tostring(L, 5);
 	char *body = lua_tostring(L, 6);
+	int sem_fd;
 
 	char buffer[256];
 
@@ -512,6 +514,14 @@ int l_postMessage(lua_State *L) {
 		JAM_CloseMB(jb);
 	}
 	free(msg);
+
+	if (conf.mail_conferences[confr]->mail_areas[area]->type == TYPE_ECHOMAIL_AREA || conf.mail_conferences[confr]->mail_areas[area]->type == TYPE_NEWSGROUP_AREA) {
+		if (conf.echomail_sem != NULL) {
+			sem_fd = open(conf.echomail_sem, O_RDWR | O_CREAT | O_TRUNC, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
+			close(sem_fd);
+		}
+	}
+
 	return 0;
 }
 
