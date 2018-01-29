@@ -2084,13 +2084,14 @@ void post_message(struct user_record *user) {
 	if (strlen(buffer) == 0) {
 		strcpy(buffer, "ALL");
 	}
-
+/*
 	if (conf.mail_conferences[user->cur_mail_conf]->networked == 0 && strcasecmp(buffer, "ALL") != 0) {
 		if (check_user(buffer)) {
 			s_printf(get_string(55));
 			return;
 		}
 	}
+*/
 	if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NETMAIL_AREA) {
 		s_printf(get_string(121));
 		s_readstring(buffer2, 32);

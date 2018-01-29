@@ -1,7 +1,11 @@
 #include <sys/utsname.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include "bbs.h"
 #include "lua/lua.h"
 #include "lua/lauxlib.h"
+#include "jamlib/jam.h"
 
 extern int mynode;
 extern struct bbs_config conf;
@@ -171,6 +175,180 @@ int l_getBBSInfo(lua_State *L) {
 	return 4;
 }
 
+
+int l_getUserHandle(lua_State *L) {	
+	lua_pushstring(L, gUser->loginname);
+
+	return 1;
+}
+
+int l_messageFound(lua_State *L) {
+	int conference = lua_tointeger(L, 1);
+	int area = lua_tointeger(L, 2);
+	int id = lua_tointeger(L, 3);
+	int z;
+
+	s_JamBase *jb;
+	s_JamBaseHeader jbh;
+	s_JamMsgHeader jmh;
+	s_JamSubPacket* jsp;
+
+	jb = open_jam_base(conf.mail_conferences[conference]->mail_areas[area]->path);
+	if (!jb) {
+		dolog("Error opening JAM base.. %s", conf.mail_conferences[conference]->mail_areas[area]->path);
+		lua_pushnumber(L, 0);
+		return 1;
+	}
+	z = JAM_ReadMsgHeader(jb, id, &jmh, &jsp);
+
+	if (z != 0) {
+		dolog("Failed to read msg header: %d Erro %d", z, JAM_Errno(jb));
+		JAM_CloseMB(jb);
+		lua_pushnumber(L, 0);
+		return 1;
+	}
+	if (jmh.Attribute & JAM_MSG_DELETED) {
+		JAM_DelSubPacket(jsp);
+		JAM_CloseMB(jb);
+		lua_pushnumber(L, 0);
+		return 1;
+	}
+	
+	JAM_DelSubPacket(jsp);
+	JAM_CloseMB(jb);
+	
+	lua_pushnumber(L, 1);
+	return 1;	
+}
+
+int l_readMessageHdr(lua_State *L) {
+	int conference = lua_tointeger(L, 1);
+	int area = lua_tointeger(L, 2);
+	int id = lua_tointeger(L, 3);
+	int z;
+
+	s_JamBase *jb;
+	s_JamBaseHeader jbh;
+	s_JamMsgHeader jmh;
+	s_JamSubPacket* jsp;
+
+	char *subject = NULL;
+	char *sender = NULL;
+	char *recipient = NULL;
+
+	jb = open_jam_base(conf.mail_conferences[conference]->mail_areas[area]->path);
+	if (!jb) {
+		dolog("Error opening JAM base.. %s", conf.mail_conferences[conference]->mail_areas[area]->path);
+		return 0;
+	}
+	z = JAM_ReadMsgHeader(jb, id, &jmh, &jsp);
+
+	if (z != 0) {
+		dolog("Failed to read msg header: %d Erro %d", z, JAM_Errno(jb));
+		JAM_CloseMB(jb);
+	} else if (jmh.Attribute & JAM_MSG_DELETED) {
+		JAM_DelSubPacket(jsp);
+		JAM_CloseMB(jb);
+	} else {
+		for (z=0;z<jsp->NumFields;z++) {
+			if (jsp->Fields[z]->LoID == JAMSFLD_SUBJECT) {
+				subject = (char *)malloc(jsp->Fields[z]->DatLen + 1);
+				memset(subject, 0, jsp->Fields[z]->DatLen + 1);
+				memcpy(subject, jsp->Fields[z]->Buffer, jsp->Fields[z]->DatLen);
+			}
+			if (jsp->Fields[z]->LoID == JAMSFLD_SENDERNAME) {
+				sender = (char *)malloc(jsp->Fields[z]->DatLen + 1);
+				memset(sender, 0, jsp->Fields[z]->DatLen + 1);
+				memcpy(sender, jsp->Fields[z]->Buffer, jsp->Fields[z]->DatLen);
+			}
+			if (jsp->Fields[z]->LoID == JAMSFLD_RECVRNAME) {
+				recipient = (char *)malloc(jsp->Fields[z]->DatLen + 1);
+				memset(recipient, 0, jsp->Fields[z]->DatLen + 1);
+				memcpy(recipient, jsp->Fields[z]->Buffer, jsp->Fields[z]->DatLen);
+			}
+
+		}
+		JAM_DelSubPacket(jsp);
+		JAM_CloseMB(jb);		
+	}
+	if (subject == NULL) {
+		subject = strdup("(No Subject)");
+	}
+
+	if (sender == NULL) {
+		sender = strdup("(No Sender)");
+	}
+
+	if (recipient == NULL) {
+		recipient = strdup("(No Recipient)");
+	}
+
+	lua_pushstring(L, sender);
+	lua_pushstring(L, recipient);
+	lua_pushstring(L, subject);
+
+	free(subject);
+	free(sender);
+	free(recipient);
+
+	
+	return 3;
+}
+
+int l_readMessage(lua_State *L) {
+	int conference = lua_tointeger(L, 1);
+	int area = lua_tointeger(L, 2);
+	int id = lua_tointeger(L, 3);
+	int z;
+
+	s_JamBase *jb;
+	s_JamBaseHeader jbh;
+	s_JamMsgHeader jmh;
+
+	char *body = NULL;
+
+	jb = open_jam_base(conf.mail_conferences[conference]->mail_areas[area]->path);
+	if (!jb) {
+		dolog("Error opening JAM base.. %s", conf.mail_conferences[conference]->mail_areas[area]->path);
+		return 0;
+	}
+	z = JAM_ReadMsgHeader(jb, id, &jmh, NULL);
+
+	if (z != 0) {
+		dolog("Failed to read msg header: %d Erro %d", z, JAM_Errno(jb));
+		JAM_CloseMB(jb);
+		body = strdup("No Message");
+	} else if (jmh.Attribute & JAM_MSG_DELETED) {
+		JAM_CloseMB(jb);
+		body = strdup("No Message");
+	} else {
+		body = (char *)malloc(jmh.TxtLen + 1);
+		JAM_ReadMsgText(jb, jmh.TxtOffset, jmh.TxtLen, (char *)body);
+		body[jmh.TxtLen] = '\0';
+
+		JAM_CloseMB(jb);
+	}
+	lua_pushstring(L, body);
+
+	free(body);
+	
+	return 1;
+}
+
+int l_tempPath(lua_State *L) {
+	char buffer[PATH_MAX];
+	struct stat s;
+	snprintf(buffer, PATH_MAX, "%s/node%d/lua/", conf.bbs_path, mynode);
+
+	if (stat(buffer, &s) != 0) {
+		mkdir(buffer, 0755);
+	}
+	
+	lua_pushstring(L, buffer);
+
+	return 1;
+}
+
 void lua_push_cfunctions(lua_State *L) {
 	lua_pushcfunction(L, l_bbsWString);
 	lua_setglobal(L, "bbs_write_string");
@@ -207,7 +385,17 @@ void lua_push_cfunctions(lua_State *L) {
 	lua_pushcfunction(L, l_bbsFileScan);
 	lua_setglobal(L, "bbs_file_scan");	
 	lua_pushcfunction(L, l_bbsFullMailScan);
-	lua_setglobal(L, "bbs_full_mail_scan");		
+	lua_setglobal(L, "bbs_full_mail_scan");	
+	lua_pushcfunction(L, l_getUserHandle);
+	lua_setglobal(L, "bbs_get_userhandle");	
+	lua_pushcfunction(L, l_messageFound);
+	lua_setglobal(L, "bbs_message_found");	
+	lua_pushcfunction(L, l_readMessageHdr);
+	lua_setglobal(L, "bbs_read_message_hdr");	
+	lua_pushcfunction(L, l_readMessage);
+	lua_setglobal(L, "bbs_read_message");
+	lua_pushcfunction(L, l_tempPath);
+	lua_setglobal(L, "bbs_temp_path");
 }
 
 void do_lua_script(char *script) {
