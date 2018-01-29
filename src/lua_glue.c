@@ -489,6 +489,8 @@ int l_postMessage(lua_State *L) {
 
 	msg = (char *)malloc(strlen(body) + 2 + strlen(buffer));
 	
+	j = 0;
+
 	for (i=0;i<strlen(body);i++) {
 		if (body[i] == '\n') {
 			continue;
