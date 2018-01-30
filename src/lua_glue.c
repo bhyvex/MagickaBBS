@@ -353,7 +353,7 @@ int l_tempPath(lua_State *L) {
 int l_postMessage(lua_State *L) {
 	int confr = lua_tointeger(L, 1);
 	int area = lua_tointeger(L, 2);
-	time_t dwritten = time(NULL);
+	time_t dwritten = utc_to_local(time(NULL));
 	char *to = lua_tostring(L, 3);
 	char *from = lua_tostring(L, 4);
 	char *subject = lua_tostring(L, 5);
