@@ -336,6 +336,20 @@ int l_readMessage(lua_State *L) {
 	return 1;
 }
 
+int l_dataPath(lua_State *L) {
+	char buffer[PATH_MAX];
+	struct stat s;
+	snprintf(buffer, PATH_MAX, "%s/data/", conf.script_path);
+
+	if (stat(buffer, &s) != 0) {
+		mkdir(buffer, 0755);
+	}
+	
+	lua_pushstring(L, buffer);
+
+	return 1;
+}
+
 int l_tempPath(lua_State *L) {
 	char buffer[PATH_MAX];
 	struct stat s;
@@ -347,6 +361,11 @@ int l_tempPath(lua_State *L) {
 	
 	lua_pushstring(L, buffer);
 
+	return 1;
+}
+
+int l_userSecurity(lua_State *L) {
+	lua_pushnumber(L, gUser->sec_level);
 	return 1;
 }
 
@@ -576,6 +595,10 @@ void lua_push_cfunctions(lua_State *L) {
 	lua_setglobal(L, "bbs_temp_path");
 	lua_pushcfunction(L, l_postMessage);
 	lua_setglobal(L, "bbs_post_message");
+	lua_pushcfunction(L, l_dataPath);
+	lua_setglobal(L, "bbs_data_path");
+	lua_pushcfunction(L, l_userSecurity);
+	lua_setglobal(L, "bbs_user_security");
 }
 
 void do_lua_script(char *script) {

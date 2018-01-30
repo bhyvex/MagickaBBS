@@ -20,7 +20,7 @@ function menu()
 
 	-- display tagline
 
-	local tLines = readLines("scripts/taglines.txt");
+	local tLines = readLines(bbs_data_path() .. "taglines.txt");
 
 	local rand = math.random(#tLines);
 

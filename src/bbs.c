@@ -689,7 +689,7 @@ void automessage_display() {
 }
 
 void runbbs_real(int socket, char *ip, int ssh) {
-	char buffer[1024];
+	char buffer[PATH_MAX];
 	char password[17];
 
 	struct stat s;
@@ -878,7 +878,7 @@ tryagain:
 			user = gUser;
 		}
 	}
-	sprintf(buffer, "%s/nodeinuse.%d", conf.bbs_path, mynode);
+	snprintf(buffer, PATH_MAX, "%s/nodeinuse.%d", conf.bbs_path, mynode);
 	nodefile = fopen(buffer, "w");
 	if (!nodefile) {
 		dolog("Error opening nodefile!");
@@ -889,15 +889,25 @@ tryagain:
 	fputs(user->loginname, nodefile);
 	fclose(nodefile);
 
-	sprintf(buffer, "%s/node%d/nodemsg.txt", conf.bbs_path, mynode);
+	snprintf(buffer, PATH_MAX, "%s/node%d/nodemsg.txt", conf.bbs_path, mynode);
 
 	if (stat(buffer, &s) == 0) {
 		unlink(buffer);
 	}
 
+	snprintf(buffer, PATH_MAX, "%s/node%d/lua/", conf.bbs_path, mynode);
+
+	if (stat(buffer, &s) == 0) {
+		recursive_delete(buffer);
+	}
+	
+
 #if defined(ENABLE_WWW)
 	www_expire_old_links();
 #endif
+
+
+
 	// do post-login
 	dolog("%s logged in, on node %d", user->loginname, mynode);
 	broadcast("%s logged in, on node %d", user->loginname, mynode);
@@ -918,7 +928,7 @@ tryagain:
 
 
 	if (conf.script_path != NULL) {
-		sprintf(buffer, "%s/login_stanza.lua", conf.script_path);
+		snprintf(buffer, PATH_MAX, "%s/login_stanza.lua", conf.script_path);
 		if (stat(buffer, &s) == 0) {
 			L = luaL_newstate();
 			luaL_openlibs(L);
@@ -980,7 +990,7 @@ void do_logout() {
 	int do_internal_logout = 1;
 	
 	if (conf.script_path != NULL) {
-		sprintf(buffer, "%s/logout_stanza.lua", conf.script_path);
+		snprintf(buffer, PATH_MAX, "%s/logout_stanza.lua", conf.script_path);
 		if (stat(buffer, &s) == 0) {
 			L = luaL_newstate();
 			luaL_openlibs(L);
