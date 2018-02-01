@@ -21,6 +21,8 @@
 #include "lua/lauxlib.h"
 
 
+int telnet_bin_mode = 0;
+
 int mynode = 0;
 struct bbs_config conf;
 
@@ -384,9 +386,15 @@ void s_displayansi(char *file) {
 	}
 }
 
+
 char s_getchar() {
 	unsigned char c;
+	unsigned char d;
 	int len;
+	char iac_binary_will[] = {IAC, IAC_WILL, IAC_TRANSMIT_BINARY, '\0'};
+	char iac_binary_do[] = {IAC, IAC_DO, IAC_TRANSMIT_BINARY, '\0'};
+	char iac_binary_wont[] = {IAC, IAC_WONT, IAC_TRANSMIT_BINARY, '\0'};
+	char iac_binary_dont[] = {IAC, IAC_DONT, IAC_TRANSMIT_BINARY, '\0'};
 
 	do {
 
@@ -401,18 +409,57 @@ char s_getchar() {
 		}
 
 		if (!sshBBS) {
-			while (c == 255) {
+			while (c == IAC) {
 				len = read(gSocket, &c, 1);
 				if (len == 0) {
 					disconnect("Socket Closed");
-				} else if (c == 255) {
+				} else if (c == IAC) {
 					usertimeout = 10;
 					return c;
 				}
-				if (c == 254 || c == 253 || c == 252 || c == 251) {
-					len = read(gSocket, &c, 1);
+				if (c == IAC_WILL || c == IAC_WONT || c == IAC_DO || c == IAC_DONT) {
+					len = read(gSocket, &d, 1);
 					if (len == 0) {
 						disconnect("Socket Closed");
+					}
+
+					switch (c) {
+						case IAC_WILL:
+							fprintf(stderr, "IAC WILL %d\n", d);
+							if (d == 0) {
+								if (telnet_bin_mode != 1) {
+									telnet_bin_mode = 1;
+									write(gSocket, iac_binary_do, 3);
+								}
+							}							
+							break;
+						case IAC_WONT:
+							fprintf(stderr, "IAC WONT %d\n", d);
+							if (d == 0) {
+								if (telnet_bin_mode != 0) {
+									telnet_bin_mode = 0;
+									write(gSocket, iac_binary_dont, 3);
+								}
+							}							
+							break;
+						case IAC_DO:
+							fprintf(stderr, "IAC DO %d\n", d);
+							if (d == 0) {
+								if (telnet_bin_mode != 1) {
+									telnet_bin_mode = 1;
+									write(gSocket, iac_binary_will, 3);
+								}
+							}
+							break;
+						case IAC_DONT:
+							fprintf(stderr, "IAC DONT %d\n", d);
+							if (d == 0) {
+								if (telnet_bin_mode != 0) {
+									telnet_bin_mode = 0;
+									write(gSocket, iac_binary_wont, 3);
+								}
+							}							
+							break;	
 					}
 				} else if (c == 250) {
 					do {
@@ -695,9 +742,9 @@ void runbbs_real(int socket, char *ip, int ssh) {
 	struct stat s;
 	FILE *nodefile;
 	int i;
-	char iac_echo[] = {255, 251, 1, '\0'};
-	char iac_sga[] = {255, 251, 3, '\0'};
-	char iac_binary[] = {255, 251, 0, '\0'};
+	char iac_echo[] = {IAC, IAC_WILL, IAC_ECHO, '\0'};
+	char iac_sga[] = {IAC, IAC_WILL, IAC_SUPPRESS_GO_AHEAD, '\0'};
+
 	struct user_record *user;
 	struct tm thetime;
 	struct tm oldtime;
@@ -725,10 +772,6 @@ void runbbs_real(int socket, char *ip, int ssh) {
 			dolog("Failed to send iac_sga");
 			exit(0);
 		}
-		if (write(socket, iac_binary, 3) != 3) {
-			dolog("Failed to send iac_binary");
-			exit(0);
-		}		
 	} else {
 		sshBBS = 1;
 	}

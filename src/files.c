@@ -25,6 +25,8 @@ extern int bbs_stdout;
 extern int bbs_stderr;
 extern time_t userlaston;
 extern struct user_record *gUser;
+extern int telnet_bin_mode;
+extern int timeoutpaused;
 
 struct file_entry {
 	int fid;
@@ -156,6 +158,10 @@ int doIO(ZModem *zm) {
 	int done = 0;
 	int	i;
 	int j;
+	char iac_binary_will[] = {IAC, IAC_WILL, IAC_TRANSMIT_BINARY, '\0'};
+	char iac_binary_do[] = {IAC, IAC_DO, IAC_TRANSMIT_BINARY, '\0'};
+	char iac_binary_wont[] = {IAC, IAC_WONT, IAC_TRANSMIT_BINARY, '\0'};
+	char iac_binary_dont[] = {IAC, IAC_DONT, IAC_TRANSMIT_BINARY, '\0'};
 
 	while(!done) {
 		FD_ZERO(&readfds);
@@ -180,8 +186,53 @@ int doIO(ZModem *zm) {
 						pos++;
 						j++;
 					} else {
-						j++;
-						j++;
+						// IAC command
+						if (buffer[j+1] == IAC_WILL || buffer[j+1] == IAC_WONT || buffer[j+1] == IAC_DO || buffer[j+1] == IAC_DONT) {
+							switch (buffer[j+1]) {
+								case IAC_WILL:
+									fprintf(stderr, "IAC WILL %d\n", buffer[j+2]);
+									if (buffer[j+2] == 0) {
+										if (telnet_bin_mode != 1) {
+											telnet_bin_mode = 1;
+											write(gSocket, iac_binary_do, 3);
+										}
+									}							
+									break;
+								case IAC_WONT:
+									fprintf(stderr, "IAC WONT %d\n", buffer[j+2]);
+									if (buffer[j+2] == 0) {
+										if (telnet_bin_mode != 0) {
+											telnet_bin_mode = 0;
+											write(gSocket, iac_binary_dont, 3);
+										}
+									}							
+									break;
+								case IAC_DO:
+									fprintf(stderr, "IAC DO %d\n", buffer[j+2]);
+									if (buffer[j+2] == 0) {
+										if (telnet_bin_mode != 1) {
+											telnet_bin_mode = 1;
+											write(gSocket, iac_binary_will, 3);
+										}
+									}
+									break;
+								case IAC_DONT:
+									fprintf(stderr, "IAC DONT %d\n", buffer[j+2]);
+									if (buffer[j+2] == 0) {
+										if (telnet_bin_mode != 0) {
+											telnet_bin_mode = 0;
+											write(gSocket, iac_binary_wont, 3);
+										}
+									}							
+									break;
+							}
+							j+= 2;
+						} else if (buffer[j+1] == 250) {
+							j++;
+							do {
+								j++;	
+							} while(buffer[j] != 240);
+						}
 					}
 				} else {
 					buffer2[pos] = buffer[j];
@@ -379,13 +430,22 @@ int do_download(struct user_record *user, char *file) {
 	char **arguments;
 	int bpos;
 	int len;
-	
+	char iac_binary_will[] = {IAC, IAC_WILL, IAC_TRANSMIT_BINARY, '\0'};
+	char iac_binary_do[] = {IAC, IAC_DO, IAC_TRANSMIT_BINARY, '\0'};
+
 	if (conf.protocols[user->defprotocol - 1]->internal_zmodem) {
 		if (sshBBS) {
 			ttySetRaw(STDIN_FILENO, &oldit);
 			ttySetRaw(STDOUT_FILENO, &oldot);
-		}		
+		} else {
+			if (telnet_bin_mode == 0) {
+				write(gSocket, iac_binary_will, 3);
+				write(gSocket, iac_binary_do, 3);
+			}
+		}
+		timeoutpaused = 1;
 		download_zmodem(user, file);
+		timeoutpaused = 0;
 		if (sshBBS) {
 			tcsetattr(STDIN_FILENO, TCSANOW, &oldit);
 			tcsetattr(STDOUT_FILENO, TCSANOW, &oldot);
@@ -452,7 +512,12 @@ int do_download(struct user_record *user, char *file) {
 		arguments[bpos] = NULL;
 		
 		arguments[0] = download_command;
-
+		if (!sshBBS) {
+			if (telnet_bin_mode == 0) {
+				write(gSocket, iac_binary_will, 3);
+				write(gSocket, iac_binary_do, 3);
+			}
+		}
 		runexternal(user, download_command, conf.protocols[user->defprotocol - 1]->stdio, arguments, conf.bbs_path, 1, NULL);
 		
 		free(arguments);		
@@ -473,9 +538,19 @@ int do_upload(struct user_record *user, char *final_path) {
 	struct dirent *dent;
 	struct stat s;
 	int len;
-	
+	char iac_binary_will[] = {IAC, IAC_WILL, IAC_TRANSMIT_BINARY, '\0'};
+	char iac_binary_do[] = {IAC, IAC_DO, IAC_TRANSMIT_BINARY, '\0'};
+
 	if (conf.protocols[user->defprotocol - 1]->internal_zmodem) {
+		if (!sshBBS) {
+			if (telnet_bin_mode == 0) {
+				write(gSocket, iac_binary_will, 3);
+				write(gSocket, iac_binary_do, 3);
+			}
+		}
+		timeoutpaused = 1;
 		upload_zmodem(user, final_path);
+		timeoutpaused = 0;
 		return 1;
 	} else {
 		
@@ -554,6 +629,12 @@ int do_upload(struct user_record *user, char *final_path) {
 		
 		mkdir(upload_path, 0755);
 		
+		if (!sshBBS) {
+			if (telnet_bin_mode == 0) {
+				write(gSocket, iac_binary_will, 3);
+				write(gSocket, iac_binary_do, 3);
+			}
+		}
 		runexternal(user, upload_command, conf.protocols[user->defprotocol - 1]->stdio, arguments, upload_path, 1, NULL);
 		
 		free(arguments);

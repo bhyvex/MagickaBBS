@@ -12,6 +12,7 @@ config/*
 illusion/*
 scripts/*
 logs/*
+files/*
 *.a
 deps/lua/lua
 deps/lua/luac

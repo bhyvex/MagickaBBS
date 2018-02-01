@@ -23,6 +23,15 @@
 #define TYPE_ECHOMAIL_AREA 2
 #define TYPE_NEWSGROUP_AREA 3
 
+#define IAC  255
+#define IAC_WILL 251
+#define IAC_WONT 252
+#define IAC_DO   253
+#define IAC_DONT 254
+#define IAC_TRANSMIT_BINARY 0
+#define IAC_SUPPRESS_GO_AHEAD 3
+#define IAC_ECHO 1
+
 struct fido_addr {
 	unsigned short zone;
 	unsigned short net;
