@@ -31,7 +31,7 @@ This is my autoexec.bat (in /home/someuser/.dosemu/drive_c/)
 
 
 
-## Step 4. Configure a Door =====
+## Configure a Door
 
 Firstly you want a dosemu.conf for calling the door, I use the same one for calling all my dos doors.
 
@@ -46,7 +46,7 @@ This is my dosemu.conf (in /home/someuser/MagickaBBS/doors/)
     $_rawkeyboard = (0)
     $_com1 = "virtual"
 
-You will need both [[http://tinysbbs.com/files/tsoft/THANG23B.ZIP|THANG23B.ZIP]] and [[http://www.pcmicro.com/bnu/bnu170.zip|BNU170.ZIP]]
+You will need both [THANG23B.ZIP](http://tinysbbs.com/files/tsoft/THANG23B.ZIP) and [BNU170.ZIP](http://www.pcmicro.com/bnu/bnu170.zip)
 
 First unzip BNU170.ZIP in /home/someuser/MagickaBBS/doors/bnu
 
