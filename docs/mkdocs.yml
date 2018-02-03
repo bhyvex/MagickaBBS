@@ -1,0 +1,26 @@
+site_name: MagickaBBS - Documentation
+pages:
+  - About: 'index.md'
+  - Installation: 'guide/installation.md'
+  - Configuration:
+    - INI Files:
+      - bbs.ini: 'guide/ini/bbs.md'
+      - doors.ini: 'guide/ini/doors.md'
+      - archivers.ini: 'guide/ini/archivers.md'
+      - protocols.ini: 'guide/ini/protocols.md'
+      - s10-99.ini: 'guide/ini/seclevels.md'
+    - Doors: 
+      - DOS Doors: 'guide/doors/dos.md'
+      - Native Doors: 'guide/doors/native.md'
+    - Message Bases:
+      - Local Bases: 'guide/msgs/local.md'
+      - FTN Bases:
+        - Configuration: 'guide/msgs/ftn/config.md'
+        - Binkd: 'guide/msgs/ftn/binkd.md'
+        - Magimail: 'guide/msgs/ftn/magimail.md'
+    - File Bases:
+      - Configuration: 'guide/files/config.md'
+      - TIC File Processing: 'guide/files/tic.md'
+    - Menu Editing: 'guide/menus.md'
+    - Scripting: 'guide/scripting.md'
+    
