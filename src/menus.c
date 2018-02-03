@@ -77,6 +77,7 @@ int menu_system(char *menufile) {
     char *ansi_file;
     int i;
     int j;
+    int k;
     struct stat s;
     char *lRet;
 	lua_State *L;
@@ -85,7 +86,7 @@ int menu_system(char *menufile) {
     char c;
     int clearscreen = 0;
 	char confirm;
-	
+
     if (menufile[0] == '/') {
         snprintf(buffer, PATH_MAX, "%s.mnu", menufile);
     } else {
@@ -500,18 +501,36 @@ int menu_system(char *menufile) {
 							msg_conf_sub_bases();
 							break;
 						case MENU_RESETPOINTERS:
-							s_printf(get_string(229), conf.mail_conferences[gUser->cur_mail_conf]->mail_areas[gUser->cur_mail_area]->name);
-							confirm = s_getc();
-							if (confirm == 'y' || confirm == 'Y') {
-								msgbase_reset_pointers(gUser->cur_mail_conf, gUser->cur_mail_area);
-							}
+                            s_printf(get_string(229));
+                            s_readstring(buffer, 10);
+                            if (tolower(buffer[0]) == 'r') {
+                                k = -1;
+                                j = 1;
+                            } else if (tolower(buffer[0]) == 'u') {
+                                k = -1;
+                                j = 0;
+                            } else if (buffer[0] < '0' || buffer[0] > '9') {
+                                s_printf(get_string(39));
+                                break;
+                            } else {
+                                k = atoi(buffer) - 1;
+                            }
+
+							msgbase_reset_pointers(gUser->cur_mail_conf, gUser->cur_mail_area, j, k);
+
 							break;
 						case MENU_RESETALLPOINTERS:
-							s_printf(get_string(230));
-							confirm = s_getc();
-							if (confirm == 'y' || confirm == 'Y') {
-								msgbase_reset_all_pointers();
-							}
+                            s_printf(get_string(230));
+                            confirm = s_getc();
+                            if (confirm == 'r' || confirm == 'R') {
+                                j = 1;
+                            } else if (confirm == 'u' || confirm == 'U') {
+                                j = 0;
+                            } else {
+                                s_printf(get_string(39));
+                                break;
+                            }                        
+							msgbase_reset_all_pointers(j);
 							break;
 						case MENU_FILESCAN:
 							file_scan();

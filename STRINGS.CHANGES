@@ -34,3 +34,11 @@ NEWSTRING: "\e[%d;1H\e[1;30;40m[\e[1;34;44m%4d\e[1;30;40m]\e[1;32m*\e[1;37m%s\e[
 LINE 261 NEW
 OLDSTRING: (NONE)
 NEWSTRING: "\e[%d;1H\e[1;30;40m[\e[1;34m%4d\e[1;30;40m]\e[1;32m*\e[1;37m%s\e[K"
+
+LINE 230 MODIFIED
+OLDSTRING: "\r\n\e[1;37mAre you sure you want to reset all messages in %s to unread? \e[0m"
+NEWSTRING: "\r\n\r\n\e[1;37mReset pointers to All (\e[1;33mR\e[1;37m)ead, All (\e[1;33mU\e[1;37m)nread? or Msg #: "
+
+LINE 231 MODIFIED
+OLDSTRING: "\r\n\e[1;37mAre you sure you want to reset \e[1;31mall messages \e[1;37min all bases to unread? \e[0m"
+NEWSTRING: "\r\n\r\n\e[1;37mReset \e[1;31mALL\e[1;37m pointers in \e[1;31mALL \e[1;37mareas to (\e[1;33mR\e[1;37m)ead, (\e[1;33mU\e[1;37m)nread? \e[0m"

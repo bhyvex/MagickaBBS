@@ -3231,30 +3231,76 @@ void msg_conf_sub_bases() {
 	} while (!done);
 }
 
-void msgbase_reset_pointers(int conference, int msgarea) {
+void msgbase_reset_pointers(int conference, int msgarea, int readm, int msgno) {
 	s_JamBase *jb;
 	s_JamBaseHeader jbh;
 	s_JamLastRead jlr;
-	
+	s_JamMsgHeader jmh;
+
+	int max_msg;
+	int active_msgs;
+	int i, j, k;
+
 	jb = open_jam_base(conf.mail_conferences[conference]->mail_areas[msgarea]->path);
 	if (!jb) {
 		dolog("Unable to open message base");
 		return;
 	}
+
+	if (JAM_ReadMBHeader(jb, &jbh) != 0) {
+		JAM_CloseMB(jb);
+		return;
+	}
+
+	j = 0;
+
+	if (msgno == -1 && readm) {
+		k = jbh.ActiveMsgs;
+	} else if (msgno == -1 && !readm) {
+		k = 0;
+	} else {
+		if (msgno > jbh.ActiveMsgs) {
+			k = jbh.ActiveMsgs;
+		} else {
+			k = msgno;
+		}
+	}
+
+	for (i=0;j<k;i++) {
+		memset(&jmh, 0, sizeof(s_JamMsgHeader));
+		if (JAM_ReadMsgHeader(jb, i, &jmh, NULL) != 0) {
+			dolog("Failed to read msg header: Erro %d", JAM_Errno(jb));
+			return;
+		}
+
+		if (jmh.Attribute & JAM_MSG_DELETED) {
+			continue;
+		}
+		j++;
+	}
+
+	max_msg = i;	
+
 	if (JAM_ReadLastRead(jb, gUser->id, &jlr) != JAM_NO_USER) {
-		jlr.LastReadMsg = 0;
-		jlr.HighReadMsg = 0;
+		jlr.LastReadMsg = max_msg;
+		jlr.HighReadMsg = max_msg;
+		JAM_WriteLastRead(jb, gUser->id, &jlr);
+	} else {
+		jlr.LastReadMsg = max_msg;
+		jlr.HighReadMsg = max_msg;
+		jlr.UserCRC = JAM_Crc32(gUser->loginname, strlen(gUser->loginname));
+		jlr.UserID = gUser->id;	
 		JAM_WriteLastRead(jb, gUser->id, &jlr);
 	}
 	JAM_CloseMB(jb);
 }
 
-void msgbase_reset_all_pointers() {
+void msgbase_reset_all_pointers(int readm) {
 	int i, j;
 	
 	for (i=0;i<conf.mail_conference_count;i++) {
 		for (j=0;j<conf.mail_conferences[i]->mail_area_count;j++) {
-			msgbase_reset_pointers(i, j);
+			msgbase_reset_pointers(i, j, readm, -1);
 		}
 	}
 }
