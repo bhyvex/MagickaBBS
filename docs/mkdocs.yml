@@ -10,7 +10,9 @@ pages:
       - protocols.ini: 'guide/ini/protocols.md'
       - s10-99.ini: 'guide/ini/seclevels.md'
     - Doors: 
-      - DOS Doors: 'guide/doors/dos.md'
+      - DOS Doors: 
+        - DOSBOX: 'guide/doors/dosbox.md'
+        - DOSEMU: 'guide/doors/dosemu.md'
       - Native Doors: 'guide/doors/native.md'
     - Message Bases:
       - Local Bases: 'guide/msgs/local.md'
