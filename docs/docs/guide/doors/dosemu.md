@@ -78,12 +78,15 @@ until you have a directory for each node.
 Finally, the script for running tinys hangman, thang.sh
 
     #!/bin/bash
-    
+    trap '' 2
     NODE=$1
     
     cp /home/someuser/MagickaBBS/node${NODE}/dorinfo1.def /home/someuser/MagickaBBS/doors/thang/node${NODE}/
     
     /usr/bin/dosemu -quiet -f /home/someuser/MagickaBBS/doors/dosemu.conf -I "dosbanner 0" -E "D:\THANG\THANG.BAT ${NODE}" 2>/dev/null
+    
+    trap 2
+
 
 You can then edit your doors.ini to include:
 

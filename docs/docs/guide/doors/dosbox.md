@@ -60,13 +60,17 @@ Here is an example script I use for Freshwater Fishing:
     export SDL_VIDEODRIVER="dummy"
     NODE=$1
     SOCKET=$2
-    
+
+    trap '' 2
+
     if [ ! -e /home/pi/MagickaBBS/doors/ffs.inuse ]; then
        touch /home/pi/MagickaBBS/doors/ffs.inuse
        cp /home/pi/MagickaBBS/node${NODE}/door.sys /home/pi/MagickaBBS/doors/ffs/
        /usr/local/bin/dosbox -socket $SOCKET -c "C:\ffs\ffs.bat ${NODE}" -conf /home/pi/MagickaBBS/doors/dosbox.conf
        rm /home/pi/MagickaBBS/doors/ffs.inuse
     fi
+    
+    trap 2
 
 
 This will just dump the user back to the BBS if the door is in use. You could get fancy and use the 'inuse' door I created which will display an in-use message and then quit ([INUSE Door](https://github.com/apamment/inuse)), but that is outside the scope of this document.
