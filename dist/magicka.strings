@@ -164,7 +164,7 @@ User Name        Location                         Times On\r\n
 \e[1;30m-------------------------------------------------------------------------------\e[0m\r\n
 \e[1;37m%-16s \e[1;36m%-32s \e[1;32m%5d\r\n
 \e[1;30m-------------------------------------------------------------------------------\e[0m\r\n
-\r\nWhat is your login name: 
+\r\n\e[0mWhat is your login name: 
 Sorry, that name is too short.\r\n
 Sorry, invalid character, can only use alpha characters.\r\n
 Sorry, that name is reserved.\r\n

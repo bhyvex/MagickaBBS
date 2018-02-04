@@ -42,3 +42,7 @@ NEWSTRING: "\r\n\r\n\e[1;37mReset pointers to All (\e[1;33mR\e[1;37m)ead, All (\
 LINE 231 MODIFIED
 OLDSTRING: "\r\n\e[1;37mAre you sure you want to reset \e[1;31mall messages \e[1;37min all bases to unread? \e[0m"
 NEWSTRING: "\r\n\r\n\e[1;37mReset \e[1;31mALL\e[1;37m pointers in \e[1;31mALL \e[1;37mareas to (\e[1;33mR\e[1;37m)ead, (\e[1;33mU\e[1;37m)nread? \e[0m"
+
+LINE 167 MODIFIED
+OLDSTRING: "\r\nWhat is your login name: "
+NEWSTRING: "\r\n\e[0mWhat is your login name: "
