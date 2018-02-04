@@ -106,7 +106,7 @@ Where data is the name of the lua script to call without the extension.
 
 **bbs_temp_path** Returns a temporary path for the script to store data in. This path is cleared out on login.
 
-**bbs_post_message** Takes 2 numbers and 4 strings, The conference number, the area number, the recipient, the sender, the subject and the body.
+**bbs_post_message** Posts a message to a message base. Takes 2 numbers and 4 strings, The conference number, the area number, the recipient, the sender, the subject and the body.
 
 **bbs_data_path** Returns a path for script data storage. This is shared with all scripts, so make sure your filenames are unique.
 
