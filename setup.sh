@@ -30,7 +30,7 @@ if [ ! -e ./magicka.strings ]; then
 fi
 
 if [ ! -e ./www ]; then
-    ln -s dist/www www
+    ln -s dist/www-bootstrap www
 fi
 
 if [ ! -e ./logs ]; then
