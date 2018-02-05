@@ -716,11 +716,17 @@ static char *www_wordwrap(char *content, int cutoff) {
 				last_space = &ret[at];
 			}
 			at++;
+			ret[at] = '\0';
 		} else {
-			ret[at++] = content[i];
+			ret[at] = ' ';
+			last_space = &ret[at++];
+			ret[at] = '\0';
 		}
-		ret[at] = '\0';
-		if (content[i] == '\r') {
+		
+		if (content[i] == '\r' && content[i+1] == '\r') {
+			i+=2;
+			ret[at++] = '\r';
+			ret[at] = '\0';
 			line_count = 0;
 			last_space = NULL;
 		} else if (line_count == cutoff) {
