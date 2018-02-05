@@ -701,7 +701,7 @@ static char *www_wordwrap(char *content, int cutoff) {
 	char *last_space = NULL;
 	char *ret = (char *)malloc(len + 1);
 	int at = 0;
-
+	int extra = 0;
 	if (ret == NULL) {
 		return NULL;
 	}
@@ -732,7 +732,8 @@ static char *www_wordwrap(char *content, int cutoff) {
 				line_count = strlen(&last_space[1]);
 				last_space = NULL;
 			} else {
-				ret = (char *)realloc(ret, strlen(content) + 2);
+				extra++;
+				ret = (char *)realloc(ret, strlen(content) + extra + 1);
 				if (ret == NULL) {
 					return NULL;
 				}
