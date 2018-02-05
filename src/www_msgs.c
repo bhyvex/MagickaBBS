@@ -697,7 +697,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 static char *www_wordwrap(char *content, int cutoff) {
 	int len = strlen(content);
 	int i;
-	int line_count;
+	int line_count = 0;
 	char *last_space = NULL;
 	char *ret = (char *)malloc(len + 1);
 	int at = 0;
