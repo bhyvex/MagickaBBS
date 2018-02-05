@@ -190,7 +190,6 @@ int doIO(ZModem *zm) {
 						if (buffer[j+1] == IAC_WILL || buffer[j+1] == IAC_WONT || buffer[j+1] == IAC_DO || buffer[j+1] == IAC_DONT) {
 							switch (buffer[j+1]) {
 								case IAC_WILL:
-									fprintf(stderr, "IAC WILL %d\n", buffer[j+2]);
 									if (buffer[j+2] == 0) {
 										if (telnet_bin_mode != 1) {
 											telnet_bin_mode = 1;
@@ -199,7 +198,6 @@ int doIO(ZModem *zm) {
 									}							
 									break;
 								case IAC_WONT:
-									fprintf(stderr, "IAC WONT %d\n", buffer[j+2]);
 									if (buffer[j+2] == 0) {
 										if (telnet_bin_mode != 0) {
 											telnet_bin_mode = 0;
@@ -208,7 +206,6 @@ int doIO(ZModem *zm) {
 									}							
 									break;
 								case IAC_DO:
-									fprintf(stderr, "IAC DO %d\n", buffer[j+2]);
 									if (buffer[j+2] == 0) {
 										if (telnet_bin_mode != 1) {
 											telnet_bin_mode = 1;
@@ -217,7 +214,6 @@ int doIO(ZModem *zm) {
 									}
 									break;
 								case IAC_DONT:
-									fprintf(stderr, "IAC DONT %d\n", buffer[j+2]);
 									if (buffer[j+2] == 0) {
 										if (telnet_bin_mode != 0) {
 											telnet_bin_mode = 0;

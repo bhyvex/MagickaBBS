@@ -425,7 +425,6 @@ char s_getchar() {
 
 					switch (c) {
 						case IAC_WILL:
-							fprintf(stderr, "IAC WILL %d\n", d);
 							if (d == 0) {
 								if (telnet_bin_mode != 1) {
 									telnet_bin_mode = 1;
@@ -434,7 +433,6 @@ char s_getchar() {
 							}							
 							break;
 						case IAC_WONT:
-							fprintf(stderr, "IAC WONT %d\n", d);
 							if (d == 0) {
 								if (telnet_bin_mode != 0) {
 									telnet_bin_mode = 0;
@@ -443,7 +441,6 @@ char s_getchar() {
 							}							
 							break;
 						case IAC_DO:
-							fprintf(stderr, "IAC DO %d\n", d);
 							if (d == 0) {
 								if (telnet_bin_mode != 1) {
 									telnet_bin_mode = 1;
@@ -452,7 +449,6 @@ char s_getchar() {
 							}
 							break;
 						case IAC_DONT:
-							fprintf(stderr, "IAC DONT %d\n", d);
 							if (d == 0) {
 								if (telnet_bin_mode != 0) {
 									telnet_bin_mode = 0;

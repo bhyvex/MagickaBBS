@@ -371,7 +371,6 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 										} else if (gotiac == 2) {
 											switch (iac) {
 												case IAC_WILL:
-													fprintf(stderr, "IAC WILL %d\n", c);
 													if (c == 0) {
 														if (telnet_bin_mode != 1) {
 															telnet_bin_mode = 1;
@@ -380,7 +379,6 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 													}							
 													break;
 												case IAC_WONT:
-													fprintf(stderr, "IAC WONT %d\n", c);
 													if (c == 0) {
 														if (telnet_bin_mode != 0) {
 															telnet_bin_mode = 0;
@@ -389,7 +387,6 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 													}							
 													break;
 												case IAC_DO:
-													fprintf(stderr, "IAC DO %d\n", c);
 													if (c == 0) {
 														if (telnet_bin_mode != 1) {
 															telnet_bin_mode = 1;
@@ -398,7 +395,6 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 													}
 													break;
 												case IAC_DONT:
-													fprintf(stderr, "IAC DONT %d\n", c);
 													if (c == 0) {
 														if (telnet_bin_mode != 0) {
 															telnet_bin_mode = 0;
