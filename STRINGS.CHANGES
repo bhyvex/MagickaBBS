@@ -46,3 +46,23 @@ NEWSTRING: "\r\n\r\n\e[1;37mReset \e[1;31mALL\e[1;37m pointers in \e[1;31mALL \e
 LINE 167 MODIFIED
 OLDSTRING: "\r\nWhat is your login name: "
 NEWSTRING: "\r\n\e[0mWhat is your login name: "
+
+LINE 144 MODIFIED
+OLDSTRING: "\r\n\e[1;32mText Files Collection\r\n"
+NEWSTRING: "\e[1;37;44mChoose a Text file to view\e[K"
+
+LINE 145 MODIFIED
+OLDSTRING: "\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n"
+NEWSTRING: "\e[24;1H\e[1;37;44mUp / Down to Select, Enter to View, Q to Quit\e[K"
+
+LINE 146 CLEARED
+OLDSTRING: "\e[1;30m[\e[1;34m%3d\e[1;30m] \e[1;37m%s\r\n"
+NEWSTRING: ""
+
+LINE 147 CLEARED
+OLDSTRING: "\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n"
+NEWSTRING: ""
+
+LINE 148 CLEARED
+OLDSTRING: "Enter the number of a text file to display or Q to quit:"
+NEWSTRING: ""

@@ -141,11 +141,11 @@ Enter the area number:
 \r\n\e[1;32m%d. %s\e[0m\r\n
 \e[1;37m   --> %d. %s (%d new)\e[0m\r\n
 \r\n\e[0mTL: %dm :> 
-\r\n\e[1;32mText Files Collection\r\n
-\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n
-\e[1;30m[\e[1;34m%3d\e[1;30m] \e[1;37m%s\r\n
-\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n
-Enter the number of a text file to display or Q to quit:
+\e[1;37;44mChoose a Text file to view\e[K
+\e[24;1H\e[1;37;44mUp / Down to Select, Enter to View, Q to Quit\e[K
+
+
+
 \r\nSorry, there are no text files to display\r\n
 \e[2J\e[1;1H\e[1;32mYour Settings\r\n
 \e[1;30m-------------------------------------------------------------------------------\e[0m\r\n

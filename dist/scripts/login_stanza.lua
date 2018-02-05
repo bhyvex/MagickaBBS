@@ -20,7 +20,7 @@ end
 while(true) do
 	if file_exists(bulletin_path .. "/bulletin" .. string.format("%d", i) .. ".ans") then
 		bbs_write_string("\027[2J\027[1;1H");
-		bbs_display_ansi("bulletin" .. string.format("%d", i));
+		bbs_display_ansi_pause("bulletin" .. string.format("%d", i));
 		bbs_write_string("\027[1;37mPress any key to continue...\027[0m");
 		bbs_read_char();
 	else
