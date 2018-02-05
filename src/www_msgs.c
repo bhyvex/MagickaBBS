@@ -729,7 +729,7 @@ static char *www_wordwrap(char *content, int cutoff) {
 			// wrap
 			if (last_space != NULL) {
 				*last_space = '\r';
-				line_count = strlen(&last_space);
+				line_count = strlen(&last_space[1]);
 				last_space = NULL;
 			} else {
 				ret = (char *)realloc(ret, strlen(content) + 2);
