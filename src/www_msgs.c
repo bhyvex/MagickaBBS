@@ -731,7 +731,7 @@ static char *www_wordwrap(char *content, int cutoff) {
 				*last_space = '\r';
 				last_space = NULL;
 			} else {
-				ret = (char *)realloc(ret, strlen(ret) + 2);
+				ret = (char *)realloc(ret, strlen(content) + 2);
 				if (ret == NULL) {
 					return NULL;
 				}
