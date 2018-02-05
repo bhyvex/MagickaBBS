@@ -21,9 +21,11 @@ void display_bulletins() {
 	sprintf(buffer, "%s/bulletin%d.ans", conf.ansi_path, i);
 
 	while (stat(buffer, &s) == 0) {
+		s_printf("\e[2J\e[1;1H");
 		s_displayansi_pause(buffer, 1);
-		s_printf(get_string(6));
+		s_printf(get_string(185));
 		s_getc();
+		s_printf("\r\n");
 		i++;
 		sprintf(buffer, "%s/bulletin%d.ans", conf.ansi_path, i);
 	}
