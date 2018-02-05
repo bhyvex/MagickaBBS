@@ -1,5 +1,18 @@
 # Installation
 
+## Platform Specific Notes:
+
+* FreeBSD requires libiconv to be installed from ports in addition to other dependencies.
+
+* macOS makefiles are intended to be built with dependencies provided by macports, homebrew support will require significant changes.
+
+* NetBSD requires libiconv to be installed from pkgsrc in addition to other dependencies. 
+
+* OpenBSD as of 6.2 does not have libmicrohttpd in ports, but current does. Requires libiconv.
+
+* OpenIndiana does not have libssh in packages, so it needs to be built separately. Requires libiconv.
+
+* DragonFlyBSD also requires libiconv.
 
 ## Install Prerequisites
 
