@@ -13,6 +13,8 @@
 extern char * aha(char *input);
 extern struct bbs_config conf;
 
+
+static char *www_wordwrap(char *content, int cutoff);
 static char *www_sanitize(char *inp) {
 	int i;
 	char *result;
@@ -268,6 +270,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 	char *msgid = NULL;
 	char *replyid = NULL;
 	char *body = NULL;
+	char *body2 = NULL;
 	int z;
 	struct tm msg_date;
 	time_t date;
@@ -594,15 +597,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 			strcat(page, buffer);
 			len += strlen(buffer);
 
-			sprintf(buffer, "%s said....\n\n", from);
-			if (len + strlen(buffer) > max_len - 1) {
-				max_len += 4096;
-				page = (char *)realloc(page, max_len);
-			}	
-			strcat(page, buffer);
-			len += strlen(buffer);
-
-			sprintf(buffer, "> ");
+			sprintf(buffer, " %c> ", from[0]);
 			if (len + strlen(buffer) > max_len - 1) {
 				max_len += 4096;
 				page = (char *)realloc(page, max_len);
@@ -611,16 +606,23 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 			len += strlen(buffer);
 
 			chars = 0;
-			
-			for (i=0;i<jmh.TxtLen;i++) {
-				if (body[i] == '\r') {
-					sprintf(buffer, "\n> ");
+			body2 = www_wordwrap(body, 69);
+
+			if (body2 == NULL) {
+				body2 = body;
+			} else {
+				free(body);
+			}
+
+			for (i=0;i<strlen(body2);i++) {
+				if (body2[i] == '\r') {
+					sprintf(buffer, "\n %c> ", from[0]);
 					chars = 0;
-				} else if (chars == 78) {
-					sprintf(buffer, "\n> %c", body[i]);
+				} else if (chars == 73) {
+					sprintf(buffer, "\n %c> %c", from[0], body2[i]);
 					chars = 1;
 				} else {
-					sprintf(buffer, "%c", body[i]);
+					sprintf(buffer, "%c", body2[i]);
 					chars ++;
 				}
 				if (len + strlen(buffer) > max_len - 1) {
@@ -630,7 +632,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 				strcat(page, buffer);
 				len += strlen(buffer);			
 			}
-			free(body);
+			free(body2);
 			sprintf(buffer, "</textarea>\n<br />");
 			if (len + strlen(buffer) > max_len - 1) {
 				max_len += 4096;
@@ -692,7 +694,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 	}
 }
 
-static char *www_wordwrap(char *content) {
+static char *www_wordwrap(char *content, int cutoff) {
 	int len = strlen(content);
 	int i;
 	int line_count;
@@ -721,10 +723,18 @@ static char *www_wordwrap(char *content) {
 		if (content[i] == '\r') {
 			line_count = 0;
 			last_space = NULL;
-		} else if (line_count == 75) {
+		} else if (line_count == cutoff) {
 			// wrap
 			if (last_space != NULL) {
 				*last_space = '\r';
+				last_space = NULL;
+			} else {
+				ret = (char *)realloc(ret, strlen(ret) + 2);
+				if (ret == NULL) {
+					return NULL;
+				}
+				ret[at++] = '\r';
+				ret[at] = '\0';
 				last_space = NULL;
 			}
 			line_count = 0;
@@ -884,7 +894,7 @@ int www_send_msg(struct user_record *user, char *to, char *subj, int conference,
 		} else {
 			snprintf(buffer, 256, "\r\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s \r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline);
 		}
-		body2 = www_wordwrap(body);
+		body2 = www_wordwrap(body, 73);
 		if (body2 == NULL) {
 			JAM_UnlockMB(jb);
 			JAM_DelSubPacket(jsp);
