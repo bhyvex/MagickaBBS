@@ -327,7 +327,9 @@ static int mail_area_handler(void* user, const char* section, const char* name,
 			} 
 		} else if (strcasecmp(name, "fido node") == 0) {
 			mc->fidoaddr = parse_fido_addr(value);
-		} 
+		} else if (strcasecmp(name, "domain") == 0) {
+			mc->domain = strdup(value);
+		}
 	} else {
 		// check if it's partially filled in
 		for (i=0;i<mc->mail_area_count;i++) {
@@ -551,6 +553,7 @@ static int handler(void* user, const char* section, const char* name,
 		conf->mail_conferences[conf->mail_conference_count]->tagline = NULL;
 		conf->mail_conferences[conf->mail_conference_count]->mail_area_count = 0;
 		conf->mail_conferences[conf->mail_conference_count]->nettype = 0;
+		conf->mail_conferences[conf->mail_conference_count]->domain = NULL;
 		conf->mail_conference_count++;
 	} else if (strcasecmp(section, "file directories") == 0) {
 		if (conf->file_directory_count == 0) {

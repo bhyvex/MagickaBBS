@@ -121,7 +121,7 @@ Change Subject? (Y/N)
 Read message [1-%d] or N for New: 
 \r\nADDR: 
 \r\n\r\nInvalid Address\r\n
-\r\nMailing to %d:%d/%d.%d\r\n
+\r\nMailing to %d:%d/%d.%d (%s)\r\n
 \r\nMailing to @%d\r\n
 Start at message [1-%d] or N for New? 
 \e[2J\e[1;1H\e[1;37;44m[MSG#] Subject                   From            To              Date          \r\n\e[0m

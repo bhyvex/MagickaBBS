@@ -66,3 +66,7 @@ NEWSTRING: ""
 LINE 148 CLEARED
 OLDSTRING: "Enter the number of a text file to display or Q to quit:"
 NEWSTRING: ""
+
+LINE 124 MODIFIED
+OLDSTRING: "\r\nMailing to %d:%d/%d.%d\r\n"
+NEWSTRING: "\r\nMailing to %d:%d/%d.%d (%s)\r\n"

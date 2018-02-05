@@ -2064,6 +2064,7 @@ void post_message(struct user_record *user) {
 	char buffer2[256];
 	int z;
 	int sem_fd;
+	char *bbsname;
 
 	s_JamBase *jb;
 	s_JamMsgHeader jmh;
@@ -2106,7 +2107,14 @@ void post_message(struct user_record *user) {
 					s_printf(get_string(122));
 					return;
 				}
-				s_printf(get_string(123), from_addr->zone, from_addr->net, from_addr->node, from_addr->point);
+				if (conf.mail_conferences[gUser->cur_mail_conf]->domain != NULL) {
+					bbsname = nl_get_bbsname(from_addr, conf.mail_conferences[gUser->cur_mail_conf]->domain);
+				} else {
+					bbsname = strdup("Unknown");
+				}
+				s_printf(get_string(123), from_addr->zone, from_addr->net, from_addr->node, from_addr->point, bbsname);
+
+				free(bbsname);
 			}
 		}
 	}

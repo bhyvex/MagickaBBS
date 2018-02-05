@@ -70,6 +70,7 @@ struct mail_conference {
 	char *name;
 	char *path;
 	char *tagline;
+	char *domain;
 	int networked;
 	int nettype;
 	int realnames;
@@ -366,4 +367,6 @@ extern char *www_create_link(int dir, int sub, int fid);
 extern char *www_decode_hash(char *hash);
 #endif
 extern int menu_system(char *menufile);
+
+extern char *nl_get_bbsname(struct fido_addr *addr, char *domain);
 #endif
