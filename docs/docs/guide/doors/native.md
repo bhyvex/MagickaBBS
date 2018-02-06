@@ -14,7 +14,7 @@ A typical script for running a door might look like this:
     SOCKET=$2
 
     cd /path/to/door
-    ./somedoor -D /path/to/BBS/node${NODE}/door.sys
+    ./somedoor -D /path/to/MagickaBBS/node${NODE}/door.sys
 
 In addition to native doors, you can also run native programs as doors. You need to be careful with this though, as an incorrectly set up program could allow the user access to your file system.
 
