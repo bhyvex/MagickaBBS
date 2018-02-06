@@ -16,9 +16,9 @@
 
 ## Install Prerequisites
 
-Ensure you have git, c compiler, libsqlite3-dev, libreadline-dev, libssl-dev, libssh-dev libncurses5-dev, libmicrohttpd-dev, bash and gnu make
+Ensure you have git, c compiler, libsqlite3-dev, libreadline-dev, libssl-dev, libssh-dev libncurses5-dev, libmicrohttpd-dev, bash, libdbd-sqlite3-perl, gnu sed and gnu make
 
-    sudo apt-get install build-essential libsqlite3-dev libreadline-dev git libssl-dev libssh-dev libncurses5-dev libmicrohttpd-dev
+    sudo apt-get install build-essential libsqlite3-dev libreadline-dev git libssl-dev libssh-dev libncurses5-dev libmicrohttpd-dev libdbd-sqlite3-perl sed
 
 should work on debian and debian derivatives.
 

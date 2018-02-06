@@ -2769,7 +2769,7 @@ textarea.input-group-sm>.form-control, textarea.input-group-sm>.input-group-addo
 }
 .navbar {
     position: relative;
-    min-height: 45px;
+    min-height: 50px;
     margin-bottom: 21px;
     border: 1px solid transparent;
 }
@@ -2941,13 +2941,14 @@ textarea.input-group-sm>.form-control, textarea.input-group-sm>.input-group-addo
 .navbar-brand {
     font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
     float: left;
-    padding: 12px 15px;
+    padding: 5px 15px 0px 15px;
     font-size: 19px;
     line-height: 21px;
 }
 .navbar-brand:hover, .navbar-brand:focus {
     text-decoration: none;
 }
+
 @media(min-width:768px) {
     .navbar>.container .navbar-brand {
     margin-left: -15px;
@@ -3013,8 +3014,8 @@ textarea.input-group-sm>.form-control, textarea.input-group-sm>.input-group-addo
     float: left;
 }
 .navbar-nav>li>a {
-    padding-top: 12px;
-    padding-bottom: 12px;
+    padding-top: 17px;
+    padding-bottom: 17px;
 }
 .navbar-nav.navbar-right:last-child {
     margin-right: -15px;
