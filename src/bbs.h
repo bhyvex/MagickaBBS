@@ -369,4 +369,5 @@ extern char *www_decode_hash(char *hash);
 extern int menu_system(char *menufile);
 
 extern char *nl_get_bbsname(struct fido_addr *addr, char *domain);
+extern void nl_browser();
 #endif

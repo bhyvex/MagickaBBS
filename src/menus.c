@@ -55,6 +55,7 @@
 #define MENU_DISPTXTFILE		45
 #define MENU_DISPTXTFILEPAUSE	46
 #define MENU_GENWWWURLS         47
+#define MENU_NLBROWSER          48
 
 extern struct bbs_config conf;
 extern struct user_record *gUser;
@@ -216,6 +217,8 @@ int menu_system(char *menufile) {
 				menu[menu_items-1]->command = MENU_DISPTXTFILEPAUSE;
 			} else if (strncasecmp(&buffer[8], "GENWWWURLS", 10) == 0) {
                 menu[menu_items-1]->command = MENU_GENWWWURLS;
+            } else if (strncasecmp(&buffer[8], "NLBROWSER", 9) == 0) {
+                menu[menu_items-1]->command = MENU_NLBROWSER;
             }
         } else if (strncasecmp(buffer, "SECLEVEL", 8) == 0) {
             menu[menu_items-1]->seclevel = atoi(&buffer[9]);
@@ -555,6 +558,9 @@ int menu_system(char *menufile) {
 							break;
                         case MENU_GENWWWURLS:
                             genurls();
+                            break;
+                        case MENU_NLBROWSER:
+                            nl_browser();
                             break;
                         default:
                             break;     
