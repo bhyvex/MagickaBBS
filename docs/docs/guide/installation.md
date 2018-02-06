@@ -1,6 +1,6 @@
 # Installation
 
-## Platform Specific Notes:
+## Platform Specific Notes
 
 * FreeBSD requires libiconv to be installed from ports in addition to other dependencies.
 

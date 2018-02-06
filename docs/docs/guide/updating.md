@@ -4,7 +4,7 @@
 
 Firstly, you should always backup your BBS, just incase.
 
-   cp -r MagickaBBS MagickaBBS_Backup
+    cp -r MagickaBBS MagickaBBS_Backup
 
 Next you should shut down your BBS.
 
