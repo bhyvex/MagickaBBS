@@ -83,7 +83,6 @@ The following sample configuration is an example of a single network setup, feel
 
     pid-file /path/to/MagickaBBS/ftn/binkd.pid
 
-    # touch a watch file when files are received to kick of toss
     exec "/path/to/MagickaBBS/ftn/magitoss.sh"  *.[mwtfs][oehrau][0-9a-zA-Z] *.pkt
     exec "/path/to/MagickaBBS/ftn/ticproc.sh" *.tic *.TIC
 
@@ -146,7 +145,6 @@ If you want to be a member of multiple networks, you need additional domain, add
 
     pid-file /path/to/MagickaBBS/ftn/binkd.pid
 
-    # touch a watch file when files are received to kick of toss
     exec "/path/to/MagickaBBS/ftn/magitoss.sh"  *.[mwtfs][oehrau][0-9a-zA-Z] *.pkt
     exec "/path/to/MagickaBBS/ftn/ticproc.sh" *.tic *.TIC
 
