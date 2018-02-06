@@ -112,6 +112,10 @@ void nl_browser() {
     sqlite3_finalize(res);
 	sqlite3_close(db);
 	
+	if (entry_count == 0) {
+		return;
+	}
+
 	while (1) {
 		if (redraw) {
 			s_printf("\e[2J\e[1;1H");
