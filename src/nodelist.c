@@ -121,7 +121,7 @@ void nl_browser() {
 				if (i == selected) {
 					s_printf(get_string(147), i - start + 2, i, entries[i]->address, entries[i]->bbsname);
 				} else {
-					s_printf(get_string(262), i - start + 2, i, entries[i]->address, entries[i]->bbsname);
+					s_printf(get_string(261), i - start + 2, i, entries[i]->address, entries[i]->bbsname);
 				}
 			}
 			s_printf("\e[%d;5H", selected - start + 2);
@@ -148,7 +148,7 @@ void nl_browser() {
 						selected = entry_count - 1;
 					} else {
 						if (!redraw) {		
-							s_printf(get_string(262), selected - start + 1, selected - 1, entries[selected - 1]->address, entries[selected - 1]->bbsname);
+							s_printf(get_string(261), selected - start + 1, selected - 1, entries[selected - 1]->address, entries[selected - 1]->bbsname);
 							s_printf(get_string(147), selected - start + 2, selected, entries[selected]->address, entries[selected]->bbsname);
 							s_printf("\e[%d;5H", selected - start + 2);
 						}
@@ -168,7 +168,7 @@ void nl_browser() {
 					} else {
 						if (!redraw) {	
 							s_printf(get_string(147), selected - start + 2, selected, entries[selected]->address, entries[selected]->bbsname);
-							s_printf(get_string(262), selected - start + 3, selected + 1, entries[selected + 1]->address, entries[selected + 1]->bbsname);
+							s_printf(get_string(261), selected - start + 3, selected + 1, entries[selected + 1]->address, entries[selected + 1]->bbsname);
 							s_printf("\e[%d;5H", selected - start + 2);
 						}	
 					}
