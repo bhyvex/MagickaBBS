@@ -13,7 +13,7 @@
     Inbound Directory = /path/to/MagickaBBS/ftn/in_sec
     Bad Files Directory = /path/to/MagickaBBS/ftn/tic_bad
 
-    [FSX_INFO]
+    [SOME_AREA]
     Database = /path/to/MagickaBBS/somearea.sq3
     File Path = /path/to/MagickaBBS/files/somearea
     Password = SECRET
