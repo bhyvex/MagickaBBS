@@ -10,7 +10,7 @@ ODOORS = ../deps/odoors/libs-`uname -s`/libODoors.a
 JSMN = ../deps/jsmn/libjsmn.a
 CDK = ../deps/cdk-5-20161210/libcdk.a
 
-all: magicka magimail magiedit ticproc mgpost magichat fileapprove magiftpd
+all: magicka magimail magiedit ticproc mgpost magichat fileapprove magiftpd reset_pass
 
 ${LUA}:
 	cd ../deps/lua && $(MAKE) -f Makefile bsd MAKEFLAGS=
@@ -62,6 +62,9 @@ fileapprove: $(CDK)
 magiftpd:
 	cd ../utils/magiftpd && $(MAKE)
 
+reset_pass:
+	cd ../utils/reset_pass && $(MAKE)
+
 .PHONY: clean
 
 clean:
@@ -79,3 +82,4 @@ clean:
 	cd ../deps/cdk-5.0-20161210 && $(MAKE) clean
 	cd ../utils/fileapprove && $(MAKE) clean
 	cd ../utils/magiftpd && $(MAKE) clean
+	cd ../utils/reset_pass && $(MAKE) clean

@@ -80,3 +80,4 @@ menus/main.mnu
 core
 .vscode/launch.json
 docs/site
+utils/reset_pass/reset_pass

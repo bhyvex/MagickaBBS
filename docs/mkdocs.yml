@@ -1,4 +1,5 @@
 site_name: MagickaBBS - Documentation
+theme_dir: cinder
 pages:
   - About: 'index.md'
   - Installation: 'guide/installation.md'
@@ -20,9 +21,12 @@ pages:
         - Configuration: 'guide/msgs/ftn/config.md'
         - Binkd: 'guide/msgs/ftn/binkd.md'
         - Magimail: 'guide/msgs/ftn/magimail.md'
+        - Nodelists: 'guide/msgs/ftn/nodelists.md'
     - File Bases:
       - Configuration: 'guide/files/config.md'
       - TIC File Processing: 'guide/files/tic.md'
     - Menu Editing: 'guide/menus.md'
     - Scripting: 'guide/scripting.md'
-    
+  - Administration:
+    - Managing Users: 'guide/users.md'
+    - Updating Magicka: 'guide/updating.md'
