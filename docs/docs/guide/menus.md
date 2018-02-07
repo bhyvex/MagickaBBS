@@ -129,3 +129,5 @@ Finally, an optional SECLEVEL command indicates the required security level for 
 **GENWWWURLS** Generate and show WWW urls for the tagged files for web download.
 
 **NLBROWSER** Browse the nodelist for the current conference.
+
+**SENDFEEDBACK** Send feedback to the Sysop.

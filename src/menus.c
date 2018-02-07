@@ -56,6 +56,7 @@
 #define MENU_DISPTXTFILEPAUSE	46
 #define MENU_GENWWWURLS         47
 #define MENU_NLBROWSER          48
+#define MENU_SENDFEEDBACK       49
 
 extern struct bbs_config conf;
 extern struct user_record *gUser;
@@ -87,6 +88,7 @@ int menu_system(char *menufile) {
     char c;
     int clearscreen = 0;
 	char confirm;
+    char *msg;
 
     dolog("%s is loading menu: %s", gUser->loginname, menufile);
 
@@ -221,6 +223,8 @@ int menu_system(char *menufile) {
                 menu[menu_items-1]->command = MENU_GENWWWURLS;
             } else if (strncasecmp(&buffer[8], "NLBROWSER", 9) == 0) {
                 menu[menu_items-1]->command = MENU_NLBROWSER;
+            } else if (strncasecmp(&buffer[8], "SENDFEEDBACK", 12) == 0) {
+                menu[menu_items-1]->command = MENU_SENDFEEDBACK;
             }
         } else if (strncasecmp(buffer, "SECLEVEL", 8) == 0) {
             menu[menu_items-1]->seclevel = atoi(&buffer[9]);
@@ -563,6 +567,16 @@ int menu_system(char *menufile) {
                             break;
                         case MENU_NLBROWSER:
                             nl_browser();
+                            break;
+                        case MENU_SENDFEEDBACK:
+                        	if (check_user(conf.sysop_name)) {
+                                break;
+                            }
+                            msg = external_editor(gUser, conf.sysop_name, gUser->loginname, NULL, 0, NULL, "Feedback", 1, 0);
+                            if (msg != NULL) {
+                                commit_email(conf.sysop_name, "Feedback", msg);
+                                free(msg);
+                            }
                             break;
                         default:
                             break;     

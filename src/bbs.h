@@ -315,6 +315,7 @@ extern void chat_system(struct user_record *user);
 extern int mail_getemailcount(struct user_record *user);
 extern void send_email(struct user_record *user);
 extern void list_emails(struct user_record *user);
+extern void commit_email(char *recipient, char *subject, char *msg);
 
 extern void download_zmodem(struct user_record *user, char *filename);
 extern void settings_menu(struct user_record *user);
