@@ -811,7 +811,7 @@ void runbbs_real(int socket, char *ip, int ssh) {
 		exit(1);
 	}
 
-	dolog("Incoming connection on node %d", mynode);
+	dolog("Incoming %s connection on node %d", (ssh ? "SSH" : "Telnet"), mynode);
 
 	usertimeout = 10;
 	timeoutpaused = 0;

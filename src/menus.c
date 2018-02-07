@@ -88,6 +88,8 @@ int menu_system(char *menufile) {
     int clearscreen = 0;
 	char confirm;
 
+    dolog("%s is loading menu: %s", gUser->loginname, menufile);
+
     if (menufile[0] == '/') {
         snprintf(buffer, PATH_MAX, "%s.mnu", menufile);
     } else {
