@@ -684,8 +684,6 @@ static void ssh_chan_close(ssh_session session, ssh_channel channel, void *userd
 	int status;
   (void)session;
   (void)channel;
-	kill(bbs_pid, SIGTERM);
-	waitpid(bbs_pid, &status, 0);
   close(fd);
 }
 
