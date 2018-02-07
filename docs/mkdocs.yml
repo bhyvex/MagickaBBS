@@ -1,5 +1,8 @@
 site_name: MagickaBBS - Documentation
-theme_dir: cinder
+theme:
+  name: cinder
+  custom_dir: 'cinder'
+
 pages:
   - About: 'index.md'
   - Installation: 'guide/installation.md'

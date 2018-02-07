@@ -15,7 +15,7 @@ This is the main bbs INI file and contains the following sections
  * **Default Tagline** The tagline to use if a conference doesn't have it's own set
  * **External Editor Cmd** The script to launch for running an external editor (NOT Required - remove if you dont have one)
  * **External Editor Stdio** True or False if your editor requires stdio redirection (Only Required if External Editor CMD is set)
- * **External Editor Codepage** The codepage the external editor uses (CP437 for magichat) (Only required if External Editor CMD is set)
+ * **External Editor Codepage** The codepage the external editor uses (CP437 for magiedit) (Only required if External Editor CMD is set)
  * **Automessage Write Level** The security level a user needs to change the automessage (Required)
  * **Fork** True if you want the BBS to run in daemon mode false if not. (Required)
  * **Enable WWW** True to enable the WWW server, false if not. (Required)
