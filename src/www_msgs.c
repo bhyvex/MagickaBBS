@@ -13,58 +13,8 @@
 extern char * aha(char *input);
 extern struct bbs_config conf;
 
-static int new_messages(struct user_record *user, int conference, int area) {
-	int count = 0;
-	s_JamBase *jb;
-	s_JamBaseHeader jbh;
-	s_JamLastRead jlr;
-	struct msg_headers *msghs;
-		
-	jb = open_jam_base(conf.mail_conferences[conference]->mail_areas[area]->path);
-	if (!jb) {
-		return 0;
-	}
-	if (JAM_ReadMBHeader(jb, &jbh) != 0) {
-		JAM_CloseMB(jb);
-		return 0;
-	}
-	if (JAM_ReadLastRead(jb, user->id, &jlr) == JAM_NO_USER) {
-		if (jbh.ActiveMsgs == 0) {
-			JAM_CloseMB(jb);
-			return 0;
-		}
-		if (conf.mail_conferences[conference]->mail_areas[area]->type == TYPE_NETMAIL_AREA) {
-			msghs = read_message_headers(conference, area, user);
-			if (msghs != NULL) {
-				if (msghs->msg_count > 0) {
-					count = msghs->msg_count;
-				}
-				free_message_headers(msghs);
-			}
-		} else {
-			count = jbh.ActiveMsgs;
-		}
-	} else {
-		if (jlr.HighReadMsg < jbh.ActiveMsgs) {
-			if (conf.mail_conferences[conference]->mail_areas[area]->type == TYPE_NETMAIL_AREA) {
-				msghs = read_message_headers(conference, area, user);
-				if (msghs != NULL) {
-					if (msghs->msg_count > 0) {
-						if (msghs->msgs[msghs->msg_count-1]->msg_h->MsgNum > jlr.HighReadMsg) {
-							count = msghs->msgs[msghs->msg_count-1]->msg_h->MsgNum - jlr.HighReadMsg;
-						}
-					}
-					free_message_headers(msghs);
-				}
-			} else {
-				count = jbh.ActiveMsgs - jlr.HighReadMsg;
-			}
-		}
-	}
-	JAM_CloseMB(jb);
-	return count;
-}
 
+static char *www_wordwrap(char *content, int cutoff);
 static char *www_sanitize(char *inp) {
 	int i;
 	char *result;
@@ -141,9 +91,9 @@ char *www_msgs_arealist(struct user_record *user) {
 				if (conf.mail_conferences[i]->mail_areas[j]->read_sec_level <= user->sec_level) {
 					
 					if (new_messages(user, i, j) > 0) {
-						sprintf(buffer, "<div class=\"area-list-new\"><a href=\"/msgs/%d/%d/\">%s</a></div>\n", i, j, conf.mail_conferences[i]->mail_areas[j]->name);
+						sprintf(buffer, "<div class=\"area-list-new\"><a href=\"%smsgs/%d/%d/\">%s</a></div>\n", conf.www_url, i, j, conf.mail_conferences[i]->mail_areas[j]->name);
 					} else {
-						sprintf(buffer, "<div class=\"area-list-item\"><a href=\"/msgs/%d/%d/\">%s</a></div>\n", i, j, conf.mail_conferences[i]->mail_areas[j]->name);
+						sprintf(buffer, "<div class=\"area-list-item\"><a href=\"%smsgs/%d/%d/\">%s</a></div>\n", conf.www_url, i, j, conf.mail_conferences[i]->mail_areas[j]->name);
 					}
 					if (len + strlen(buffer) > max_len - 1) {
 						max_len += 4096;
@@ -192,7 +142,7 @@ char *www_msgs_messagelist(struct user_record *user, int conference, int area, i
 	len += strlen(buffer);
 	
 	if (conf.mail_conferences[conference]->mail_areas[area]->type != TYPE_NETMAIL_AREA) {
-		sprintf(buffer, "<div class=\"button\"><a href=\"/msgs/new/%d/%d\">New Message</a></div>\n", conference, area);
+		sprintf(buffer, "<div class=\"button\"><a href=\"%smsgs/new/%d/%d\">New Message</a></div>\n", conf.www_url, conference, area);
 		if (len + strlen(buffer) > max_len - 1) {
 			max_len += 4096;
 			page = (char *)realloc(page, max_len);
@@ -246,15 +196,15 @@ char *www_msgs_messagelist(struct user_record *user, int conference, int area, i
 		subject = www_sanitize(mhrs->msgs[i]->subject);
 		if (mhrs->msgs[i]->msg_h->MsgNum > jlr.HighReadMsg) {
 			if (conf.date_style == 1) {
-				sprintf(buffer, "<div class=\"msg-summary\"><div class=\"msg-summary-id\">%d</div><div class=\"msg-summary-subject\"><a href=\"/msgs/%d/%d/%d\">%s</a></div><div class=\"msg-summary-from\">%s</div><div class=\"msg-summary-to\">%s</div><div class=\"msg-summary-date\">%.2d:%.2d %.2d-%.2d-%.2d</div></div>\n", mhrs->msgs[i]->msg_no + 1, conference, area, mhrs->msgs[i]->msg_h->MsgNum, subject, from, to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+				sprintf(buffer, "<div class=\"msg-summary\"><div class=\"msg-summary-id\">%d</div><div class=\"msg-summary-subject\"><a href=\"%smsgs/%d/%d/%d\">%s</a></div><div class=\"msg-summary-from\">%s</div><div class=\"msg-summary-to\">%s</div><div class=\"msg-summary-date\">%.2d:%.2d %.2d-%.2d-%.2d</div></div>\n", mhrs->msgs[i]->msg_no + 1, conf.www_url, conference, area, mhrs->msgs[i]->msg_h->MsgNum, subject, from, to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
 			} else {
-				sprintf(buffer, "<div class=\"msg-summary\"><div class=\"msg-summary-id\">%d</div><div class=\"msg-summary-subject\"><a href=\"/msgs/%d/%d/%d\">%s</a></div><div class=\"msg-summary-from\">%s</div><div class=\"msg-summary-to\">%s</div><div class=\"msg-summary-date\">%.2d:%.2d %.2d-%.2d-%.2d</div></div>\n", mhrs->msgs[i]->msg_no + 1, conference, area, mhrs->msgs[i]->msg_h->MsgNum, subject, from, to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+				sprintf(buffer, "<div class=\"msg-summary\"><div class=\"msg-summary-id\">%d</div><div class=\"msg-summary-subject\"><a href=\"%smsgs/%d/%d/%d\">%s</a></div><div class=\"msg-summary-from\">%s</div><div class=\"msg-summary-to\">%s</div><div class=\"msg-summary-date\">%.2d:%.2d %.2d-%.2d-%.2d</div></div>\n", mhrs->msgs[i]->msg_no + 1, conf.www_url, conference, area, mhrs->msgs[i]->msg_h->MsgNum, subject, from, to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 			}
 		} else {
 			if (conf.date_style == 1) {
-				sprintf(buffer, "<div class=\"msg-summary-seen\"><div class=\"msg-summary-id\">%d</div><div class=\"msg-summary-subject\"><a href=\"/msgs/%d/%d/%d\">%s</a></div><div class=\"msg-summary-from\">%s</div><div class=\"msg-summary-to\">%s</div><div class=\"msg-summary-date\">%.2d:%.2d %.2d-%.2d-%.2d</div></div>\n", mhrs->msgs[i]->msg_no + 1, conference, area, mhrs->msgs[i]->msg_h->MsgNum, subject, from, to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
+				sprintf(buffer, "<div class=\"msg-summary-seen\"><div class=\"msg-summary-id\">%d</div><div class=\"msg-summary-subject\"><a href=\"%smsgs/%d/%d/%d\">%s</a></div><div class=\"msg-summary-from\">%s</div><div class=\"msg-summary-to\">%s</div><div class=\"msg-summary-date\">%.2d:%.2d %.2d-%.2d-%.2d</div></div>\n", mhrs->msgs[i]->msg_no + 1, conf.www_url, conference, area, mhrs->msgs[i]->msg_h->MsgNum, subject, from, to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mon + 1, msg_date.tm_mday, msg_date.tm_year - 100);
 			} else {
-				sprintf(buffer, "<div class=\"msg-summary-seen\"><div class=\"msg-summary-id\">%d</div><div class=\"msg-summary-subject\"><a href=\"/msgs/%d/%d/%d\">%s</a></div><div class=\"msg-summary-from\">%s</div><div class=\"msg-summary-to\">%s</div><div class=\"msg-summary-date\">%.2d:%.2d %.2d-%.2d-%.2d</div></div>\n", mhrs->msgs[i]->msg_no + 1, conference, area, mhrs->msgs[i]->msg_h->MsgNum, subject, from, to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
+				sprintf(buffer, "<div class=\"msg-summary-seen\"><div class=\"msg-summary-id\">%d</div><div class=\"msg-summary-subject\"><a href=\"%smsgs/%d/%d/%d\">%s</a></div><div class=\"msg-summary-from\">%s</div><div class=\"msg-summary-to\">%s</div><div class=\"msg-summary-date\">%.2d:%.2d %.2d-%.2d-%.2d</div></div>\n", mhrs->msgs[i]->msg_no + 1, conf.www_url, conference, area, mhrs->msgs[i]->msg_h->MsgNum, subject, from, to, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100);
 			}
 		}
 
@@ -279,9 +229,9 @@ char *www_msgs_messagelist(struct user_record *user, int conference, int area, i
 	
 	if (skip > 0) {
 		if (skip - 50 < 0) {
-			sprintf(buffer, "<div class=\"msg-summary-prev\"><a href=\"/msgs/%d/%d/\">Prev</a></div>\n", conference, area);
+			sprintf(buffer, "<div class=\"msg-summary-prev\"><a href=\"%smsgs/%d/%d/\">Prev</a></div>\n", conf.www_url, conference, area);
 		} else {
-			sprintf(buffer, "<div class=\"msg-summary-prev\"><a href=\"/msgs/%d/%d/?skip=%d\">Prev</a></div>\n", conference, area, skip - 50);
+			sprintf(buffer, "<div class=\"msg-summary-prev\"><a href=\"%smsgs/%d/%d/?skip=%d\">Prev</a></div>\n", conf.www_url, conference, area, skip - 50);
 		}
 		if (len + strlen(buffer) > max_len - 1) {
 			max_len += 4096;
@@ -292,7 +242,7 @@ char *www_msgs_messagelist(struct user_record *user, int conference, int area, i
 	}
 	
 	if (skip + 50 <= mhrs->msg_count) {
-		sprintf(buffer, "<div class=\"msg-summary-next\"><a href=\"/msgs/%d/%d/?skip=%d\">Next</a></div>\n", conference, area, skip + 50);
+		sprintf(buffer, "<div class=\"msg-summary-next\"><a href=\"%smsgs/%d/%d/?skip=%d\">Next</a></div>\n", conf.www_url, conference, area, skip + 50);
 		if (len + strlen(buffer) > max_len - 1) {
 			max_len += 4096;
 			page = (char *)realloc(page, max_len);
@@ -320,6 +270,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 	char *msgid = NULL;
 	char *replyid = NULL;
 	char *body = NULL;
+	char *body2 = NULL;
 	int z;
 	struct tm msg_date;
 	time_t date;
@@ -402,6 +353,14 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		if (subject == NULL) {
 			subject = strdup("(No Subject)");
 		}
+
+		if (from == NULL) {
+			from = strdup("(No Sender)");
+		}
+
+		if (to == NULL) {
+			to = strdup("(No Recipient)");
+		}
 		
 		if (jmh.Attribute & JAM_MSG_PRIVATE) {
 			if (!msg_is_to(user, to, daddress, conf.mail_conferences[conference]->nettype, conf.mail_conferences[conference]->realnames, conference) &&
@@ -458,7 +417,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		len = 0;
 		memset(page, 0, 4096);
 		
-		sprintf(buffer, "<div class=\"content-header\"><a href=\"/msgs/%d/%d\"><h2>%s - %s</h2></a></div>\n", conference, area, conf.mail_conferences[conference]->name, conf.mail_conferences[conference]->mail_areas[area]->name);
+		sprintf(buffer, "<div class=\"content-header\"><a href=\"%smsgs/%d/%d\"><h2>%s - %s</h2></a></div>\n", conf.www_url, conference, area, conf.mail_conferences[conference]->name, conf.mail_conferences[conference]->mail_areas[area]->name);
 		if (len + strlen(buffer) > max_len - 1) {
 			max_len += 4096;
 			page = (char *)realloc(page, max_len);
@@ -485,7 +444,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		len += strlen(buffer);
 
 		from_s = www_sanitize(from);
-		if (conf.mail_conferences[conference]->mail_areas[area]->type != TYPE_LOCAL_AREA) {
+		if (conf.mail_conferences[conference]->mail_areas[area]->type != TYPE_LOCAL_AREA && oaddress != NULL) {
 			sprintf(buffer, "<div class=\"msg-view-from\">From: %s (%s)</div>\n", from_s, oaddress);
 		} else {
 			sprintf(buffer, "<div class=\"msg-view-from\">From: %s</div>\n", from_s);
@@ -579,7 +538,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 			strcat(page, buffer);
 			len += strlen(buffer);
 			
-			sprintf(buffer, "<form action=\"/msgs/\" method=\"POST\" enctype=\"application/x-www-form-urlencoded\">\n");
+			sprintf(buffer, "<form action=\"%smsgs/\" method=\"POST\" enctype=\"application/x-www-form-urlencoded\">\n", conf.www_url);
 			if (len + strlen(buffer) > max_len - 1) {
 				max_len += 4096;
 				page = (char *)realloc(page, max_len);
@@ -630,7 +589,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 			strcat(page, buffer);
 			len += strlen(buffer);
 
-			sprintf(buffer, "<textarea name=\"body\" wrap=\"hard\" rows=\"25\" cols=\"79\" id=\"replybody\">");
+			sprintf(buffer, "<textarea name=\"body\" rows=\"25\" cols=\"79\" wrap=\"soft\" id=\"replybody\">");
 			if (len + strlen(buffer) > max_len - 1) {
 				max_len += 4096;
 				page = (char *)realloc(page, max_len);
@@ -638,15 +597,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 			strcat(page, buffer);
 			len += strlen(buffer);
 
-			sprintf(buffer, "%s said....\n\n", from);
-			if (len + strlen(buffer) > max_len - 1) {
-				max_len += 4096;
-				page = (char *)realloc(page, max_len);
-			}	
-			strcat(page, buffer);
-			len += strlen(buffer);
-
-			sprintf(buffer, "> ");
+			sprintf(buffer, " %c> ", from[0]);
 			if (len + strlen(buffer) > max_len - 1) {
 				max_len += 4096;
 				page = (char *)realloc(page, max_len);
@@ -655,16 +606,23 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 			len += strlen(buffer);
 
 			chars = 0;
-			
-			for (i=0;i<jmh.TxtLen;i++) {
-				if (body[i] == '\r') {
-					sprintf(buffer, "\n> ");
+			body2 = www_wordwrap(body, 69);
+
+			if (body2 == NULL) {
+				body2 = body;
+			} else {
+				free(body);
+			}
+
+			for (i=0;i<strlen(body2);i++) {
+				if (body2[i] == '\r') {
+					sprintf(buffer, "\n %c> ", from[0]);
 					chars = 0;
-				} else if (chars == 78) {
-					sprintf(buffer, "\n> %c", body[i]);
+				} else if (chars == 73) {
+					sprintf(buffer, "\n %c> %c", from[0], body2[i]);
 					chars = 1;
 				} else {
-					sprintf(buffer, "%c", body[i]);
+					sprintf(buffer, "%c", body2[i]);
 					chars ++;
 				}
 				if (len + strlen(buffer) > max_len - 1) {
@@ -674,7 +632,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 				strcat(page, buffer);
 				len += strlen(buffer);			
 			}
-			free(body);
+			free(body2);
 			sprintf(buffer, "</textarea>\n<br />");
 			if (len + strlen(buffer) > max_len - 1) {
 				max_len += 4096;
@@ -736,6 +694,61 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 	}
 }
 
+static char *www_wordwrap(char *content, int cutoff) {
+	int len = strlen(content);
+	int i;
+	int line_count = 0;
+	char *last_space = NULL;
+	char *ret = (char *)malloc(len + 1);
+	int at = 0;
+	int extra = 0;
+	if (ret == NULL) {
+		return NULL;
+	}
+
+	for (i=0;i<len;i++) {
+		if (content[i] == '\n') {
+			continue;
+		}
+		if (content[i] != '\r') {
+			ret[at] = content[i];
+			if (content[i] == ' ') {
+				last_space = &ret[at];
+			}
+			at++;
+			
+		} else {
+			ret[at++] = content[i];
+		}
+		ret[at] = '\0';
+		
+		if (content[i] == '\r') {
+			line_count = 0;
+			last_space = NULL;
+		} else if (line_count == cutoff) {
+			// wrap
+			if (last_space != NULL) {
+				*last_space = '\r';
+				line_count = strlen(&last_space[1]);
+				last_space = NULL;
+			} else {
+				extra++;
+				ret = (char *)realloc(ret, strlen(content) + extra + 1);
+				if (ret == NULL) {
+					return NULL;
+				}
+				ret[at++] = '\r';
+				ret[at] = '\0';
+				last_space = NULL;
+				line_count = 0;
+			}
+		} else {
+			line_count++;
+		}
+	}
+	return ret;
+}
+
 int www_send_msg(struct user_record *user, char *to, char *subj, int conference, int area, char *replyid, char *body) {
 	s_JamBase *jb;
 	s_JamMsgHeader jmh;
@@ -753,8 +766,12 @@ int www_send_msg(struct user_record *user, char *to, char *subj, int conference,
 	char *tagline;
 	struct utsname name;
 	int pos;
+	char *body3;
 	
 	if (conference < 0 || conference >= conf.mail_conference_count || area < 0 || area >= conf.mail_conferences[conference]->mail_area_count) {
+		return 0;
+	}
+	if (subj == NULL || to == NULL || body == NULL) {
 		return 0;
 	}
 	if (conf.mail_conferences[conference]->mail_areas[area]->write_sec_level <= user->sec_level && conf.mail_conferences[conference]->mail_areas[area]->type != TYPE_NETMAIL_AREA) {
@@ -869,31 +886,45 @@ int www_send_msg(struct user_record *user, char *to, char *subj, int conference,
 
 		if (conf.mail_conferences[conference]->nettype == NETWORK_FIDO) {
 			if (conf.mail_conferences[conference]->fidoaddr->point == 0) {
-				snprintf(buffer, 256, "\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s (%d:%d/%d)\r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline, conf.mail_conferences[conference]->fidoaddr->zone,
+				snprintf(buffer, 256, "\r\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s (%d:%d/%d)\r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline, conf.mail_conferences[conference]->fidoaddr->zone,
 																																						  conf.mail_conferences[conference]->fidoaddr->net,
 																																						  conf.mail_conferences[conference]->fidoaddr->node);
 			} else {
-				snprintf(buffer, 256, "\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s (%d:%d/%d.%d)\r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline, conf.mail_conferences[conference]->fidoaddr->zone,
+				snprintf(buffer, 256, "\r\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s (%d:%d/%d.%d)\r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline, conf.mail_conferences[conference]->fidoaddr->zone,
 																																						  conf.mail_conferences[conference]->fidoaddr->net,
 																																						  conf.mail_conferences[conference]->fidoaddr->node,
 																																						  conf.mail_conferences[conference]->fidoaddr->point);
 			}
 		} else {
-			snprintf(buffer, 256, "\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s \r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline);
+			snprintf(buffer, 256, "\r\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s \r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, tagline);
 		}
-		body2 = (char *)malloc(strlen(body) + 2 + strlen(buffer));		
-		memset(body2, 0, strlen(body) + 2 + strlen(buffer));
-		pos = 0;
-		for (z =0;z < strlen(body); z++) {
-			if (body[z] != '\n') {
-				body2[pos++] = body[z];
-				body2[pos] = '\0';
-			}
+		body2 = www_wordwrap(body, 73);
+		if (body2 == NULL) {
+			JAM_UnlockMB(jb);
+			JAM_DelSubPacket(jsp);
+			JAM_CloseMB(jb);
+			return 0;
 		}
-		strcat(body2, buffer);
+		body3 = (char *)malloc(strlen(body2) + 2 + strlen(buffer));		
+		if (body3 == NULL) {
+			free(body2);
+			JAM_UnlockMB(jb);
+			JAM_DelSubPacket(jsp);
+			JAM_CloseMB(jb);
+			return 0;
+		}
 		
-		if (JAM_AddMessage(jb, &jmh, jsp, (char *)body2, strlen(body2))) {
-				
+		memset(body3, 0, strlen(body2) + 2 + strlen(buffer));
+		pos = 0;
+		sprintf(body3, "%s%s", body2, buffer);
+		
+		if (JAM_AddMessage(jb, &jmh, jsp, (char *)body3, strlen(body3))) {
+			free(body3);
+			free(body2);
+			JAM_UnlockMB(jb);
+			JAM_DelSubPacket(jsp);
+			JAM_CloseMB(jb);
+			return 0;
 		} else {
 			if (conf.mail_conferences[conference]->mail_areas[area]->type == TYPE_ECHOMAIL_AREA) {
 				if (conf.echomail_sem != NULL) {
@@ -904,6 +935,7 @@ int www_send_msg(struct user_record *user, char *to, char *subj, int conference,
 		}
 
 		free(body2);
+		free(body3);
 
 		JAM_UnlockMB(jb);
 
@@ -912,6 +944,7 @@ int www_send_msg(struct user_record *user, char *to, char *subj, int conference,
 			
 		return 1;
 	}
+	return 0;
 }
 
 char *www_new_msg(struct user_record *user, int conference, int area) {
@@ -933,7 +966,7 @@ char *www_new_msg(struct user_record *user, int conference, int area) {
 	strcat(page, buffer);
 	len += strlen(buffer);
 
-	sprintf(buffer, "<form action=\"/msgs/\" method=\"POST\" enctype=\"application/x-www-form-urlencoded\">\n");
+	sprintf(buffer, "<form action=\"%smsgs/\" method=\"POST\" onsubmit=\"return validate()\" enctype=\"application/x-www-form-urlencoded\">\n", conf.www_url);
 	if (len + strlen(buffer) > max_len - 1) {
 		max_len += 4096;
 		page = (char *)realloc(page, max_len);
@@ -964,7 +997,7 @@ char *www_new_msg(struct user_record *user, int conference, int area) {
 	strcat(page, buffer);
 	len += strlen(buffer);
 
-	sprintf(buffer, "To : <input type=\"text\" name=\"recipient\" value=\"All\" /><br />\n");
+	sprintf(buffer, "To : <input type=\"text\" name=\"recipient\" value=\"All\" id=\"recipient\"/><br />\n");
 	if (len + strlen(buffer) > max_len - 1) {
 		max_len += 4096;
 		page = (char *)realloc(page, max_len);
@@ -972,7 +1005,7 @@ char *www_new_msg(struct user_record *user, int conference, int area) {
 	strcat(page, buffer);
 	len += strlen(buffer);
 
-	sprintf(buffer, "Subject : <input type=\"text\" name=\"subject\" /><br />\n");
+	sprintf(buffer, "Subject : <input type=\"text\" name=\"subject\" id=\"subject\" /><br />\n");
 	if (len + strlen(buffer) > max_len - 1) {
 		max_len += 4096;
 		page = (char *)realloc(page, max_len);
@@ -980,7 +1013,7 @@ char *www_new_msg(struct user_record *user, int conference, int area) {
 	strcat(page, buffer);
 	len += strlen(buffer);
 
-	sprintf(buffer, "<textarea name=\"body\" wrap=\"hard\" rows=\"25\" cols=\"79\"></textarea>\n<br />");
+	sprintf(buffer, "<textarea name=\"body\" id=\"body\" rows=\"25\" cols=\"79\" wrap=\"soft\"></textarea>\n<br />");
 	if (len + strlen(buffer) > max_len - 1) {
 		max_len += 4096;
 		page = (char *)realloc(page, max_len);

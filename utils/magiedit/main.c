@@ -767,6 +767,7 @@ char *message_editor() {
             }
         }
     }
+    return NULL;
 }
 
 #if _MSC_VER

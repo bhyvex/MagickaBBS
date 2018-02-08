@@ -8,9 +8,9 @@ ODOORS = ../deps/odoors/libs-`uname -s`/libODoors.a
 JSMN = ../deps/jsmn/libjsmn.a
 CDK = ../deps/cdk-5-20161210/libcdk.a
 
-OBJ = inih/ini.o bbs.o main.o users.o main_menu.o mail_menu.o doors.o bbs_list.o chat_system.o email.o files.o settings.o lua_glue.o strings.o bluewave.o hashmap/hashmap.o menus.o
+OBJ = inih/ini.o bbs.o main.o users.o main_menu.o mail_menu.o doors.o bbs_list.o chat_system.o email.o files.o settings.o lua_glue.o strings.o bluewave.o hashmap/hashmap.o menus.o nodelist.o
 
-all: magicka magimail magiedit ticproc mgpost magichat fileapprove magiftpd
+all: magicka magimail magiedit ticproc mgpost magichat fileapprove magiftpd reset_pass
 
 ${LUA}:
 	cd ../deps/lua && $(MAKE) -f Makefile macosx MAKEFLAGS=
@@ -58,6 +58,9 @@ fileapprove: $(CDK)
 magiftpd:
 	cd ../utils/magiftpd && $(MAKE)
 
+reset_pass:
+	cd ../utils/reset_pass && $(MAKE)
+
 .PHONY: clean
 
 clean:
@@ -74,3 +77,4 @@ clean:
 	cd ../deps/cdk-5.0-20161210 && $(MAKE) clean
 	cd ../utils/fileapprove && $(MAKE) clean
 	cd ../utils/magiftpd && $(MAKE) clean
+	cd ../utils/reset_pass && $(MAKE) clean

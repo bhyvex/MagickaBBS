@@ -25,8 +25,11 @@ extern int bbs_stdout;
 extern int bbs_stderr;
 extern time_t userlaston;
 extern struct user_record *gUser;
+extern int telnet_bin_mode;
+extern int timeoutpaused;
 
 struct file_entry {
+	int fid;
 	int dir;
 	int sub;
 	char *filename;
@@ -36,7 +39,14 @@ struct file_entry {
 	time_t uploaddate;
 };
 
-char **tagged_files;
+struct tagged_file {
+	char *filename;
+	int dir;
+	int sub;
+	int fid;
+};
+
+struct tagged_file **tagged_files;
 int tagged_count = 0;
 
 int ttySetRaw(int fd, struct termios *prevTermios) {
@@ -148,6 +158,10 @@ int doIO(ZModem *zm) {
 	int done = 0;
 	int	i;
 	int j;
+	char iac_binary_will[] = {IAC, IAC_WILL, IAC_TRANSMIT_BINARY, '\0'};
+	char iac_binary_do[] = {IAC, IAC_DO, IAC_TRANSMIT_BINARY, '\0'};
+	char iac_binary_wont[] = {IAC, IAC_WONT, IAC_TRANSMIT_BINARY, '\0'};
+	char iac_binary_dont[] = {IAC, IAC_DONT, IAC_TRANSMIT_BINARY, '\0'};
 
 	while(!done) {
 		FD_ZERO(&readfds);
@@ -172,8 +186,49 @@ int doIO(ZModem *zm) {
 						pos++;
 						j++;
 					} else {
-						j++;
-						j++;
+						// IAC command
+						if (buffer[j+1] == IAC_WILL || buffer[j+1] == IAC_WONT || buffer[j+1] == IAC_DO || buffer[j+1] == IAC_DONT) {
+							switch (buffer[j+1]) {
+								case IAC_WILL:
+									if (buffer[j+2] == 0) {
+										if (telnet_bin_mode != 1) {
+											telnet_bin_mode = 1;
+											write(gSocket, iac_binary_do, 3);
+										}
+									}							
+									break;
+								case IAC_WONT:
+									if (buffer[j+2] == 0) {
+										if (telnet_bin_mode != 0) {
+											telnet_bin_mode = 0;
+											write(gSocket, iac_binary_dont, 3);
+										}
+									}							
+									break;
+								case IAC_DO:
+									if (buffer[j+2] == 0) {
+										if (telnet_bin_mode != 1) {
+											telnet_bin_mode = 1;
+											write(gSocket, iac_binary_will, 3);
+										}
+									}
+									break;
+								case IAC_DONT:
+									if (buffer[j+2] == 0) {
+										if (telnet_bin_mode != 0) {
+											telnet_bin_mode = 0;
+											write(gSocket, iac_binary_wont, 3);
+										}
+									}							
+									break;
+							}
+							j+= 2;
+						} else if (buffer[j+1] == 250) {
+							j++;
+							do {
+								j++;	
+							} while(buffer[j] != 240);
+						}
 					}
 				} else {
 					buffer2[pos] = buffer[j];
@@ -371,13 +426,22 @@ int do_download(struct user_record *user, char *file) {
 	char **arguments;
 	int bpos;
 	int len;
-	
+	char iac_binary_will[] = {IAC, IAC_WILL, IAC_TRANSMIT_BINARY, '\0'};
+	char iac_binary_do[] = {IAC, IAC_DO, IAC_TRANSMIT_BINARY, '\0'};
+
 	if (conf.protocols[user->defprotocol - 1]->internal_zmodem) {
 		if (sshBBS) {
 			ttySetRaw(STDIN_FILENO, &oldit);
 			ttySetRaw(STDOUT_FILENO, &oldot);
-		}		
+		} else {
+			if (telnet_bin_mode == 0) {
+				write(gSocket, iac_binary_will, 3);
+				write(gSocket, iac_binary_do, 3);
+			}
+		}
+		timeoutpaused = 1;
 		download_zmodem(user, file);
+		timeoutpaused = 0;
 		if (sshBBS) {
 			tcsetattr(STDIN_FILENO, TCSANOW, &oldit);
 			tcsetattr(STDOUT_FILENO, TCSANOW, &oldot);
@@ -444,7 +508,12 @@ int do_download(struct user_record *user, char *file) {
 		arguments[bpos] = NULL;
 		
 		arguments[0] = download_command;
-
+		if (!sshBBS) {
+			if (telnet_bin_mode == 0) {
+				write(gSocket, iac_binary_will, 3);
+				write(gSocket, iac_binary_do, 3);
+			}
+		}
 		runexternal(user, download_command, conf.protocols[user->defprotocol - 1]->stdio, arguments, conf.bbs_path, 1, NULL);
 		
 		free(arguments);		
@@ -465,9 +534,19 @@ int do_upload(struct user_record *user, char *final_path) {
 	struct dirent *dent;
 	struct stat s;
 	int len;
-	
+	char iac_binary_will[] = {IAC, IAC_WILL, IAC_TRANSMIT_BINARY, '\0'};
+	char iac_binary_do[] = {IAC, IAC_DO, IAC_TRANSMIT_BINARY, '\0'};
+
 	if (conf.protocols[user->defprotocol - 1]->internal_zmodem) {
+		if (!sshBBS) {
+			if (telnet_bin_mode == 0) {
+				write(gSocket, iac_binary_will, 3);
+				write(gSocket, iac_binary_do, 3);
+			}
+		}
+		timeoutpaused = 1;
 		upload_zmodem(user, final_path);
+		timeoutpaused = 0;
 		return 1;
 	} else {
 		
@@ -546,6 +625,12 @@ int do_upload(struct user_record *user, char *final_path) {
 		
 		mkdir(upload_path, 0755);
 		
+		if (!sshBBS) {
+			if (telnet_bin_mode == 0) {
+				write(gSocket, iac_binary_will, 3);
+				write(gSocket, iac_binary_do, 3);
+			}
+		}
 		runexternal(user, upload_command, conf.protocols[user->defprotocol - 1]->stdio, arguments, upload_path, 1, NULL);
 		
 		free(arguments);
@@ -790,6 +875,50 @@ void download_zmodem(struct user_record *user, char *filename) {
 	}
 }
 
+
+void genurls() {
+#if defined(ENABLE_WWW)	
+	int i;
+	char *url;
+	if (conf.www_server) {
+		for (i=0;i<tagged_count;i++) {
+			if (i % 6 == 0 && i != 0) {
+				// pause
+				s_printf(get_string(6));
+				s_getc();			
+			}
+
+			url = www_create_link(tagged_files[i]->dir, tagged_files[i]->sub, tagged_files[i]->fid);
+
+			if (url != NULL) {
+				s_printf(get_string(255), basename(tagged_files[i]->filename));
+				s_printf(get_string(256), url);
+				free(url);
+			} else {
+				s_printf(get_string(257));
+			}
+		}
+		for (i=0;i<tagged_count;i++) {
+			free(tagged_files[i]->filename);
+			free(tagged_files[i]);
+		}
+		free(tagged_files);
+		tagged_count = 0;	
+		s_printf(get_string(6));
+		s_getc();
+	} else {
+		s_printf(get_string(258));
+		s_printf(get_string(6));
+		s_getc();
+	}
+#else
+	s_printf(get_string(258));
+	s_printf(get_string(6));
+	s_getc();
+#endif	
+}
+
+
 void download(struct user_record *user) {
 	int i;
 	char *ssql = "select dlcount from files where filename like ?";
@@ -802,10 +931,11 @@ void download(struct user_record *user) {
 
 
 	for (i=0;i<tagged_count;i++) {
+		s_printf(get_string(254), basename(tagged_files[i]->filename));
 
-		do_download(user, tagged_files[i]);
+		do_download(user, tagged_files[i]->filename);
 
-		sprintf(buffer, "%s/%s.sq3", conf.bbs_path, conf.file_directories[user->cur_file_dir]->file_subs[user->cur_file_sub]->database);
+		sprintf(buffer, "%s/%s.sq3", conf.bbs_path, conf.file_directories[tagged_files[i]->dir]->file_subs[tagged_files[i]->sub]->database);
 
 		rc = sqlite3_open(buffer, &db);
 
@@ -818,7 +948,7 @@ void download(struct user_record *user) {
 		rc = sqlite3_prepare_v2(db, ssql, -1, &res, 0);
 
 		if (rc == SQLITE_OK) {
-			sqlite3_bind_text(res, 1, tagged_files[i], -1, 0);
+			sqlite3_bind_text(res, 1, tagged_files[i]->filename, -1, 0);
 		} else {
 			dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
 		}
@@ -840,7 +970,7 @@ void download(struct user_record *user) {
 
 		if (rc == SQLITE_OK) {
 			sqlite3_bind_int(res, 1, dloads);
-			sqlite3_bind_text(res, 2, tagged_files[i], -1, 0);
+			sqlite3_bind_text(res, 2, tagged_files[i]->filename, -1, 0);
 		} else {
 			dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
 		}
@@ -854,6 +984,7 @@ void download(struct user_record *user) {
 
 
 	for (i=0;i<tagged_count;i++) {
+		free(tagged_files[i]->filename);
 		free(tagged_files[i]);
 	}
 	free(tagged_files);
@@ -920,18 +1051,22 @@ void do_list_files(struct file_entry **files_e, int files_c) {
 								if (conf.file_directories[files_e[z]->dir]->file_subs[files_e[z]->sub]->download_sec_level <= gUser->sec_level) {
 									match = 0;
 									for (k=0;k<tagged_count;k++) {
-										if (strcmp(tagged_files[k], files_e[z]->filename) == 0) {
+										if (strcmp(tagged_files[k]->filename, files_e[z]->filename) == 0) {
 											match = 1;
 											break;
 										}
 									}
 									if (match == 0) {
 										if (tagged_count == 0) {
-											tagged_files = (char **)malloc(sizeof(char *));
+											tagged_files = (struct tagged_file **)malloc(sizeof(struct tagged_file *));
 										} else {
-											tagged_files = (char **)realloc(tagged_files, sizeof(char *) * (tagged_count + 1));
+											tagged_files = (struct tagged_file **)realloc(tagged_files, sizeof(struct tagged_file *) * (tagged_count + 1));
 										}
-										tagged_files[tagged_count] = strdup(files_e[z]->filename);
+										tagged_files[tagged_count] = (struct tagged_file *)malloc(sizeof(struct tagged_file));
+										tagged_files[tagged_count]->filename = strdup(files_e[z]->filename);
+										tagged_files[tagged_count]->dir = files_e[z]->dir;
+										tagged_files[tagged_count]->sub = files_e[z]->sub;
+										tagged_files[tagged_count]->fid = files_e[z]->fid;
 										tagged_count++;
 										s_printf(get_string(71), basename(files_e[z]->filename));
 									} else {
@@ -974,18 +1109,22 @@ void do_list_files(struct file_entry **files_e, int files_c) {
 						if (conf.file_directories[files_e[z]->dir]->file_subs[files_e[z]->sub]->download_sec_level <= gUser->sec_level) {
 							match = 0;
 							for (k=0;k<tagged_count;k++) {
-								if (strcmp(tagged_files[k], files_e[z]->filename) == 0) {
+								if (strcmp(tagged_files[k]->filename, files_e[z]->filename) == 0) {
 									match = 1;
 									break;
 								}
 							}
 							if (match == 0) {
 								if (tagged_count == 0) {
-									tagged_files = (char **)malloc(sizeof(char *));
+									tagged_files = (struct tagged_file **)malloc(sizeof(struct tagged_file *));
 								} else {
-									tagged_files = (char **)realloc(tagged_files, sizeof(char *) * (tagged_count + 1));
+									tagged_files = (struct tagged_file **)realloc(tagged_files, sizeof(struct tagged_file *) * (tagged_count + 1));
 								}
-								tagged_files[tagged_count] = strdup(files_e[z]->filename);
+								tagged_files[tagged_count] = (struct tagged_file *)malloc(sizeof(struct tagged_file));
+								tagged_files[tagged_count]->filename = strdup(files_e[z]->filename);
+								tagged_files[tagged_count]->dir = files_e[z]->dir;
+								tagged_files[tagged_count]->sub = files_e[z]->sub;
+								tagged_files[tagged_count]->fid = files_e[z]->fid;
 								tagged_count++;
 								s_printf(get_string(71), basename(files_e[z]->filename));
 							} else {
@@ -1017,18 +1156,22 @@ void do_list_files(struct file_entry **files_e, int files_c) {
 				if (conf.file_directories[files_e[z]->dir]->file_subs[files_e[z]->sub]->download_sec_level <= gUser->sec_level) {
 					match = 0;
 					for (k=0;k<tagged_count;k++) {
-						if (strcmp(tagged_files[k], files_e[z]->filename) == 0) {
+						if (strcmp(tagged_files[k]->filename, files_e[z]->filename) == 0) {
 							match = 1;
 							break;
 						}
 					}
 					if (match == 0) {
 						if (tagged_count == 0) {
-							tagged_files = (char **)malloc(sizeof(char *));
+							tagged_files = (struct tagged_file **)malloc(sizeof(struct tagged_file *));
 						} else {
-							tagged_files = (char **)realloc(tagged_files, sizeof(char *) * (tagged_count + 1));
+							tagged_files = (struct tagged_file **)realloc(tagged_files, sizeof(struct tagged_file *) * (tagged_count + 1));
 						}
-						tagged_files[tagged_count] = strdup(files_e[z]->filename);
+						tagged_files[tagged_count] = (struct tagged_file *)malloc(sizeof(struct tagged_file));
+						tagged_files[tagged_count]->filename = strdup(files_e[z]->filename);
+						tagged_files[tagged_count]->dir = files_e[z]->dir;
+						tagged_files[tagged_count]->sub = files_e[z]->sub;
+						tagged_files[tagged_count]->fid = files_e[z]->fid;
 						tagged_count++;
 						s_printf(get_string(71), basename(files_e[z]->filename));
 					} else {
@@ -1102,21 +1245,21 @@ void file_search() {
 		ptr = strtok(NULL, " ");
 	}
 	if (stype == 0) {
-		snprintf(sqlbuffer, 1024, "select filename, description, size, dlcount, uploaddate from files where approved=1 AND (filename LIKE ?");
+		snprintf(sqlbuffer, 1024, "select id, filename, description, size, dlcount, uploaddate from files where approved=1 AND (filename LIKE ?");
 		for (i=1; i < searchterm_count; i++) {
 			strncat(sqlbuffer, " OR filename LIKE ?", 1024);
 		}
 		strncat(sqlbuffer, ")", 1024);
 	}
 	if (stype == 1) {
-		snprintf(sqlbuffer, 1024, "select filename, description, size, dlcount, uploaddate from files where approved=1 AND (description LIKE ?");
+		snprintf(sqlbuffer, 1024, "select id, filename, description, size, dlcount, uploaddate from files where approved=1 AND (description LIKE ?");
 		for (i=1; i < searchterm_count; i++) {
 			strncat(sqlbuffer, " OR description LIKE ?", 1024);
 		}
 		strncat(sqlbuffer, ")", 1024);
 	}
 	if (stype == 2) {
-		snprintf(sqlbuffer, 1024, "select filename, description, size, dlcount, uploaddate from files where approved=1 AND (filename LIKE ?");
+		snprintf(sqlbuffer, 1024, "select id, filename, description, size, dlcount, uploaddate from files where approved=1 AND (filename LIKE ?");
 		for (i=1; i < searchterm_count; i++) {
 			strncat(sqlbuffer, " OR filename LIKE ?", 1024);
 		}
@@ -1171,11 +1314,12 @@ void file_search() {
 				files_e = (struct file_entry **)realloc(files_e, sizeof(struct file_entry *) * (files_c + 1));
 			}
 			files_e[files_c] = (struct file_entry *)malloc(sizeof(struct file_entry));
-			files_e[files_c]->filename = strdup((char *)sqlite3_column_text(res, 0));
-			files_e[files_c]->description = strdup((char *)sqlite3_column_text(res, 1));
-			files_e[files_c]->size = sqlite3_column_int(res, 2);
-			files_e[files_c]->dlcount = sqlite3_column_int(res, 3);
-			files_e[files_c]->uploaddate = sqlite3_column_int(res, 4);
+			files_e[files_c]->fid = sqlite3_column_int(res, 0);
+			files_e[files_c]->filename = strdup((char *)sqlite3_column_text(res, 1));
+			files_e[files_c]->description = strdup((char *)sqlite3_column_text(res, 2));
+			files_e[files_c]->size = sqlite3_column_int(res, 3);
+			files_e[files_c]->dlcount = sqlite3_column_int(res, 4);
+			files_e[files_c]->uploaddate = sqlite3_column_int(res, 5);
 			files_e[files_c]->dir = gUser->cur_file_dir;
 			files_e[files_c]->sub = gUser->cur_file_sub;
 			files_c++;
@@ -1232,11 +1376,12 @@ void file_search() {
 						files_e = (struct file_entry **)realloc(files_e, sizeof(struct file_entry *) * (files_c + 1));
 					}
 					files_e[files_c] = (struct file_entry *)malloc(sizeof(struct file_entry));
-					files_e[files_c]->filename = strdup((char *)sqlite3_column_text(res, 0));
-					files_e[files_c]->description = strdup((char *)sqlite3_column_text(res, 1));
-					files_e[files_c]->size = sqlite3_column_int(res, 2);
-					files_e[files_c]->dlcount = sqlite3_column_int(res, 3);
-					files_e[files_c]->uploaddate = sqlite3_column_int(res, 4);
+					files_e[files_c]->fid = sqlite3_column_int(res, 0);
+					files_e[files_c]->filename = strdup((char *)sqlite3_column_text(res, 1));
+					files_e[files_c]->description = strdup((char *)sqlite3_column_text(res, 2));
+					files_e[files_c]->size = sqlite3_column_int(res, 3);
+					files_e[files_c]->dlcount = sqlite3_column_int(res, 4);
+					files_e[files_c]->uploaddate = sqlite3_column_int(res, 5);
 					files_e[files_c]->dir = gUser->cur_file_dir;
 					files_e[files_c]->sub = gUser->cur_file_sub;
 					files_c++;
@@ -1257,10 +1402,10 @@ void file_search() {
 }
 
 void list_files(struct user_record *user) {
-	char *dsql = "select filename, description, size, dlcount, uploaddate from files where approved=1 ORDER BY uploaddate DESC";
-	char *fsql = "select filename, description, size, dlcount, uploaddate from files where approved=1 ORDER BY filename";
-	char *psql = "select filename, description, size, dlcount, uploaddate from files where approved=1 ORDER BY dlcount DESC";
-	char *nsql = "select filename, description, size, dlcount, uploaddate from files where approved=1 ORDER BY uploaddate DESC WHERE uploaddate > ?";
+	char *dsql = "select id, filename, description, size, dlcount, uploaddate from files where approved=1 ORDER BY uploaddate DESC";
+	char *fsql = "select id, filename, description, size, dlcount, uploaddate from files where approved=1 ORDER BY filename";
+	char *psql = "select id, filename, description, size, dlcount, uploaddate from files where approved=1 ORDER BY dlcount DESC";
+	char *nsql = "select id, filename, description, size, dlcount, uploaddate from files where approved=1 ORDER BY uploaddate DESC WHERE uploaddate > ?";
 	char *sql;
 	char buffer[PATH_MAX];
 	sqlite3 *db;
@@ -1301,15 +1446,15 @@ void list_files(struct user_record *user) {
     }
 	sqlite3_busy_timeout(db, 5000);
     rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
-	if (sql == nsql) {
-		sqlite3_bind_int(res, 1, userlaston);
-	}
     if (rc != SQLITE_OK) {
-        sqlite3_finalize(res);
 		sqlite3_close(db);
 		s_printf(get_string(68));
 		return;
     }
+	if (sql == nsql) {
+		sqlite3_bind_int(res, 1, userlaston);
+	}
+
 
 
     files_c = 0;
@@ -1321,11 +1466,12 @@ void list_files(struct user_record *user) {
 			files_e = (struct file_entry **)realloc(files_e, sizeof(struct file_entry *) * (files_c + 1));
 		}
 		files_e[files_c] = (struct file_entry *)malloc(sizeof(struct file_entry));
-		files_e[files_c]->filename = strdup((char *)sqlite3_column_text(res, 0));
-		files_e[files_c]->description = strdup((char *)sqlite3_column_text(res, 1));
-		files_e[files_c]->size = sqlite3_column_int(res, 2);
-		files_e[files_c]->dlcount = sqlite3_column_int(res, 3);
-		files_e[files_c]->uploaddate = sqlite3_column_int(res, 4);
+		files_e[files_c]->fid = sqlite3_column_int(res, 0);
+		files_e[files_c]->filename = strdup((char *)sqlite3_column_text(res, 1));
+		files_e[files_c]->description = strdup((char *)sqlite3_column_text(res, 2));
+		files_e[files_c]->size = sqlite3_column_int(res, 3);
+		files_e[files_c]->dlcount = sqlite3_column_int(res, 4);
+		files_e[files_c]->uploaddate = sqlite3_column_int(res, 5);
 		files_e[files_c]->dir = user->cur_file_dir;
 		files_e[files_c]->sub = user->cur_file_sub;
 		files_c++;
@@ -1623,6 +1769,7 @@ void clear_tagged_files() {
 	// Clear tagged files
 	if (tagged_count > 0) {
 		for (i=0;i<tagged_count;i++) {
+			free(tagged_files[i]->filename);
 			free(tagged_files[i]);
 		}
 		free(tagged_files);

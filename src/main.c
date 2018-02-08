@@ -327,7 +327,9 @@ static int mail_area_handler(void* user, const char* section, const char* name,
 			} 
 		} else if (strcasecmp(name, "fido node") == 0) {
 			mc->fidoaddr = parse_fido_addr(value);
-		} 
+		} else if (strcasecmp(name, "domain") == 0) {
+			mc->domain = strdup(value);
+		}
 	} else {
 		// check if it's partially filled in
 		for (i=0;i<mc->mail_area_count;i++) {
@@ -425,6 +427,13 @@ static int handler(void* user, const char* section, const char* name,
 			}
 		} else if (strcasecmp(name, "www port") == 0) {
 			conf->www_port = atoi(value);
+		} else if (strcasecmp(name, "www url") == 0) {
+			if (value[strlen(value) - 1] == '/') {
+				conf->www_url = strdup(value);
+			} else {
+				conf->www_url = (char *)malloc(strlen(value) + 2);
+				sprintf(conf->www_url, "%s/", value);
+			}
 		} else if (strcasecmp(name, "ssh port") == 0) {
 			conf->ssh_port = atoi(value);
 		} else if (strcasecmp(name, "ssh dsa key") == 0) {
@@ -544,6 +553,7 @@ static int handler(void* user, const char* section, const char* name,
 		conf->mail_conferences[conf->mail_conference_count]->tagline = NULL;
 		conf->mail_conferences[conf->mail_conference_count]->mail_area_count = 0;
 		conf->mail_conferences[conf->mail_conference_count]->nettype = 0;
+		conf->mail_conferences[conf->mail_conference_count]->domain = NULL;
 		conf->mail_conference_count++;
 	} else if (strcasecmp(section, "file directories") == 0) {
 		if (conf->file_directory_count == 0) {
@@ -674,8 +684,6 @@ static void ssh_chan_close(ssh_session session, ssh_channel channel, void *userd
 	int status;
   (void)session;
   (void)channel;
-	kill(bbs_pid, SIGTERM);
-	waitpid(bbs_pid, &status, 0);
   close(fd);
 }
 
@@ -1065,7 +1073,7 @@ void server(int port, int ipv6) {
 	}
 
 #if defined(ENABLE_WWW) 
-	if (conf.www_server && conf.www_path != NULL) {
+	if (conf.www_server && conf.www_path != NULL && conf.www_url != NULL) {
 		if (!conf.fork) {
 			printf(" - HTTP Starting on Port %d (IPv%d)\n", conf.www_port, (ipv6 ? 6 : 4));
 		}
@@ -1241,6 +1249,7 @@ int main(int argc, char **argv) {
 	conf.telnet_port = 0;
 	conf.string_file = NULL;
 	conf.www_path = NULL;
+	conf.www_url = NULL;
 	conf.archiver_count = 0;
 	conf.broadcast_enable = 0;
 	conf.broadcast_port = 0;

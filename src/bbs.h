@@ -12,7 +12,7 @@
 #include "jamlib/jam.h"
 
 #define VERSION_MAJOR 0
-#define VERSION_MINOR 8
+#define VERSION_MINOR 9
 #define VERSION_STR "alpha"
 
 #define NETWORK_FIDO 1
@@ -22,6 +22,15 @@
 #define TYPE_NETMAIL_AREA  1
 #define TYPE_ECHOMAIL_AREA 2
 #define TYPE_NEWSGROUP_AREA 3
+
+#define IAC  255
+#define IAC_WILL 251
+#define IAC_WONT 252
+#define IAC_DO   253
+#define IAC_DONT 254
+#define IAC_TRANSMIT_BINARY 0
+#define IAC_SUPPRESS_GO_AHEAD 3
+#define IAC_ECHO 1
 
 struct fido_addr {
 	unsigned short zone;
@@ -61,6 +70,7 @@ struct mail_conference {
 	char *name;
 	char *path;
 	char *tagline;
+	char *domain;
 	int networked;
 	int nettype;
 	int realnames;
@@ -128,6 +138,7 @@ struct bbs_config {
 	char *netmail_sem;
 	char *default_tagline;
 	int telnet_port;
+	char *www_url;
 	int www_server;
 	int www_port;
 	char *www_path;
@@ -227,11 +238,14 @@ struct msg_headers {
 	struct jam_msg **msgs;
 	int msg_count;
 };
+
+extern char *str_replace(const char *orig, const char *rep, const char *with);
 extern int copy_file(char *src, char *dest);
 extern int recursive_delete(const char *dir);
 extern void automessage_write(struct user_record *user);
 extern void automessage_display();
 extern void dolog(char *fmt, ...);
+extern void dolog_www(char *ipaddr, char *fmt, ...);
 extern void runbbs_ssh(char *ipaddress);
 extern void runbbs(int sock, char *ipaddress);
 extern struct fido_addr *parse_fido_addr(const char *str);
@@ -285,21 +299,23 @@ extern void next_mail_area(struct user_record *user);
 extern void prev_mail_area(struct user_record *user);
 extern void post_message(struct user_record *user);
 extern void msg_conf_sub_bases();
-extern void msgbase_reset_pointers(int conference, int msgarea);
-extern void msgbase_reset_all_pointers();
+extern void msgbase_reset_pointers(int conference, int msgarea, int readm, int msgno);
+extern void msgbase_reset_all_pointers(int readm);
 extern void full_mail_scan(struct user_record *user);
 extern int read_new_msgs(struct user_record *user, struct msg_headers *msghs);
+extern int new_messages(struct user_record *user, int conference, int area);
 
 extern void rundoor(struct user_record *user, char *cmd, int stdio, char *codepage);
 extern void runexternal(struct user_record *user, char *cmd, int stdio, char **argv, char *cwd, int raw, char *codepage);
 
-extern void bbs_list(struct user_record *user);
+extern void bbs_list();
 
 extern void chat_system(struct user_record *user);
 
 extern int mail_getemailcount(struct user_record *user);
 extern void send_email(struct user_record *user);
 extern void list_emails(struct user_record *user);
+extern void commit_email(char *recipient, char *subject, char *msg);
 
 extern void download_zmodem(struct user_record *user, char *filename);
 extern void settings_menu(struct user_record *user);
@@ -319,6 +335,7 @@ extern void next_file_sub(struct user_record *user);
 extern void prev_file_sub(struct user_record *user);
 extern void file_scan();
 extern void file_search();
+extern void genurls();
 
 extern void lua_push_cfunctions(lua_State *L);
 extern void do_lua_script(char *script);
@@ -346,6 +363,12 @@ extern char *www_msgs_messageview(struct user_record *user, int conference, int 
 extern int www_send_msg(struct user_record *user, char *to, char *subj, int conference, int area, char *replyid, char *body);
 extern char *www_new_msg(struct user_record *user, int conference, int area);
 extern char *www_last10();
+extern void www_expire_old_links();
+extern char *www_create_link(int dir, int sub, int fid);
+extern char *www_decode_hash(char *hash);
 #endif
 extern int menu_system(char *menufile);
+
+extern char *nl_get_bbsname(struct fido_addr *addr, char *domain);
+extern void nl_browser();
 #endif

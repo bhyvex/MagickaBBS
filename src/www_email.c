@@ -80,10 +80,16 @@ int www_send_email(struct user_record *user, char *recipient, char *subject, cha
 	int i;
 	int pos;
 	
+	if (recipient == NULL || subject == NULL || ibody == NULL) {
+		return 0;
+	}
+
 	if (check_user(recipient)) {
 		return 0;
 	}
 	
+
+
 	uname(&name);
 	
 	snprintf(buffer, 256, "\r--- MagickaBBS v%d.%d%s (%s/%s)\r * Origin: %s \r", VERSION_MAJOR, VERSION_MINOR, VERSION_STR, name.sysname, name.machine, conf.default_tagline);
@@ -150,7 +156,7 @@ char *www_new_email() {
 	max_len = 4096;
 	len = 0;
 	memset(page, 0, 4096);
-	
+
 	sprintf(buffer, "<div class=\"content-header\"><h2>New Email</h2></div>\n");
 	if (len + strlen(buffer) > max_len - 1) {
 		max_len += 4096;
@@ -159,7 +165,7 @@ char *www_new_email() {
 	strcat(page, buffer);
 	len += strlen(buffer);
 
-	sprintf(buffer, "<form action=\"/email/\" method=\"POST\" enctype=\"application/x-www-form-urlencoded\">\n");
+	sprintf(buffer, "<form action=\"%semail/\" method=\"POST\" onsubmit=\"return validate()\" enctype=\"application/x-www-form-urlencoded\">\n", conf.www_url);
 	if (len + strlen(buffer) > max_len - 1) {
 		max_len += 4096;
 		page = (char *)realloc(page, max_len);
@@ -167,7 +173,7 @@ char *www_new_email() {
 	strcat(page, buffer);
 	len += strlen(buffer);
 
-	sprintf(buffer, "To : <input type=\"text\" name=\"recipient\" /><br />\n");
+	sprintf(buffer, "To : <input type=\"text\" name=\"recipient\" id=\"recipient\" /><br />\n");
 	if (len + strlen(buffer) > max_len - 1) {
 		max_len += 4096;
 		page = (char *)realloc(page, max_len);
@@ -175,7 +181,7 @@ char *www_new_email() {
 	strcat(page, buffer);
 	len += strlen(buffer);
 
-	sprintf(buffer, "Subject : <input type=\"text\" name=\"subject\" /><br />\n");
+	sprintf(buffer, "Subject : <input type=\"text\" name=\"subject\" id=\"subject\" /><br />\n");
 	if (len + strlen(buffer) > max_len - 1) {
 		max_len += 4096;
 		page = (char *)realloc(page, max_len);
@@ -183,7 +189,7 @@ char *www_new_email() {
 	strcat(page, buffer);
 	len += strlen(buffer);
 
-	sprintf(buffer, "<textarea name=\"body\" wrap=\"hard\" rows=\"25\" cols=\"79\"></textarea>\n<br />");
+	sprintf(buffer, "<textarea name=\"body\" wrap=\"hard\" rows=\"25\" cols=\"79\" id=\"body\"></textarea>\n<br />");
 	if (len + strlen(buffer) > max_len - 1) {
 		max_len += 4096;
 		page = (char *)realloc(page, max_len);
@@ -380,7 +386,7 @@ char *www_email_display(struct user_record *user, int email) {
 		strcat(page, buffer);
 		len += strlen(buffer);
 		
-		sprintf(buffer, "<form action=\"/email/\" method=\"POST\" enctype=\"application/x-www-form-urlencoded\">\n");
+		sprintf(buffer, "<form action=\"%semail/\" method=\"POST\" enctype=\"application/x-www-form-urlencoded\">\n", conf.www_url);
 		if (len + strlen(buffer) > max_len - 1) {
 			max_len += 4096;
 			page = (char *)realloc(page, max_len);
@@ -560,7 +566,7 @@ char *www_email_summary(struct user_record *user) {
 	strcat(page, buffer);
 	len += strlen(buffer);
 	
-	sprintf(buffer, "<div class=\"button\"><a href=\"/email/new\">New Email</a></div>\n");
+	sprintf(buffer, "<div class=\"button\"><a href=\"%semail/new\">New Email</a></div>\n", conf.www_url);
 	if (len + strlen(buffer) > max_len - 1) {
 		max_len += 4096;
 		page = (char *)realloc(page, max_len);
@@ -612,7 +618,7 @@ sqlite3_busy_timeout(db, 5000);
 		date = (time_t)sqlite3_column_int(res, 4);
 		localtime_r(&date, &msg_date);
 		if (seen == 0) {
-			sprintf(buffer, "<div class=\"email-summary\"><div class=\"email-id\">%d</div><div class=\"email-subject\"><a href=\"/email/%d\">%s</a></div><div class=\"email-from\">%s</div><div class=\"email-date\">%.2d:%.2d %.2d-%.2d-%.2d</div><div class=\"email-delete\"><a href=\"/email/delete/%d\"><img src=\"/static/delete.png\" alt=\"delete\" /></a></div></div>\n", msgid + 1, msgid + 1, subject, from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100, id);
+			sprintf(buffer, "<div class=\"email-summary\"><div class=\"email-id\">%d</div><div class=\"email-subject\"><a href=\"%semail/%d\">%s</a></div><div class=\"email-from\">%s</div><div class=\"email-date\">%.2d:%.2d %.2d-%.2d-%.2d</div><a href=\"%semail/delete/%d\"><div class=\"email-delete\"></div></a></div>\n", msgid + 1, conf.www_url, msgid + 1, subject, from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100, conf.www_url, id);
 			if (len + strlen(buffer) > max_len - 1) {
 				max_len += 4096;
 				page = (char *)realloc(page, max_len);
@@ -620,7 +626,7 @@ sqlite3_busy_timeout(db, 5000);
 			strcat(page, buffer);
 			len += strlen(buffer);
 		} else {
-			sprintf(buffer, "<div class=\"email-summary-seen\"><div class=\"email-id\">%d</div><div class=\"email-subject\"><a href=\"/email/%d\">%s</a></div><div class=\"email-from\">%s</div><div class=\"email-date\">%.2d:%.2d %.2d-%.2d-%.2d</div><div class=\"email-delete\"><a href=\"/email/delete/%d\"><img src=\"/static/delete.png\" alt=\"delete\" /></a></div></div>\n", msgid + 1, msgid + 1, subject, from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100, id);
+			sprintf(buffer, "<div class=\"email-summary-seen\"><div class=\"email-id\">%d</div><div class=\"email-subject\"><a href=\"%semail/%d\">%s</a></div><div class=\"email-from\">%s</div><div class=\"email-date\">%.2d:%.2d %.2d-%.2d-%.2d</div><a href=\"%semail/delete/%d\"><div class=\"email-delete\"></div></a></div>\n", msgid + 1, conf.www_url, msgid + 1, subject, from, msg_date.tm_hour, msg_date.tm_min, msg_date.tm_mday, msg_date.tm_mon + 1, msg_date.tm_year - 100, conf.www_url, id);
 			if (len + strlen(buffer) > max_len - 1) {
 				max_len += 4096;
 				page = (char *)realloc(page, max_len);

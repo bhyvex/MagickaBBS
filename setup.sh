@@ -30,7 +30,7 @@ if [ ! -e ./magicka.strings ]; then
 fi
 
 if [ ! -e ./www ]; then
-    ln -s dist/www www
+    ln -s dist/www-bootstrap www
 fi
 
 if [ ! -e ./logs ]; then
@@ -74,7 +74,7 @@ $SED -i "s/BBS Name = Magicka BBS/BBS Name = ${bbsname}/g" config/bbs.ini
 $SED -i "s/Sysop Name = sysop/Sysop Name = ${handle}/g" config/bbs.ini
 $SED -i "s@/home/andrew/MagickaBBS@${PWD}@g" config/localmail.ini
 $SED -i "s@/home/andrew/MagickaBBS@${PWD}@g" config/filesgen.ini
-$SED -i "s@/home/andrew/MagickaBBS@${PWD}@g" config/illusionnet.ini
+$SED -i "s@/home/andrew/MagickaBBS@${PWD}@g" config/happynet.ini
 $SED -i "s@/home/andrew/MagickaBBS@${PWD}@g" utils/magiedit/magiedit.sh
 $SED -i "s@/home/andrew/MagickaBBS@${PWD}@g" scripts/login_stanza.lua
 $SED -i "s/MagiChat Server = localhost/; MagiChat Server = localhost/g" config/bbs.ini

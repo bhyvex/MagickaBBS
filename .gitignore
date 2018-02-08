@@ -12,6 +12,7 @@ config/*
 illusion/*
 scripts/*
 logs/*
+files/*
 *.a
 deps/lua/lua
 deps/lua/luac
@@ -75,3 +76,7 @@ menus/file.mnu
 menus/logoff.mnu
 menus/mail.mnu
 menus/main.mnu
+core
+docs/site
+utils/reset_pass/reset_pass
+.vscode

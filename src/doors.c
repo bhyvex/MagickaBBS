@@ -31,6 +31,7 @@ extern int sshBBS;
 extern int bbs_stderr;
 int running_door_pid = 0;
 int running_door = 0;
+extern int telnet_bin_mode;
 
 extern int timeoutpaused;
 
@@ -251,6 +252,11 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 	size_t ouc;
 	size_t inc;
 	size_t sz;
+	int iac;
+	char iac_binary_will[] = {IAC, IAC_WILL, IAC_TRANSMIT_BINARY, '\0'};
+	char iac_binary_do[] = {IAC, IAC_DO, IAC_TRANSMIT_BINARY, '\0'};
+	char iac_binary_wont[] = {IAC, IAC_WONT, IAC_TRANSMIT_BINARY, '\0'};
+	char iac_binary_dont[] = {IAC, IAC_DONT, IAC_TRANSMIT_BINARY, '\0'};
 
 	timeoutpaused = 1;
 
@@ -356,12 +362,47 @@ void runexternal(struct user_record *user, char *cmd, int stdio, char *argv[], c
 										if (gotiac == 1) {
 											if (c == 254 || c == 253 || c == 252 || c == 251) {
 												gotiac = 2;
+												iac = c;
 											} else if (c == 250) {
 												gotiac = 3;
 											} else {
 												gotiac = 0;
 											}
 										} else if (gotiac == 2) {
+											switch (iac) {
+												case IAC_WILL:
+													if (c == 0) {
+														if (telnet_bin_mode != 1) {
+															telnet_bin_mode = 1;
+															write(master, iac_binary_do, 3);
+														}
+													}							
+													break;
+												case IAC_WONT:
+													if (c == 0) {
+														if (telnet_bin_mode != 0) {
+															telnet_bin_mode = 0;
+															write(master, iac_binary_dont, 3);
+														}
+													}							
+													break;
+												case IAC_DO:
+													if (c == 0) {
+														if (telnet_bin_mode != 1) {
+															telnet_bin_mode = 1;
+															write(master, iac_binary_will, 3);
+														}
+													}
+													break;
+												case IAC_DONT:
+													if (c == 0) {
+														if (telnet_bin_mode != 0) {
+															telnet_bin_mode = 0;
+															write(master, iac_binary_wont, 3);
+														}
+													}							
+													break;														
+											}
 											gotiac = 0;
 										} else if (gotiac == 3) {
 											if (c == 240) {

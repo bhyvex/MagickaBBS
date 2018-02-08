@@ -8,6 +8,7 @@
 #include <b64/cdecode.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <libgen.h>
 #if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
 #include <netinet/in.h>
 #endif
@@ -40,11 +41,18 @@ struct connection_info_s {
 };
 
 void *www_logger(void * cls, const char * uri, struct MHD_Connection *con) {
-	struct sockaddr_in *so = (struct sockaddr_in *)MHD_get_connection_info(con, MHD_CONNECTION_INFO_CLIENT_ADDRESS)->client_addr;
-	ipaddress = strdup(inet_ntoa(so->sin_addr));
-	dolog("%s", uri);
-	free(ipaddress);
-	ipaddress = NULL;	
+	struct sockaddr *so = (struct sockaddr *)MHD_get_connection_info(con, MHD_CONNECTION_INFO_CLIENT_ADDRESS)->client_addr;
+	char *ipaddr;
+	if (so->sa_family == AF_INET) {
+		ipaddr = (char *)malloc(INET_ADDRSTRLEN + 1);
+		inet_ntop(AF_INET, &((struct sockaddr_in *)so)->sin_addr, ipaddr, INET_ADDRSTRLEN);
+	} else if (so->sa_family == AF_INET6) {
+		ipaddr = (char *)malloc(INET6_ADDRSTRLEN + 1);
+		inet_ntop(AF_INET6, &((struct sockaddr_in6 *)so)->sin6_addr, ipaddr, INET6_ADDRSTRLEN);
+	}
+	dolog_www(ipaddr, "%s", uri);
+	free(ipaddr);
+
 	return NULL;
 }
 
@@ -78,6 +86,7 @@ void www_request_completed(void *cls, struct MHD_Connection *connection, void **
 		free(con_info->user->email);
 		free(con_info->user->location);
 		free(con_info->user->sec_info);
+		free(con_info->user->signature);
 		free(con_info->user);
 	}	
 	
@@ -126,18 +135,18 @@ static int iterate_post (void *coninfo_cls, enum MHD_ValueKind kind, const char 
 
 void www_init() {
 	FILE *fptr;
-	char buffer[4096];
+	char buffer[PATH_MAX];
 	int i;
 	
 	mime_types_count = 0;
 	
-	sprintf(buffer, "%s/mime.types", conf.www_path);
+	snprintf(buffer, PATH_MAX, "%s/mime.types", conf.www_path);
 	
 	fptr = fopen(buffer, "r");
 	if (!fptr) {
 		return;
 	}
-	fgets(buffer, 4096, fptr);
+	fgets(buffer, 256, fptr);
 	while (!feof(fptr)) {
 		chomp(buffer);
 		
@@ -160,7 +169,7 @@ void www_init() {
 			}
 		}
 		
-		fgets(buffer, 4096, fptr);
+		fgets(buffer, 256, fptr);
 	}
 	
 	fclose(fptr);
@@ -170,7 +179,10 @@ char *www_get_mime_type(const char *extension) {
 	int i;
 	static char default_mime_type[] = "application/octet-stream";
 	
-	
+	if (extension == NULL) {
+		return default_mime_type;
+	}
+
 	for (i=0;i<mime_types_count;i++) {
 		if (strcasecmp(extension, mime_types[i]->ext) == 0) {
 			return mime_types[i]->mime;
@@ -180,42 +192,45 @@ char *www_get_mime_type(const char *extension) {
 }
 
 int www_401(char *header, char *footer, struct MHD_Connection * connection) {
-	char buffer[4096];
-	char *page;
+	char buffer[PATH_MAX];
+	char *page, *page_tmp;
 	struct stat s;
 	char *whole_page;
 	struct MHD_Response *response;
 	int ret;
 	FILE *fptr;
 		
-	snprintf(buffer, 4096, "%s/401.tpl", conf.www_path);
+	snprintf(buffer, PATH_MAX, "%s/401.tpl", conf.www_path);
 			
-	page = NULL;
+	page_tmp = NULL;
 			
 	if (stat(buffer, &s) == 0) {
-		page = (char *)malloc(s.st_size + 1);
-		if (page == NULL) {
+		page_tmp = (char *)malloc(s.st_size + 1);
+		if (page_tmp == NULL) {
 			return -1;
 		}
-		memset(page, 0, s.st_size + 1);
+		memset(page_tmp, 0, s.st_size + 1);
 		fptr = fopen(buffer, "r");
 		if (fptr) {
-			fread(page, s.st_size, 1, fptr);
+			fread(page_tmp, s.st_size, 1, fptr);
 			fclose(fptr);
 		} else {
-			free(page);
-			page = NULL;
+			free(page_tmp);
+			page_tmp = NULL;
 		}
 	}
 			
-	if (page == NULL) {
-		page = (char *)malloc(16);
-		if (page == NULL) {
+	if (page_tmp == NULL) {
+		page_tmp = (char *)malloc(16);
+		if (page_tmp == NULL) {
 			return -1;
 		}
-		sprintf(page, "Missing Content");
+		sprintf(page_tmp, "Missing Content");
 	}
-				
+
+	page = str_replace(page_tmp, "@@WWW_URL@@", conf.www_url);
+	free(page_tmp);
+
 	whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
 			
 	sprintf(whole_page, "%s%s%s", header, page, footer);
@@ -232,42 +247,45 @@ int www_401(char *header, char *footer, struct MHD_Connection * connection) {
 }
 
 int www_404(char *header, char *footer, struct MHD_Connection * connection) {
-	char buffer[4096];
-	char *page;
+	char buffer[PATH_MAX];
+	char *page, *page_tmp;
 	struct stat s;
 	char *whole_page;
 	struct MHD_Response *response;
 	int ret;
 	FILE *fptr;
 		
-	snprintf(buffer, 4096, "%s/404.tpl", conf.www_path);
+	snprintf(buffer, PATH_MAX, "%s/404.tpl", conf.www_path);
 			
-	page = NULL;
+	page_tmp = NULL;
 			
 	if (stat(buffer, &s) == 0) {
-		page = (char *)malloc(s.st_size + 1);
-		if (page == NULL) {
+		page_tmp = (char *)malloc(s.st_size + 1);
+		if (page_tmp == NULL) {
 			return -1;
 		}
-		memset(page, 0, s.st_size + 1);
+		memset(page_tmp, 0, s.st_size + 1);
 		fptr = fopen(buffer, "r");
 		if (fptr) {
-			fread(page, s.st_size, 1, fptr);
+			fread(page_tmp, s.st_size, 1, fptr);
 			fclose(fptr);
 		} else {
-			free(page);
+			free(page_tmp);
 			page = NULL;
 		}
 	}
 			
-	if (page == NULL) {
-		page = (char *)malloc(16);
-		if (page == NULL) {
+	if (page_tmp == NULL) {
+		page_tmp = (char *)malloc(16);
+		if (page_tmp == NULL) {
 			return -1;
 		}
-		sprintf(page, "Missing Content");
+		sprintf(page_tmp, "Missing Content");
 	}
-				
+
+	page = str_replace(page_tmp, "@@WWW_URL@@", conf.www_url);
+	free(page_tmp);
+
 	whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
 			
 	sprintf(whole_page, "%s%s%s", header, page, footer);
@@ -282,42 +300,46 @@ int www_404(char *header, char *footer, struct MHD_Connection * connection) {
 }
 
 int www_403(char *header, char *footer, struct MHD_Connection * connection) {
-	char buffer[4096];
-	char *page;
+	char buffer[PATH_MAX];
+	char *page, *page_tmp;
 	struct stat s;
 	char *whole_page;
 	struct MHD_Response *response;
 	int ret;
 	FILE *fptr;
+	char *endptr;
 	
-	snprintf(buffer, 4096, "%s/403.tpl", conf.www_path);
+	snprintf(buffer, PATH_MAX, "%s/403.tpl", conf.www_path);
 			
-	page = NULL;
+	page_tmp = NULL;
 			
 	if (stat(buffer, &s) == 0) {
-		page = (char *)malloc(s.st_size + 1);
-		if (page == NULL) {
+		page_tmp = (char *)malloc(s.st_size + 1);
+		if (page_tmp == NULL) {
 			return -1;
 		}
-		memset(page, 0, s.st_size + 1);
+		memset(page_tmp, 0, s.st_size + 1);
 		fptr = fopen(buffer, "r");
 		if (fptr) {
-			fread(page, s.st_size, 1, fptr);
+			fread(page_tmp, s.st_size, 1, fptr);
 			fclose(fptr);
 		} else {
-			free(page);
-			page = NULL;
+			free(page_tmp);
+			page_tmp = NULL;
 		}
 	}
 			
-	if (page == NULL) {
-		page = (char *)malloc(16);
-		if (page == NULL) {
+	if (page_tmp == NULL) {
+		page_tmp = (char *)malloc(16);
+		if (page_tmp == NULL) {
 			return -1;
 		}
-		sprintf(page, "Missing Content");
+		sprintf(page_tmp, "Missing Content");
 	}
-				
+
+	page = str_replace(page_tmp, "@@WWW_URL@@", conf.www_url);
+	free(page_tmp);
+
 	whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
 			
 	sprintf(whole_page, "%s%s%s", header, page, footer);
@@ -376,11 +398,11 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 	struct MHD_Response *response;
 	
 	int ret;
-	char *page;
-	char buffer[4096];
+	char *page, *page_tmp;
+	char buffer[PATH_MAX];
 	struct stat s;
-	char *header;
-	char *footer;
+	char *header, *header_tmp;
+	char *footer, *footer_tmp;
 	char *whole_page;
 	FILE *fptr;
 	char *mime;
@@ -395,7 +417,13 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 	const char *val;
 	int skip;
 	char *replyid;
-	
+	char *filename;
+	int email;
+	char *endptr;
+//	char *static_buffer;
+
+	page = NULL;
+
 	if (strcmp(method, "GET") == 0) {
 		if (*ptr == NULL) {
 			con_inf = (struct connection_info_s *)malloc(sizeof(struct connection_info_s));
@@ -430,99 +458,108 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 	
 	con_inf = *ptr;
 	
-	snprintf(buffer, 4096, "%s/header.tpl", conf.www_path);
+	snprintf(buffer, PATH_MAX, "%s/header.tpl", conf.www_path);
 	
-	header = NULL;
-	
-	if (stat(buffer, &s) == 0) {
-		header = (char *)malloc(s.st_size + 1);
-		if (header == NULL) {
-			return MHD_NO;
-		}
-		memset(header, 0, s.st_size + 1);
-		fptr = fopen(buffer, "r");
-		if (fptr) {
-			fread(header, s.st_size, 1, fptr);
-			fclose(fptr);
-		} else {
-			free(header);
-			header = NULL;
-		}
-	}
-	
-	if (header == NULL) {
-		header = (char *)malloc(strlen(conf.bbs_name) * 2 + 61);
-		if (header == NULL) {
-			return MHD_NO;
-		}
-		sprintf(header, "<HTML>\n<HEAD>\n<TITLE>%s</TITLE>\n</HEAD>\n<BODY>\n<H1>%s</H1><HR />", conf.bbs_name, conf.bbs_name);
-	}
-	
-	snprintf(buffer, 4096, "%s/footer.tpl", conf.www_path);
-	
-	footer = NULL;
+	header_tmp = NULL;
 	
 	if (stat(buffer, &s) == 0) {
-		footer = (char *)malloc(s.st_size + 1);
-		if (footer == NULL) {
-			free(header);
+		header_tmp = (char *)malloc(s.st_size + 1);
+		if (header_tmp == NULL) {
 			return MHD_NO;
 		}
-		memset(footer, 0, s.st_size + 1);
+		memset(header_tmp, 0, s.st_size + 1);
 		fptr = fopen(buffer, "r");
 		if (fptr) {
-			fread(footer, s.st_size, 1, fptr);
+			fread(header_tmp, s.st_size, 1, fptr);
 			fclose(fptr);
 		} else {
-			free(footer);
-			footer = NULL;
+			free(header_tmp);
+			header_tmp = NULL;
 		}
 	}
 	
-	if (footer == NULL) {
-		footer = (char *)malloc(43);
-		if (footer == NULL) {
+	if (header_tmp == NULL) {
+		header_tmp = (char *)malloc(strlen(conf.bbs_name) * 2 + 61);
+		if (header_tmp == NULL) {
+			return MHD_NO;
+		}
+		sprintf(header_tmp, "<HTML>\n<HEAD>\n<TITLE>%s</TITLE>\n</HEAD>\n<BODY>\n<H1>%s</H1><HR />", conf.bbs_name, conf.bbs_name);
+	}
+	
+	header = str_replace(header_tmp, "@@WWW_URL@@", conf.www_url);
+	free(header_tmp);
+
+	snprintf(buffer, PATH_MAX, "%s/footer.tpl", conf.www_path);
+	
+	footer_tmp = NULL;
+	
+	if (stat(buffer, &s) == 0) {
+		footer_tmp = (char *)malloc(s.st_size + 1);
+		if (footer_tmp == NULL) {
 			free(header);
 			return MHD_NO;
 		}
-		sprintf(footer, "<HR />Powered by Magicka BBS</BODY></HTML>");
+		memset(footer_tmp, 0, s.st_size + 1);
+		fptr = fopen(buffer, "r");
+		if (fptr) {
+			fread(footer_tmp, s.st_size, 1, fptr);
+			fclose(fptr);
+		} else {
+			free(footer_tmp);
+			footer_tmp = NULL;
+		}
 	}
 	
+	if (footer_tmp == NULL) {
+		footer_tmp = (char *)malloc(43);
+		if (footer_tmp == NULL) {
+			free(header);
+			return MHD_NO;
+		}
+		sprintf(footer_tmp, "<HR />Powered by Magicka BBS</BODY></HTML>");
+	}
+
+	footer = str_replace(footer_tmp, "@@WWW_URL@@", conf.www_url);
+	free(footer_tmp);
+
 	if (strcmp(method, "GET") == 0) {
 		if (strcasecmp(url, "/") == 0) {
 
-			snprintf(buffer, 4096, "%s/index.tpl", conf.www_path);
+			snprintf(buffer, PATH_MAX, "%s/index.tpl", conf.www_path);
 			
-			page = NULL;
+			page_tmp = NULL;
 			
 			if (stat(buffer, &s) == 0) {
-				page = (char *)malloc(s.st_size + 1);
-				if (page == NULL) {
+				page_tmp = (char *)malloc(s.st_size + 1);
+				if (page_tmp == NULL) {
 					free(header);
 					free(footer);
 					return MHD_NO;
 				}
-				memset(page, 0, s.st_size + 1);
+				memset(page_tmp, 0, s.st_size + 1);
 				fptr = fopen(buffer, "r");
 				if (fptr) {
-					fread(page, s.st_size, 1, fptr);
+					fread(page_tmp, s.st_size, 1, fptr);
 					fclose(fptr);
 				} else {
-					free(page);
-					page = NULL;
+					free(page_tmp);
+					page_tmp = NULL;
 				}
 			}
 			
-			if (page == NULL) {
-				page = (char *)malloc(16);
-				if (page == NULL) {
+			if (page_tmp == NULL) {
+				page_tmp = (char *)malloc(16);
+				if (page_tmp == NULL) {
 					free(header);
 					free(footer);					
 					return MHD_NO;
 				}
-				sprintf(page, "Missing Content");
+				sprintf(page_tmp, "Missing Content");
 			}
-				
+		
+			page = str_replace(page_tmp, "@@WWW_URL@@", conf.www_url);
+			free(page_tmp);
+
 			whole_page = (char *)malloc(strlen(header) + strlen(page) + strlen(footer) + 1);
 			
 			sprintf(whole_page, "%s%s%s", header, page, footer);
@@ -581,8 +618,8 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 				free(footer);
 				return MHD_YES;		
 			}
-			
-			if (!www_email_delete(con_inf->user, atoi(&url[14]))) {
+			email = strtol(&url[14], &endptr, 10);
+			if (email == -1 || !www_email_delete(con_inf->user, email)) {
 				page = (char *)malloc(31);
 				if (page == NULL) {
 					free(header);
@@ -616,7 +653,13 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 				free(footer);
 				return MHD_YES;		
 			}
-			page = www_email_display(con_inf->user, atoi(&url[7]));
+			email = strtol(&url[7], &endptr, 10);
+			if (email == -1) {
+				free(header);
+				free(footer);
+				return MHD_NO;						
+			}
+			page = www_email_display(con_inf->user, email);
 			if (page == NULL) {
 				free(header);
 				free(footer);
@@ -658,10 +701,16 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 	
 			aptr = strtok(url_copy, "/");
 			if (aptr != NULL) {
-				conference = atoi(aptr);
+				conference = strtol(aptr, &endptr, 10);
+				if (endptr == aptr) {
+					conference = -1;
+				}
 				aptr = strtok(NULL, "/");
 				if (aptr != NULL) {
-					area = atoi(aptr);
+					area = strtol(aptr, &endptr, 10);
+					if (endptr == aptr) {
+						area = -1;
+					}	
 				}
 			}
 			free(url_copy);
@@ -692,13 +741,22 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 	
 			aptr = strtok(url_copy, "/");
 			if (aptr != NULL) {
-				conference = atoi(aptr);
+				conference = strtol(aptr, &endptr, 10);
+				if (endptr == aptr) {
+					conference = -1;
+				}
 				aptr = strtok(NULL, "/");
 				if (aptr != NULL) {
-					area = atoi(aptr);
+					area = strtol(aptr, &endptr, 10);
+					if (endptr == aptr) {
+						area = -1;
+					}
 					aptr = strtok(NULL, "/");
 					if (aptr != NULL) {
-						msg = atoi(aptr);
+						msg = strtol(aptr, &endptr, 10);
+						if (endptr == aptr) {
+							msg = -1;
+						}						
 					}
 				}
 			}
@@ -735,28 +793,46 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 		} else if (strncasecmp(url, "/static/", 8) == 0) {
 			// sanatize path
 			if (strstr(url, "/..") != NULL) {
+				free(header);
+				free(footer);
 				return MHD_NO;
 			}
+
+			mime = NULL;
 			// get mimetype
 			for (i=strlen(url);i>0;--i) {
 				if (url[i] == '.') {
 					mime = www_get_mime_type(&url[i+1]);
 					break;
 				}
+				if (url[i] == '/') {
+					mime = www_get_mime_type(NULL);
+					break;
+				}
 			}
+
+			if (mime = NULL) {
+				mime = www_get_mime_type(NULL);
+			}
+
+
 			// load file
 			
 			sprintf(buffer, "%s%s", conf.www_path, url);
 			if (stat(buffer, &s) == 0 && S_ISREG(s.st_mode)) {
 				fno = open(buffer, O_RDONLY);
 				if (fno != -1) {
+
+					//static_buffer = (char *)malloc(s.st_size + 1);
+					//read(fno, static_buffer, s.st_size);
 					response = MHD_create_response_from_fd(s.st_size, fno);
+					//response = MHD_create_response_from_buffer (s.st_size, (void*) static_buffer, MHD_RESPMEM_MUST_FREE);
 					MHD_add_response_header(response, MHD_HTTP_HEADER_CONTENT_TYPE, mime);
 					ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
 					MHD_destroy_response (response);
 					free(header);
 					free(footer);
-					return MHD_YES;				
+					return ret;				
 				} else {
 					if (www_403(header, footer, connection) != 0) {
 						free(header);
@@ -778,6 +854,55 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 				return MHD_YES;	
 			}
 			
+		} else if (strncasecmp(url, "/files/", 7) == 0) {
+			filename = www_decode_hash(&url[7]);
+			if (filename != NULL) {
+				mime = NULL;
+				// get mimetype
+				for (i=strlen(filename);i>0;--i) {
+					if (filename[i] == '.') {
+						mime = www_get_mime_type(&filename[i+1]);
+						break;
+					}
+					if (filename[i] == '/') {
+						mime = www_get_mime_type(NULL);
+						break;
+					}
+				}
+
+				if (mime = NULL) {
+					mime = www_get_mime_type(NULL);
+				}
+				
+				if (stat(filename, &s) == 0 && S_ISREG(s.st_mode)) {
+					fno = open(filename, O_RDONLY);
+					if (fno != -1) {
+					
+						response = MHD_create_response_from_fd(s.st_size, fno);
+						MHD_add_response_header(response, MHD_HTTP_HEADER_CONTENT_TYPE, mime);
+						sprintf(buffer, "%ld", s.st_size);
+						MHD_add_response_header(response, MHD_HTTP_HEADER_CONTENT_LENGTH, buffer);
+					
+						snprintf(buffer, PATH_MAX, "attachment; filename=\"%s\"", basename(filename));
+						MHD_add_response_header(response, MHD_HTTP_HEADER_CONTENT_DISPOSITION, buffer);
+						ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+						MHD_destroy_response (response);
+						free(header);
+						free(footer);
+						free(filename);
+						return ret;
+					}
+				}
+				free(filename);
+			}
+			if (www_404(header, footer, connection) != 0) {
+				free(header);
+				free(footer);
+				return MHD_NO;	
+			}
+			free(header);
+			free(footer);
+			return MHD_YES;	
 		} else {
 			if (www_404(header, footer, connection) != 0) {
 				free(header);
@@ -864,7 +989,8 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 			to = NULL;
 			body = NULL;
 			replyid = NULL;
-
+			conference = -1;
+			area = -1;
 			
 			for (i=0;i<con_inf->count;i++) {
 				if (strcmp(con_inf->keys[i], "recipient") == 0) {
@@ -874,15 +1000,22 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 				} else if (strcmp(con_inf->keys[i], "body") == 0) {
 					body = con_inf->values[i];
 				} else if (strcmp(con_inf->keys[i], "conference") == 0) {
-					conference = atoi(con_inf->values[i]);
+					conference = strtol(con_inf->values[i], &endptr, 10);
+					if (endptr == con_inf->values[i]) {
+						conference = -1;
+					}
 				} else if (strcmp(con_inf->keys[i], "area") == 0) {
-					area = atoi(con_inf->values[i]);
+					area = strtol(con_inf->values[i], &endptr, 10);
+					if (endptr == con_inf->values[i]) {
+						area = -1;
+					}
 				} else if (strcmp(con_inf->keys[i], "replyid") == 0) {
 					replyid = con_inf->values[i];
 				}
 			}
+
 			if (!www_send_msg(con_inf->user, to, subj, conference, area, replyid, body)) {
-				page = (char *)malloc(50);
+				page = (char *)malloc(31);
 				if (page == NULL) {
 					free(header);
 					free(footer);					
@@ -890,7 +1023,7 @@ int www_handler(void * cls, struct MHD_Connection * connection, const char * url
 				}
 				sprintf(page, "<h1>Error Sending Message</h1>");
 			} else {
-				page = (char *)malloc(21);
+				page = (char *)malloc(23);
 				if (page == NULL) {
 					free(header);
 					free(footer);					

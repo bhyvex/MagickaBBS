@@ -54,6 +54,9 @@
 #define MENU_FILESEARCH			44
 #define MENU_DISPTXTFILE		45
 #define MENU_DISPTXTFILEPAUSE	46
+#define MENU_GENWWWURLS         47
+#define MENU_NLBROWSER          48
+#define MENU_SENDFEEDBACK       49
 
 extern struct bbs_config conf;
 extern struct user_record *gUser;
@@ -76,6 +79,7 @@ int menu_system(char *menufile) {
     char *ansi_file;
     int i;
     int j;
+    int k;
     struct stat s;
     char *lRet;
 	lua_State *L;
@@ -84,7 +88,10 @@ int menu_system(char *menufile) {
     char c;
     int clearscreen = 0;
 	char confirm;
-	
+    char *msg;
+
+    dolog("%s is loading menu: %s", gUser->loginname, menufile);
+
     if (menufile[0] == '/') {
         snprintf(buffer, PATH_MAX, "%s.mnu", menufile);
     } else {
@@ -212,7 +219,13 @@ int menu_system(char *menufile) {
 				menu[menu_items-1]->command = MENU_DISPTXTFILE;
 			} else if (strncasecmp(&buffer[8], "DISPLAYTXTPAUSE", 15) == 0) {
 				menu[menu_items-1]->command = MENU_DISPTXTFILEPAUSE;
-			} 
+			} else if (strncasecmp(&buffer[8], "GENWWWURLS", 10) == 0) {
+                menu[menu_items-1]->command = MENU_GENWWWURLS;
+            } else if (strncasecmp(&buffer[8], "NLBROWSER", 9) == 0) {
+                menu[menu_items-1]->command = MENU_NLBROWSER;
+            } else if (strncasecmp(&buffer[8], "SENDFEEDBACK", 12) == 0) {
+                menu[menu_items-1]->command = MENU_SENDFEEDBACK;
+            }
         } else if (strncasecmp(buffer, "SECLEVEL", 8) == 0) {
             menu[menu_items-1]->seclevel = atoi(&buffer[9]);
         } else if (strncasecmp(buffer, "DATA", 4) == 0) {
@@ -497,18 +510,36 @@ int menu_system(char *menufile) {
 							msg_conf_sub_bases();
 							break;
 						case MENU_RESETPOINTERS:
-							s_printf(get_string(229), conf.mail_conferences[gUser->cur_mail_conf]->mail_areas[gUser->cur_mail_area]->name);
-							confirm = s_getc();
-							if (confirm == 'y' || confirm == 'Y') {
-								msgbase_reset_pointers(gUser->cur_mail_conf, gUser->cur_mail_area);
-							}
+                            s_printf(get_string(229));
+                            s_readstring(buffer, 10);
+                            if (tolower(buffer[0]) == 'r') {
+                                k = -1;
+                                j = 1;
+                            } else if (tolower(buffer[0]) == 'u') {
+                                k = -1;
+                                j = 0;
+                            } else if (buffer[0] < '0' || buffer[0] > '9') {
+                                s_printf(get_string(39));
+                                break;
+                            } else {
+                                k = atoi(buffer) - 1;
+                            }
+
+							msgbase_reset_pointers(gUser->cur_mail_conf, gUser->cur_mail_area, j, k);
+
 							break;
 						case MENU_RESETALLPOINTERS:
-							s_printf(get_string(230));
-							confirm = s_getc();
-							if (confirm == 'y' || confirm == 'Y') {
-								msgbase_reset_all_pointers();
-							}
+                            s_printf(get_string(230));
+                            confirm = s_getc();
+                            if (confirm == 'r' || confirm == 'R') {
+                                j = 1;
+                            } else if (confirm == 'u' || confirm == 'U') {
+                                j = 0;
+                            } else {
+                                s_printf(get_string(39));
+                                break;
+                            }                        
+							msgbase_reset_all_pointers(j);
 							break;
 						case MENU_FILESCAN:
 							file_scan();
@@ -531,6 +562,22 @@ int menu_system(char *menufile) {
 							s_printf(get_string(6));
 							s_getc();
 							break;
+                        case MENU_GENWWWURLS:
+                            genurls();
+                            break;
+                        case MENU_NLBROWSER:
+                            nl_browser();
+                            break;
+                        case MENU_SENDFEEDBACK:
+                        	if (check_user(conf.sysop_name)) {
+                                break;
+                            }
+                            msg = external_editor(gUser, conf.sysop_name, gUser->loginname, NULL, 0, NULL, "Feedback", 1, 0);
+                            if (msg != NULL) {
+                                commit_email(conf.sysop_name, "Feedback", msg);
+                                free(msg);
+                            }
+                            break;
                         default:
                             break;     
                     }

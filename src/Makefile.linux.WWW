@@ -5,12 +5,12 @@ JAMLIB = ../deps/jamlib/jamlib.a
 ZMODEM = ../deps/Xmodem/libzmodem.a
 LUA = ../deps/lua/liblua.a
 B64 = ../deps/libb64-1.2/src/libb64.a
-MICROHTTPD=-lmicrohttpd
+MICROHTTPD=-lmicrohttpd 
 ODOORS = ../deps/odoors/libs-`uname -s`/libODoors.a
 JSMN = ../deps/jsmn/libjsmn.a
 CDK = ../deps/cdk-5-20161210/libcdk.a
 
-all: magicka magimail magiedit ticproc mgpost magichat fileapprove magiftpd
+all: magicka magimail magiedit ticproc mgpost magichat fileapprove magiftpd reset_pass
 
 ${LUA}: 
 	cd ../deps/lua && $(MAKE) -f Makefile linux MAKEFLAGS=
@@ -34,7 +34,7 @@ $(CDK):
 	cd ../deps/cdk-5.0-20161210/ && ./configure
 	cd ../deps/cdk-5.0-20161210/ && $(MAKE)
 
-OBJ =  ../deps/aha/aha.o inih/ini.o bbs.o main.o users.o main_menu.o mail_menu.o doors.o bbs_list.o chat_system.o email.o files.o settings.o lua_glue.o strings.o www.o www_email.o www_msgs.o www_last10.o bluewave.o hashmap/hashmap.o menus.o
+OBJ =  ../deps/aha/aha.o ../deps/hashids/hashids.o inih/ini.o bbs.o main.o users.o main_menu.o mail_menu.o doors.o bbs_list.o chat_system.o email.o files.o settings.o lua_glue.o strings.o www.o www_email.o www_msgs.o www_last10.o www_files.o bluewave.o hashmap/hashmap.o menus.o nodelist.o
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
@@ -62,6 +62,9 @@ fileapprove: $(CDK)
 magiftpd:
 	cd ../utils/magiftpd && $(MAKE)
 
+reset_pass:
+	cd ../utils/reset_pass && $(MAKE)
+
 .PHONY: clean
 
 clean:
@@ -79,3 +82,4 @@ clean:
 	cd ../deps/cdk-5.0-20161210 && $(MAKE) clean
 	cd ../utils/fileapprove && $(MAKE) clean
 	cd ../utils/magiftpd && $(MAKE) clean
+	cd ../utils/reset_pass && $(MAKE) clean

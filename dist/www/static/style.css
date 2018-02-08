@@ -62,6 +62,8 @@
 	float: left;
 	display: table-column;
 	width: 30px;
+	height: 24px;
+	background: url('/static/delete.png') no-repeat;
 }
 
 .email-view-header {

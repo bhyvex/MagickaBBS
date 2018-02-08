@@ -301,7 +301,12 @@ struct msg_headers *read_message_headers(int msgconf, int msgarea, struct user_r
 			if (jamm->subject == NULL) {
 				jamm->subject = strdup("(No Subject)");
 			}
-
+			if (jamm->from == NULL) {
+				jamm->from = strdup("(No Sender)");
+			}
+			if (jamm->to == NULL) {
+				jamm->to = strdup("(No Recipient)");
+			}			
 			if (jmh.Attribute & JAM_MSG_PRIVATE) {
 				if (!msg_is_to(user, jamm->to, jamm->daddress, conf.mail_conferences[msgconf]->nettype, conf.mail_conferences[msgconf]->realnames, msgconf) &&
 				    !msg_is_from(user, jamm->from, jamm->oaddress, conf.mail_conferences[msgconf]->nettype, conf.mail_conferences[msgconf]->realnames, msgconf) &&
@@ -2059,6 +2064,7 @@ void post_message(struct user_record *user) {
 	char buffer2[256];
 	int z;
 	int sem_fd;
+	char *bbsname;
 
 	s_JamBase *jb;
 	s_JamMsgHeader jmh;
@@ -2079,13 +2085,14 @@ void post_message(struct user_record *user) {
 	if (strlen(buffer) == 0) {
 		strcpy(buffer, "ALL");
 	}
-
+/*
 	if (conf.mail_conferences[user->cur_mail_conf]->networked == 0 && strcasecmp(buffer, "ALL") != 0) {
 		if (check_user(buffer)) {
 			s_printf(get_string(55));
 			return;
 		}
 	}
+*/
 	if (conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->type == TYPE_NETMAIL_AREA) {
 		s_printf(get_string(121));
 		s_readstring(buffer2, 32);
@@ -2100,7 +2107,14 @@ void post_message(struct user_record *user) {
 					s_printf(get_string(122));
 					return;
 				}
-				s_printf(get_string(123), from_addr->zone, from_addr->net, from_addr->node, from_addr->point);
+				if (conf.mail_conferences[gUser->cur_mail_conf]->domain != NULL) {
+					bbsname = nl_get_bbsname(from_addr, conf.mail_conferences[gUser->cur_mail_conf]->domain);
+				} else {
+					bbsname = strdup("Unknown");
+				}
+				s_printf(get_string(123), from_addr->zone, from_addr->net, from_addr->node, from_addr->point, bbsname);
+
+				free(bbsname);
 			}
 		}
 	}
@@ -2751,9 +2765,17 @@ void choose_area() {
 			s_printf(get_string(248));
 			for (i=start;i<start+22 && i < list_tmp;i++) {
 				if (i == selected) {
-					s_printf(get_string(249), i - start + 2, area_tmp[i]->index, area_tmp[i]->area->name);
+					if (new_messages(gUser, gUser->cur_mail_conf, area_tmp[i]->index)) {
+						s_printf(get_string(259), i - start + 2, area_tmp[i]->index, area_tmp[i]->area->name);
+					} else {
+						s_printf(get_string(249), i - start + 2, area_tmp[i]->index, area_tmp[i]->area->name);
+					}
 				} else {
-					s_printf(get_string(250), i - start + 2, area_tmp[i]->index, area_tmp[i]->area->name);
+					if (new_messages(gUser, gUser->cur_mail_conf, area_tmp[i]->index)) {
+						s_printf(get_string(260), i - start + 2, area_tmp[i]->index, area_tmp[i]->area->name);
+					} else {					
+						s_printf(get_string(250), i - start + 2, area_tmp[i]->index, area_tmp[i]->area->name);
+					}
 				}
 			}
 			s_printf("\e[%d;5H", selected - start + 2);
@@ -2780,8 +2802,16 @@ void choose_area() {
 						selected = list_tmp - 1;
 					} else {
 						if (!redraw) {		
-							s_printf(get_string(250), selected - start + 1, area_tmp[selected - 1]->index, area_tmp[selected - 1]->area->name);
-							s_printf(get_string(249), selected - start + 2, area_tmp[selected]->index, area_tmp[selected]->area->name);
+							if (new_messages(gUser, gUser->cur_mail_conf, area_tmp[selected - 1]->index)) {
+								s_printf(get_string(260), selected - start + 1, area_tmp[selected - 1]->index, area_tmp[selected - 1]->area->name);
+							} else {
+								s_printf(get_string(250), selected - start + 1, area_tmp[selected - 1]->index, area_tmp[selected - 1]->area->name);
+							}
+							if (new_messages(gUser, gUser->cur_mail_conf, area_tmp[selected]->index)) {
+								s_printf(get_string(259), selected - start + 2, area_tmp[selected]->index, area_tmp[selected]->area->name);
+							} else {
+								s_printf(get_string(249), selected - start + 2, area_tmp[selected]->index, area_tmp[selected]->area->name);
+							}
 							s_printf("\e[%d;5H", selected - start + 2);
 						}
 					}
@@ -2798,9 +2828,17 @@ void choose_area() {
 					if (selected < 0) {
 						selected = 0;
 					} else {
-						if (!redraw) {		
-							s_printf(get_string(249), selected - start + 2, area_tmp[selected]->index, area_tmp[selected]->area->name);
-							s_printf(get_string(250), selected - start + 3, area_tmp[selected + 1]->index, area_tmp[selected + 1]->area->name);
+						if (!redraw) {	
+							if (new_messages(gUser, gUser->cur_mail_conf, area_tmp[selected]->index)) {
+								s_printf(get_string(259), selected - start + 2, area_tmp[selected]->index, area_tmp[selected]->area->name);
+							} else {
+								s_printf(get_string(249), selected - start + 2, area_tmp[selected]->index, area_tmp[selected]->area->name);
+							}
+							if (new_messages(gUser, gUser->cur_mail_conf, area_tmp[selected + 1]->index)) {
+								s_printf(get_string(260), selected - start + 3, area_tmp[selected + 1]->index, area_tmp[selected + 1]->area->name);
+							} else {
+								s_printf(get_string(250), selected - start + 3, area_tmp[selected + 1]->index, area_tmp[selected + 1]->area->name);
+							}
 							s_printf("\e[%d;5H", selected - start + 2);
 						}	
 					}
@@ -3201,30 +3239,128 @@ void msg_conf_sub_bases() {
 	} while (!done);
 }
 
-void msgbase_reset_pointers(int conference, int msgarea) {
+void msgbase_reset_pointers(int conference, int msgarea, int readm, int msgno) {
 	s_JamBase *jb;
 	s_JamBaseHeader jbh;
 	s_JamLastRead jlr;
-	
+	s_JamMsgHeader jmh;
+
+	int max_msg;
+	int active_msgs;
+	int i, j, k;
+
 	jb = open_jam_base(conf.mail_conferences[conference]->mail_areas[msgarea]->path);
 	if (!jb) {
 		dolog("Unable to open message base");
 		return;
 	}
+
+	if (JAM_ReadMBHeader(jb, &jbh) != 0) {
+		JAM_CloseMB(jb);
+		return;
+	}
+
+	j = 0;
+
+	if (msgno == -1 && readm) {
+		k = jbh.ActiveMsgs;
+	} else if (msgno == -1 && !readm) {
+		k = 0;
+	} else {
+		if (msgno > jbh.ActiveMsgs) {
+			k = jbh.ActiveMsgs;
+		} else {
+			k = msgno;
+		}
+	}
+
+	for (i=0;j<k;i++) {
+		memset(&jmh, 0, sizeof(s_JamMsgHeader));
+		if (JAM_ReadMsgHeader(jb, i, &jmh, NULL) != 0) {
+			dolog("Failed to read msg header: Erro %d", JAM_Errno(jb));
+			return;
+		}
+
+		if (jmh.Attribute & JAM_MSG_DELETED) {
+			continue;
+		}
+		j++;
+	}
+
+	max_msg = i;	
+
 	if (JAM_ReadLastRead(jb, gUser->id, &jlr) != JAM_NO_USER) {
-		jlr.LastReadMsg = 0;
-		jlr.HighReadMsg = 0;
+		jlr.LastReadMsg = max_msg;
+		jlr.HighReadMsg = max_msg;
+		JAM_WriteLastRead(jb, gUser->id, &jlr);
+	} else {
+		jlr.LastReadMsg = max_msg;
+		jlr.HighReadMsg = max_msg;
+		jlr.UserCRC = JAM_Crc32(gUser->loginname, strlen(gUser->loginname));
+		jlr.UserID = gUser->id;	
 		JAM_WriteLastRead(jb, gUser->id, &jlr);
 	}
 	JAM_CloseMB(jb);
 }
 
-void msgbase_reset_all_pointers() {
+void msgbase_reset_all_pointers(int readm) {
 	int i, j;
 	
 	for (i=0;i<conf.mail_conference_count;i++) {
 		for (j=0;j<conf.mail_conferences[i]->mail_area_count;j++) {
-			msgbase_reset_pointers(i, j);
+			msgbase_reset_pointers(i, j, readm, -1);
 		}
 	}
+}
+
+int new_messages(struct user_record *user, int conference, int area) {
+	int count = 0;
+	s_JamBase *jb;
+	s_JamBaseHeader jbh;
+	s_JamLastRead jlr;
+	struct msg_headers *msghs;
+		
+	jb = open_jam_base(conf.mail_conferences[conference]->mail_areas[area]->path);
+	if (!jb) {
+		return 0;
+	}
+	if (JAM_ReadMBHeader(jb, &jbh) != 0) {
+		JAM_CloseMB(jb);
+		return 0;
+	}
+	if (JAM_ReadLastRead(jb, user->id, &jlr) == JAM_NO_USER) {
+		if (jbh.ActiveMsgs == 0) {
+			JAM_CloseMB(jb);
+			return 0;
+		}
+		if (conf.mail_conferences[conference]->mail_areas[area]->type == TYPE_NETMAIL_AREA) {
+			msghs = read_message_headers(conference, area, user);
+			if (msghs != NULL) {
+				if (msghs->msg_count > 0) {
+					count = msghs->msg_count;
+				}
+				free_message_headers(msghs);
+			}
+		} else {
+			count = jbh.ActiveMsgs;
+		}
+	} else {
+		if (jlr.HighReadMsg < jbh.ActiveMsgs) {
+			if (conf.mail_conferences[conference]->mail_areas[area]->type == TYPE_NETMAIL_AREA) {
+				msghs = read_message_headers(conference, area, user);
+				if (msghs != NULL) {
+					if (msghs->msg_count > 0) {
+						if (msghs->msgs[msghs->msg_count-1]->msg_h->MsgNum > jlr.HighReadMsg) {
+							count = msghs->msgs[msghs->msg_count-1]->msg_h->MsgNum - jlr.HighReadMsg;
+						}
+					}
+					free_message_headers(msghs);
+				}
+			} else {
+				count = jbh.ActiveMsgs - jlr.HighReadMsg;
+			}
+		}
+	}
+	JAM_CloseMB(jb);
+	return count;
 }

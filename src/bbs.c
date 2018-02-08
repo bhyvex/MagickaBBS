@@ -21,6 +21,8 @@
 #include "lua/lauxlib.h"
 
 
+int telnet_bin_mode = 0;
+
 int mynode = 0;
 struct bbs_config conf;
 
@@ -89,8 +91,8 @@ void broadcast(char *mess, ...) {
 	}
 }
 
-void dolog(char *fmt, ...) {
-	char buffer[512];
+void dolog_www(char *ipaddr, char *fmt, ...) {
+	char buffer[PATH_MAX];
 	struct tm time_now;
 	time_t timen;
 	FILE *logfptr;
@@ -102,14 +104,42 @@ void dolog(char *fmt, ...) {
 
 	localtime_r(&timen, &time_now);
 
-	snprintf(buffer, 512, "%s/%04d%02d%02d.log", conf.log_path, time_now.tm_year + 1900, time_now.tm_mon + 1, time_now.tm_mday);
+	snprintf(buffer, PATH_MAX, "%s/%04d%02d%02d.log", conf.log_path, time_now.tm_year + 1900, time_now.tm_mon + 1, time_now.tm_mday);
 	logfptr = fopen(buffer, "a");
     if (!logfptr) {
 		return;
 	}
 	va_list ap;
 	va_start(ap, fmt);
-	vsnprintf(buffer, 512, fmt, ap);
+	vsnprintf(buffer, PATH_MAX, fmt, ap);
+	va_end(ap);
+
+	fprintf(logfptr, "%02d:%02d:%02d [%d][%s] %s\n", time_now.tm_hour, time_now.tm_min, time_now.tm_sec, mypid, ipaddr, buffer);
+
+	fclose(logfptr);
+}
+
+void dolog(char *fmt, ...) {
+	char buffer[PATH_MAX];
+	struct tm time_now;
+	time_t timen;
+	FILE *logfptr;
+	int mypid = getpid();
+
+	if (conf.log_path == NULL) return;
+
+	timen = time(NULL);
+
+	localtime_r(&timen, &time_now);
+
+	snprintf(buffer, PATH_MAX, "%s/%04d%02d%02d.log", conf.log_path, time_now.tm_year + 1900, time_now.tm_mon + 1, time_now.tm_mday);
+	logfptr = fopen(buffer, "a");
+    if (!logfptr) {
+		return;
+	}
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(buffer, PATH_MAX, fmt, ap);
 	va_end(ap);
 
 	fprintf(logfptr, "%02d:%02d:%02d [%d][%s] %s\n", time_now.tm_hour, time_now.tm_min, time_now.tm_sec, mypid, ipaddress, buffer);
@@ -356,9 +386,15 @@ void s_displayansi(char *file) {
 	}
 }
 
+
 char s_getchar() {
 	unsigned char c;
+	unsigned char d;
 	int len;
+	char iac_binary_will[] = {IAC, IAC_WILL, IAC_TRANSMIT_BINARY, '\0'};
+	char iac_binary_do[] = {IAC, IAC_DO, IAC_TRANSMIT_BINARY, '\0'};
+	char iac_binary_wont[] = {IAC, IAC_WONT, IAC_TRANSMIT_BINARY, '\0'};
+	char iac_binary_dont[] = {IAC, IAC_DONT, IAC_TRANSMIT_BINARY, '\0'};
 
 	do {
 
@@ -373,18 +409,53 @@ char s_getchar() {
 		}
 
 		if (!sshBBS) {
-			while (c == 255) {
+			while (c == IAC) {
 				len = read(gSocket, &c, 1);
 				if (len == 0) {
 					disconnect("Socket Closed");
-				} else if (c == 255) {
+				} else if (c == IAC) {
 					usertimeout = 10;
 					return c;
 				}
-				if (c == 254 || c == 253 || c == 252 || c == 251) {
-					len = read(gSocket, &c, 1);
+				if (c == IAC_WILL || c == IAC_WONT || c == IAC_DO || c == IAC_DONT) {
+					len = read(gSocket, &d, 1);
 					if (len == 0) {
 						disconnect("Socket Closed");
+					}
+
+					switch (c) {
+						case IAC_WILL:
+							if (d == 0) {
+								if (telnet_bin_mode != 1) {
+									telnet_bin_mode = 1;
+									write(gSocket, iac_binary_do, 3);
+								}
+							}							
+							break;
+						case IAC_WONT:
+							if (d == 0) {
+								if (telnet_bin_mode != 0) {
+									telnet_bin_mode = 0;
+									write(gSocket, iac_binary_dont, 3);
+								}
+							}							
+							break;
+						case IAC_DO:
+							if (d == 0) {
+								if (telnet_bin_mode != 1) {
+									telnet_bin_mode = 1;
+									write(gSocket, iac_binary_will, 3);
+								}
+							}
+							break;
+						case IAC_DONT:
+							if (d == 0) {
+								if (telnet_bin_mode != 0) {
+									telnet_bin_mode = 0;
+									write(gSocket, iac_binary_wont, 3);
+								}
+							}							
+							break;	
 					}
 				} else if (c == 250) {
 					do {
@@ -547,6 +618,8 @@ void display_last10_callers(struct user_record *user) {
 	FILE *fptr = fopen("last10.dat", "rb");
 	time_t l10_timet;
 
+	s_printf("\e[2J\e[1;1H");
+
 	s_printf(get_string(2));
 	s_printf(get_string(3));
 
@@ -581,7 +654,7 @@ void display_info() {
 	struct utsname name;
 
 	uname(&name);
-
+	s_printf("\e[2J\e[1;1H");
 	s_printf(get_string(7));
 	s_printf(get_string(8));
 	s_printf(get_string(9), conf.bbs_name);
@@ -661,15 +734,15 @@ void automessage_display() {
 }
 
 void runbbs_real(int socket, char *ip, int ssh) {
-	char buffer[1024];
+	char buffer[PATH_MAX];
 	char password[17];
 
 	struct stat s;
 	FILE *nodefile;
 	int i;
-	char iac_echo[] = {255, 251, 1, '\0'};
-	char iac_sga[] = {255, 251, 3, '\0'};
-	char iac_binary[] = {255, 251, 0, '\0'};
+	char iac_echo[] = {IAC, IAC_WILL, IAC_ECHO, '\0'};
+	char iac_sga[] = {IAC, IAC_WILL, IAC_SUPPRESS_GO_AHEAD, '\0'};
+
 	struct user_record *user;
 	struct tm thetime;
 	struct tm oldtime;
@@ -697,10 +770,6 @@ void runbbs_real(int socket, char *ip, int ssh) {
 			dolog("Failed to send iac_sga");
 			exit(0);
 		}
-		if (write(socket, iac_binary, 3) != 3) {
-			dolog("Failed to send iac_binary");
-			exit(0);
-		}		
 	} else {
 		sshBBS = 1;
 	}
@@ -708,7 +777,7 @@ void runbbs_real(int socket, char *ip, int ssh) {
 	st.sa_handler = sigterm_handler2;
 	sigemptyset(&st.sa_mask);
 	st.sa_flags = SA_SIGINFO;
-	if (sigaction(SIGTERM, &st, NULL) == -1) {
+	if (sigaction((ssh ? SIGHUP : SIGTERM), &st, NULL) == -1) {
 		dolog("Failed to setup sigterm handler.");
 		exit(1);
 	}
@@ -744,7 +813,7 @@ void runbbs_real(int socket, char *ip, int ssh) {
 		exit(1);
 	}
 
-	dolog("Incoming connection on node %d", mynode);
+	dolog("Incoming %s connection on node %d", (ssh ? "SSH" : "Telnet"), mynode);
 
 	usertimeout = 10;
 	timeoutpaused = 0;
@@ -850,7 +919,7 @@ tryagain:
 			user = gUser;
 		}
 	}
-	sprintf(buffer, "%s/nodeinuse.%d", conf.bbs_path, mynode);
+	snprintf(buffer, PATH_MAX, "%s/nodeinuse.%d", conf.bbs_path, mynode);
 	nodefile = fopen(buffer, "w");
 	if (!nodefile) {
 		dolog("Error opening nodefile!");
@@ -861,11 +930,24 @@ tryagain:
 	fputs(user->loginname, nodefile);
 	fclose(nodefile);
 
-	sprintf(buffer, "%s/node%d/nodemsg.txt", conf.bbs_path, mynode);
+	snprintf(buffer, PATH_MAX, "%s/node%d/nodemsg.txt", conf.bbs_path, mynode);
 
 	if (stat(buffer, &s) == 0) {
 		unlink(buffer);
 	}
+
+	snprintf(buffer, PATH_MAX, "%s/node%d/lua/", conf.bbs_path, mynode);
+
+	if (stat(buffer, &s) == 0) {
+		recursive_delete(buffer);
+	}
+	
+
+#if defined(ENABLE_WWW)
+	www_expire_old_links();
+#endif
+
+
 
 	// do post-login
 	dolog("%s logged in, on node %d", user->loginname, mynode);
@@ -887,7 +969,7 @@ tryagain:
 
 
 	if (conf.script_path != NULL) {
-		sprintf(buffer, "%s/login_stanza.lua", conf.script_path);
+		snprintf(buffer, PATH_MAX, "%s/login_stanza.lua", conf.script_path);
 		if (stat(buffer, &s) == 0) {
 			L = luaL_newstate();
 			luaL_openlibs(L);
@@ -949,7 +1031,7 @@ void do_logout() {
 	int do_internal_logout = 1;
 	
 	if (conf.script_path != NULL) {
-		sprintf(buffer, "%s/logout_stanza.lua", conf.script_path);
+		snprintf(buffer, PATH_MAX, "%s/logout_stanza.lua", conf.script_path);
 		if (stat(buffer, &s) == 0) {
 			L = luaL_newstate();
 			luaL_openlibs(L);
@@ -1074,4 +1156,82 @@ int copy_file(char *src, char *dest) {
 	fclose(src_file);
 	fclose(dest_file);
 	return 0;
+}
+
+char *str_replace(const char *str, const char *from, const char *to) {
+	/* Adjust each of the below values to suit your needs. */
+
+	/* Increment positions cache size initially by this number. */
+	size_t cache_sz_inc = 16;
+	/* Thereafter, each time capacity needs to be increased,
+	 * multiply the increment by this factor. */
+	const size_t cache_sz_inc_factor = 3;
+	/* But never increment capacity by more than this number. */
+	const size_t cache_sz_inc_max = 1048576;
+
+	char *pret, *ret = NULL;
+	const char *pstr2, *pstr = str;
+	size_t i, count = 0;
+	uintptr_t *pos_cache_tmp, *pos_cache = NULL;
+	size_t cache_sz = 0;
+	size_t cpylen, orglen, retlen, tolen, fromlen = strlen(from);
+
+	/* Find all matches and cache their positions. */
+	while ((pstr2 = strstr(pstr, from)) != NULL) {
+		count++;
+
+		/* Increase the cache size when necessary. */
+		if (cache_sz < count) {
+			cache_sz += cache_sz_inc;
+			pos_cache_tmp = realloc(pos_cache, sizeof(*pos_cache) * cache_sz);
+			if (pos_cache_tmp == NULL) {
+				goto end_repl_str;
+			} else pos_cache = pos_cache_tmp;
+			cache_sz_inc *= cache_sz_inc_factor;
+			if (cache_sz_inc > cache_sz_inc_max) {
+				cache_sz_inc = cache_sz_inc_max;
+			}
+		}
+
+		pos_cache[count-1] = pstr2 - str;
+		pstr = pstr2 + fromlen;
+	}
+
+	orglen = pstr - str + strlen(pstr);
+
+	/* Allocate memory for the post-replacement string. */
+	if (count > 0) {
+		tolen = strlen(to);
+		retlen = orglen + (tolen - fromlen) * count;
+	} else	retlen = orglen;
+	ret = malloc(retlen + 1);
+	if (ret == NULL) {
+		goto end_repl_str;
+	}
+
+	if (count == 0) {
+		/* If no matches, then just duplicate the string. */
+		strcpy(ret, str);
+	} else {
+		/* Otherwise, duplicate the string whilst performing
+		 * the replacements using the position cache. */
+		pret = ret;
+		memcpy(pret, str, pos_cache[0]);
+		pret += pos_cache[0];
+		for (i = 0; i < count; i++) {
+			memcpy(pret, to, tolen);
+			pret += tolen;
+			pstr = str + pos_cache[i] + fromlen;
+			cpylen = (i == count-1 ? orglen : pos_cache[i+1]) - pos_cache[i] - fromlen;
+			memcpy(pret, pstr, cpylen);
+			pret += cpylen;
+		}
+		ret[retlen] = '\0';
+	}
+
+end_repl_str:
+	/* Free the cache and return the post-replacement string,
+	 * which will be NULL in the event of an error. */
+	free(pos_cache);
+	return ret;
 }

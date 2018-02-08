@@ -7,6 +7,7 @@
 #include "bbs.h"
 
 extern struct bbs_config conf;
+extern struct user_record *gUser;
 
 struct email_msg {
 	int id;
@@ -17,15 +18,12 @@ struct email_msg {
 	char *body;
 };
 
-void send_email(struct user_record *user) {
-	char buffer[256];
+void commit_email(char *recipient, char *subject, char *msg) {
+	char buffer[PATH_MAX];
 	sqlite3 *db;
-  sqlite3_stmt *res;
-  int rc;
-  char *recipient;
-  char *subject;
-  char *msg;
-  char *csql = "CREATE TABLE IF NOT EXISTS email ("
+	sqlite3_stmt *res;
+	int rc;	
+	char *csql = "CREATE TABLE IF NOT EXISTS email ("
     					"id INTEGER PRIMARY KEY,"
 						"sender TEXT COLLATE NOCASE,"
 						"recipient TEXT COLLATE NOCASE,"
@@ -33,8 +31,57 @@ void send_email(struct user_record *user) {
 						"body TEXT,"
 						"date INTEGER,"
 						"seen INTEGER);";
-  char *isql = "INSERT INTO email (sender, recipient, subject, body, date, seen) VALUES(?, ?, ?, ?, ?, 0)";
-  char *err_msg = 0;
+	char *isql = "INSERT INTO email (sender, recipient, subject, body, date, seen) VALUES(?, ?, ?, ?, ?, 0)";
+	char *err_msg = 0;
+
+	snprintf(buffer, PATH_MAX, "%s/email.sq3", conf.bbs_path);
+
+	rc = sqlite3_open(buffer, &db);
+		
+	if (rc != SQLITE_OK) {
+		dolog("Cannot open database: %s", sqlite3_errmsg(db));
+		return;
+	}
+	sqlite3_busy_timeout(db, 5000);
+
+	rc = sqlite3_exec(db, csql, 0, 0, &err_msg);
+	if (rc != SQLITE_OK ) {
+
+		dolog("SQL error: %s", err_msg);
+
+		sqlite3_free(err_msg);
+		sqlite3_close(db);
+
+		return;
+	}
+
+	rc = sqlite3_prepare_v2(db, isql, -1, &res, 0);
+
+	if (rc == SQLITE_OK) {
+		sqlite3_bind_text(res, 1, gUser->loginname, -1, 0);
+		sqlite3_bind_text(res, 2, recipient, -1, 0);
+		sqlite3_bind_text(res, 3, subject, -1, 0);
+		sqlite3_bind_text(res, 4, msg, -1, 0);
+		sqlite3_bind_int(res, 5, time(NULL));
+	} else {
+		dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
+		sqlite3_finalize(res);
+		sqlite3_close(db);
+		return;
+	}
+	sqlite3_step(res);
+
+	sqlite3_finalize(res);
+	sqlite3_close(db);
+}
+
+void send_email(struct user_record *user) {
+	char buffer[26];
+
+  char *recipient;
+  char *subject;
+  char *msg;
+
 
 	s_printf(get_string(54));
 	s_readstring(buffer, 16);
@@ -62,48 +109,7 @@ void send_email(struct user_record *user) {
 	msg = external_editor(user, user->loginname, recipient, NULL, 0, NULL, subject, 1, 0);
 
 	if (msg != NULL) {
-		sprintf(buffer, "%s/email.sq3", conf.bbs_path);
-
-		rc = sqlite3_open(buffer, &db);
-		
-		if (rc != SQLITE_OK) {
-			dolog("Cannot open database: %s", sqlite3_errmsg(db));
-			sqlite3_close(db);
-
-			exit(1);
-		}
-		sqlite3_busy_timeout(db, 5000);
-
-		rc = sqlite3_exec(db, csql, 0, 0, &err_msg);
-		if (rc != SQLITE_OK ) {
-
-			dolog("SQL error: %s", err_msg);
-
-			sqlite3_free(err_msg);
-			sqlite3_close(db);
-
-			return;
-		}
-
-		rc = sqlite3_prepare_v2(db, isql, -1, &res, 0);
-
-		if (rc == SQLITE_OK) {
-			sqlite3_bind_text(res, 1, user->loginname, -1, 0);
-			sqlite3_bind_text(res, 2, recipient, -1, 0);
-			sqlite3_bind_text(res, 3, subject, -1, 0);
-			sqlite3_bind_text(res, 4, msg, -1, 0);
-			sqlite3_bind_int(res, 5, time(NULL));
-		} else {
-			dolog("Failed to execute statement: %s", sqlite3_errmsg(db));
-			sqlite3_finalize(res);
-			sqlite3_close(db);
-			s_printf("\r\nNo such email\r\n");
-			return;
-		}
-		sqlite3_step(res);
-
-		sqlite3_finalize(res);
-		sqlite3_close(db);
+		commit_email(recipient, subject, msg);
 		free(msg);
 	}
     free(subject);

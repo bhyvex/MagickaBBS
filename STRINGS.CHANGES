@@ -1,0 +1,136 @@
+New / Changed Strings in dist/magicka.strings
+--------------------------------------------------------------
+If you are using your own custom strings file, you will need
+to add / modify the new string on the line specified. Be sure
+to remove the start and end quotation marks.
+
+
+Changes from v0.8-alpha -> v0.9-alpha
+--------------------------------------------------------------
+LINE: 255 NEW
+OLDSTRING: (NONE)
+NEWSTRING: "\r\n\e[1;37mSending file %s...\r\n"
+
+LINE 256 NEW
+OLDSTRING: (NONE)
+NEWSTRING: "\r\n\e[1;34mFilename\e[1;30m: \e[1;37m%s\e[0m\r\n"
+
+LINE 257 NEW
+OLDSTRING: (NONE)
+NEWSTRING: "     \e[1;34mURL\e[1;30m: \e[1;37m%s\e[0m\r\n"
+
+LINE 258 NEW
+OLDSTRING: (NONE)
+NEWSTRING: "\r\n\e[1;31mError creating URL!\e[0m\r\n"
+
+LINE 259 NEW
+OLDSTRING: (NONE)
+NEWSTRING: "\e[1;33mSorry this BBS does not have the webserver enabled.\e[0m\r\n"
+
+LINE 260 NEW
+OLDSTRING: (NONE)
+NEWSTRING: "\e[%d;1H\e[1;30;40m[\e[1;34;44m%4d\e[1;30;40m]\e[1;32m*\e[1;37m%s\e[K"
+
+LINE 261 NEW
+OLDSTRING: (NONE)
+NEWSTRING: "\e[%d;1H\e[1;30;40m[\e[1;34m%4d\e[1;30;40m]\e[1;32m*\e[1;37m%s\e[K"
+
+LINE 230 MODIFIED
+OLDSTRING: "\r\n\e[1;37mAre you sure you want to reset all messages in %s to unread? \e[0m"
+NEWSTRING: "\r\n\r\n\e[1;37mReset pointers to All (\e[1;33mR\e[1;37m)ead, All (\e[1;33mU\e[1;37m)nread? or Msg #: "
+
+LINE 231 MODIFIED
+OLDSTRING: "\r\n\e[1;37mAre you sure you want to reset \e[1;31mall messages \e[1;37min all bases to unread? \e[0m"
+NEWSTRING: "\r\n\r\n\e[1;37mReset \e[1;31mALL\e[1;37m pointers in \e[1;31mALL \e[1;37mareas to (\e[1;33mR\e[1;37m)ead, (\e[1;33mU\e[1;37m)nread? \e[0m"
+
+LINE 167 MODIFIED
+OLDSTRING: "\r\nWhat is your login name: "
+NEWSTRING: "\r\n\e[0mWhat is your login name: "
+
+LINE 144 MODIFIED
+OLDSTRING: "\r\n\e[1;32mText Files Collection\r\n"
+NEWSTRING: "\e[1;37;44mChoose a Text file to view\e[K"
+
+LINE 145 MODIFIED
+OLDSTRING: "\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n"
+NEWSTRING: "\e[24;1H\e[1;37;44mUp / Down to Select, Enter to View, Q to Quit\e[K"
+
+LINE 146 CLEARED
+OLDSTRING: "\e[1;30m[\e[1;34m%3d\e[1;30m] \e[1;37m%s\r\n"
+NEWSTRING: ""
+
+LINE 147 CLEARED
+OLDSTRING: "\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n"
+NEWSTRING: ""
+
+LINE 148 CLEARED
+OLDSTRING: "Enter the number of a text file to display or Q to quit:"
+NEWSTRING: ""
+
+LINE 124 MODIFIED
+OLDSTRING: "\r\nMailing to %d:%d/%d.%d\r\n"
+NEWSTRING: "\r\nMailing to %d:%d/%d.%d (%s)\r\n"
+
+LINE 146 MODIFIED
+OLDSTRING: ""
+NEWSTRING: "\e[1;37;44mNodelist Browser\e[K"
+
+LINE 147 MODIFIED
+OLDSTRING: ""
+NEWSTRING: "\e[24;1H\e[1;37;44mUp / Down to Select, Enter to View Details, Q to Quit\e[K"
+
+LINE 148 MODIFIED
+OLDSTRING: ""
+NEWSTRING: "\e[%d;1H\e[1;30;40m[\e[1;34;44m%4d\e[1;30;40m] \e[1;37m%-15.15s %s\e[K"
+
+LINE 262 NEW
+OLDSTRING: (NONE)
+NEWSTRING: "\e[%d;1H\e[1;30;40m[\e[1;34m%4d\e[1;30;40m] \e[1;37m%-15.15s %s\e[K"
+
+LINE 263 NEW
+OLDSTRING: (NONE)
+NEWSTRING: "\e[1;37mNode Details for \e[1;33m%s\r\n"
+
+LINE 264 NEW
+OLDSTRING: (NONE)
+NEWSTRING: "\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n"
+
+LINE 265 NEW
+OLDSTRING: (NONE)
+NEWSTRING: "  \e[1;32mSystem Name : \e[1;37m%s\r\n"
+
+LINE 266 NEW
+OLDSTRING: (NONE)
+NEWSTRING: "   \e[1;32mSysop Name : \e[1;37m%s\r\n"
+
+LINE 267 NEW
+OLDSTRING: (NONE)
+NEWSTRING: "     \e[1;32mLocation : \e[1;37m%s\r\n"
+
+LINE 268 NEW
+OLDSTRING: (NONE)
+NEWSTRING: "\e[1;30m-------------------------------------------------------------------------------\e[0m\r\n"
+
+LINE 269 NEW
+OLDSTRING: (NONE)
+NEWSTRING: "\e[%d;1H\e[1;30;40m[\e[1;34m%3d\e[1;30;40m] \e[1;37m%-18.18s \e[1;33m%-16.16s \e[1;32m%-37.37s\e[K"
+
+LINE 270 NEW
+OLDSTRING: (NONE)
+NEWSTRING: "\e[%d;1H\e[1;30;40m[\e[1;34;44m%3d\e[1;30;40m] \e[1;37m%-18.18s \e[1;33m%-16.16s \e[1;32m%-37.37s\e[K"
+
+LINE 271 NEW
+OLDSTRING: (NONE)
+NEWSTRING: "\e[1;37;44mBBS Listing\e[K"
+
+LINE 272 NEW
+OLDSTRING: (NONE)
+NEWSTRING: "\e[24;1H\e[1;37;44mUp / Down to Select, A to Add, D to Delete, Q to Quit\e[K"
+
+LINE 273 NEW
+OLDSTRING: (NONE)
+NEWSTRING: "\e[8;28H\e[1;31;40mNo BBSes in the list!"
+
+LINE 274 NEW
+OLDSTRING: (NONE)
+NEWSTRING: "\e[10;22H\e[1;37mPress \e[1;33mA \e[1;37m to Add yours or \e[1;33mQ \e[1;37mto Quit\e[0m"
