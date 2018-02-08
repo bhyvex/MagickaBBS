@@ -308,7 +308,7 @@ extern int new_messages(struct user_record *user, int conference, int area);
 extern void rundoor(struct user_record *user, char *cmd, int stdio, char *codepage);
 extern void runexternal(struct user_record *user, char *cmd, int stdio, char **argv, char *cwd, int raw, char *codepage);
 
-extern void bbs_list(struct user_record *user);
+extern void bbs_list();
 
 extern void chat_system(struct user_record *user);
 

@@ -76,8 +76,7 @@ menus/file.mnu
 menus/logoff.mnu
 menus/mail.mnu
 menus/main.mnu
-.vscode/settings.json
 core
-.vscode/launch.json
 docs/site
 utils/reset_pass/reset_pass
+.vscode
