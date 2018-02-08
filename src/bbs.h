@@ -13,7 +13,7 @@
 
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 9
-#define VERSION_STR "alpha"
+#define VERSION_STR "patch"
 
 #define NETWORK_FIDO 1
 #define NETWORK_WWIV 2
