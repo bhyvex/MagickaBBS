@@ -420,7 +420,7 @@ void chat_system(struct user_record *user) {
 					}
 					memset(inputbuffer, 0, 256);
 					inputbuffer_at = 0;
-				} else if (c != '\n') {
+				} else if (c != '\n' && c != '\0') {
 					if (c == '\b' || c == 127) {
 						if (inputbuffer_at > 0) {
 							inputbuffer_at--;
