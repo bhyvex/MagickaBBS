@@ -446,7 +446,7 @@ void chat_system(struct user_record *user) {
 				
 				strncat(partmessage, readbuffer, len);
 				strcpy(readbuffer, partmessage);
-				fprintf(stderr, "%s\n", readbuffer);
+
 				y = 0;
 				for (z = 0;z < strlen(readbuffer); z++) {
 					if (readbuffer[z] != '\n') {
