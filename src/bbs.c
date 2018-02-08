@@ -618,6 +618,8 @@ void display_last10_callers(struct user_record *user) {
 	FILE *fptr = fopen("last10.dat", "rb");
 	time_t l10_timet;
 
+	s_printf("\e[2J\e[1;1H");
+
 	s_printf(get_string(2));
 	s_printf(get_string(3));
 
@@ -652,7 +654,7 @@ void display_info() {
 	struct utsname name;
 
 	uname(&name);
-
+	s_printf("\e[2J\e[1;1H");
 	s_printf(get_string(7));
 	s_printf(get_string(8));
 	s_printf(get_string(9), conf.bbs_name);
