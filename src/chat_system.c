@@ -420,7 +420,7 @@ void chat_system(struct user_record *user) {
 					}
 					memset(inputbuffer, 0, 256);
 					inputbuffer_at = 0;
-				} else if (c != '\n') {
+				} else if (c != '\n' && c != '\0') {
 					if (c == '\b' || c == 127) {
 						if (inputbuffer_at > 0) {
 							inputbuffer_at--;
@@ -446,7 +446,7 @@ void chat_system(struct user_record *user) {
 				
 				strncat(partmessage, readbuffer, len);
 				strcpy(readbuffer, partmessage);
-				
+				fprintf(stderr, "%s\n", readbuffer);
 				y = 0;
 				for (z = 0;z < strlen(readbuffer); z++) {
 					if (readbuffer[z] != '\n') {
@@ -454,6 +454,7 @@ void chat_system(struct user_record *user) {
 						message[y+1] = '\0';
 						y++;
 					} else {
+						
 						y = 0;
 						// json parse
 						jsmn_init(&parser);				
