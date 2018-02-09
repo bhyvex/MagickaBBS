@@ -4,6 +4,12 @@ If you are using your own custom strings file, you will need
 to add / modify the new string on the line specified. Be sure
 to remove the start and end quotation marks.
 
+Changes from v0.9-alpha -> v0.10-alpha
+--------------------------------------------------------------
+
+LINE: 275 NEW
+OLDSTRING: (NONE)
+NEWSTRING: \r\n\e[1;31mError executing archiver.\r\n\e[0m
 
 Changes from v0.8-alpha -> v0.9-alpha
 --------------------------------------------------------------

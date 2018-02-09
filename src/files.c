@@ -846,11 +846,11 @@ void download_zmodem(struct user_record *user, char *filename) {
 	    break ;
 
 	  case ZmErrCantOpen:
-	    dolog("cannot open file \"%s\": %s\n", filename, strerror(errno)) ;
+	    dolog("cannot open file \"%s\": %s", filename, strerror(errno)) ;
 	    return;
 
 	  case ZmFileTooLong:
-	    dolog("filename \"%s\" too long, skipping...\n", filename) ;
+	    dolog("filename \"%s\" too long, skipping...", filename) ;
 	    return;
 
 	  case ZmDone:

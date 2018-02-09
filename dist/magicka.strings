@@ -272,3 +272,4 @@ File exists!\r\n
 \e[24;1H\e[1;37;44mUp / Down to Select, A to Add, D to Delete, Q to Quit\e[K
 \e[8;28H\e[1;31;40mNo BBSes in the list!
 \e[10;22H\e[1;37mPress \e[1;33mA \e[1;37m to Add yours or \e[1;33mQ \e[1;37mto Quit\e[0m
+\r\n\e[1;31mError executing archiver.\r\n\e[0m

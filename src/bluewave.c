@@ -313,7 +313,8 @@ void bwave_create_packet() {
 	FILE *inf_file;
 	int tot_areas = 0;
 	int totmsgs = 0;
-	
+	int ret;
+
 	for (i=0;i<conf.mail_conference_count;i++) {
 		for (j=0;j<conf.mail_conferences[i]->mail_area_count;j++) {
 			if (msgbase_is_subscribed(i, j)) {
@@ -528,7 +529,8 @@ void bwave_create_packet() {
 			dup2(bbs_stderr, STDERR_FILENO);
 			dup2(bbs_stdin, STDIN_FILENO);
 		}
-		system(buffer);
+		
+		ret = system(buffer);
 		
 		if (sshBBS) {
 		
@@ -541,8 +543,11 @@ void bwave_create_packet() {
 			close(sterr);
 		}
 
-
-		do_download(gUser, archive);
+		if (ret != -1 && ret >> 8 != 127) {
+			do_download(gUser, archive);
+		} else {
+			s_printf(get_string(274));
+		}
 
 		snprintf(buffer, 1024, "%s/node%d/bwave", conf.bbs_path, mynode);
 		recursive_delete(buffer);
