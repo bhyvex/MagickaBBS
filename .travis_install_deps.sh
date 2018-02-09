@@ -5,4 +5,4 @@ tar xzf libmicrohttpd-0.9.59.tar.gz
 cd libmicrohttpd-0.9.59
 ./configure
 make
-make install
+sudo make install
