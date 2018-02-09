@@ -24,9 +24,11 @@ should work on debian and debian derivatives.
 
 ## Install Magicka
 
-Clone the repo 
+Clone the repo and checkout the branch you want, eg. v0.9-patch.
 
     git clone https://github.com/MagickaBBS/MagickaBBS
+
+    git checkout v0.9-patch
 
 Build the BBS
 

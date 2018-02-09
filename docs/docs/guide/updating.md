@@ -18,7 +18,7 @@ Assuming you've installed Magicka BBS from via git rather than use a ZIP file or
     make cleanwww
     make www
 
-Where branch is the branch you're updating to, for example v0.9-alpha.
+Where branch is the branch you're updating to, for example v0.9-patch.
 
 ## Step 3. Update Scripts
 

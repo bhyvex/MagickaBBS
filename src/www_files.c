@@ -169,11 +169,6 @@ char *www_decode_hash(char *hash) {
         return NULL;
     }
 
-#if 0
-    // TODO: check security level...
-
-    if (conf.file_directories[dir]->sec_level < )
-#endif
     // get filename from database
     snprintf(buffer, PATH_MAX, "%s/%s.sq3", conf.bbs_path, conf.file_directories[dir]->file_subs[sub]->database);
 	rc = sqlite3_open(buffer, &db);
