@@ -1,9 +1,0 @@
-language: c
-
-install: ./.travis_install_deps.sh
-
-before_install:
-  - sudo apt-get -qq update
-  - sudo apt-get install -y libssh-dev libsqlite3-dev libreadline-dev libncurses5-dev
-
-script: make www
