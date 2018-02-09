@@ -15,7 +15,7 @@ void www_expire_old_links() {
 	sqlite3 *db;
     sqlite3_stmt *res;
     int rc;
-    char sql[] = "delete from wwwhash where expire <= ?";
+    char sql[] = "delete from wwwhash where expiry <= ?";
     char *ret;
     time_t now = time(NULL);
 
@@ -44,7 +44,7 @@ int www_check_hash_expired(char *hash) {
     sqlite3_stmt *res;
     int rc;
     time_t now = time(NULL);
-    char sql[] = "select id from wwwhash where hash = ? and expire > ?";
+    char sql[] = "select id from wwwhash where hash = ? and expiry > ?";
     snprintf(buffer, PATH_MAX, "%s/www_file_hashes.sq3", conf.bbs_path);
 	rc = sqlite3_open(buffer, &db);
 	if (rc != SQLITE_OK) {
