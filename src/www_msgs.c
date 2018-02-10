@@ -174,6 +174,7 @@ char *www_msgs_messagelist(struct user_record *user, int conference, int area, i
 	jb = open_jam_base(conf.mail_conferences[conference]->mail_areas[area]->path);
 	if (!jb) {
 		free(page);
+		free_message_headers(mhrs);
 		return NULL;
 	}
 	if (JAM_ReadLastRead(jb, user->id, &jlr) == JAM_NO_USER) {
@@ -181,7 +182,7 @@ char *www_msgs_messagelist(struct user_record *user, int conference, int area, i
 		jlr.HighReadMsg = 0;
 	}
 	JAM_CloseMB(jb);
-	
+	free(jb);
 	skip_f = mhrs->msg_count - skip;
 	skip_t = mhrs->msg_count - skip - 50;
 	if (skip_t < 0) {
@@ -303,11 +304,13 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 		z = JAM_ReadMsgHeader(jb, msg - 1, &jmh, &jsp);
 		if (z != 0) {
 			JAM_CloseMB(jb);
+			free(jb);
 			return NULL;
 		}
 		if (jmh.Attribute & JAM_MSG_DELETED) {
 			JAM_DelSubPacket(jsp);
 			JAM_CloseMB(jb);
+			free(jb);
 			return NULL;
 		}		
 		
@@ -390,6 +393,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 					free(replyid);
 				}
 				JAM_CloseMB(jb);
+				free(jb);
 				return NULL;
 			}
 		}
@@ -411,6 +415,7 @@ char *www_msgs_messageview(struct user_record *user, int conference, int area, i
 
 		JAM_WriteLastRead(jb, user->id, &jlr);
 		JAM_CloseMB(jb);
+		free(jb);
 		
 		page = (char *)malloc(4096);
 		max_len = 4096;
@@ -868,11 +873,13 @@ int www_send_msg(struct user_record *user, char *to, char *subj, int conference,
 				sleep(1);
 			} else {
 				JAM_CloseMB(jb);
+				free(jb);
 				return 0;
 			}
 		}
 		if (z != 0) {
 			JAM_CloseMB(jb);
+			free(jb);
 			return 0;
 		}
 		
@@ -903,6 +910,7 @@ int www_send_msg(struct user_record *user, char *to, char *subj, int conference,
 			JAM_UnlockMB(jb);
 			JAM_DelSubPacket(jsp);
 			JAM_CloseMB(jb);
+			free(jb);
 			return 0;
 		}
 		body3 = (char *)malloc(strlen(body2) + 2 + strlen(buffer));		
@@ -911,6 +919,7 @@ int www_send_msg(struct user_record *user, char *to, char *subj, int conference,
 			JAM_UnlockMB(jb);
 			JAM_DelSubPacket(jsp);
 			JAM_CloseMB(jb);
+			free(jb);
 			return 0;
 		}
 		
@@ -924,6 +933,7 @@ int www_send_msg(struct user_record *user, char *to, char *subj, int conference,
 			JAM_UnlockMB(jb);
 			JAM_DelSubPacket(jsp);
 			JAM_CloseMB(jb);
+			free(jb);
 			return 0;
 		} else {
 			if (conf.mail_conferences[conference]->mail_areas[area]->type == TYPE_ECHOMAIL_AREA) {
@@ -941,7 +951,7 @@ int www_send_msg(struct user_record *user, char *to, char *subj, int conference,
 
 		JAM_DelSubPacket(jsp);
 		JAM_CloseMB(jb);		
-			
+		free(jb);
 		return 1;
 	}
 	return 0;

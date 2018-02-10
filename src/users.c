@@ -76,7 +76,7 @@ static int secLevel(void* user, const char* section, const char* name,
 }
 
 int save_user(struct user_record *user) {
-	char buffer[256];
+	char buffer[PATH_MAX];
 	sqlite3 *db;
     sqlite3_stmt *res;
 	int rc;
@@ -84,7 +84,7 @@ int save_user(struct user_record *user) {
 	char *update_sql = "UPDATE users SET password=?, salt=?, firstname=?,"
 					   "lastname=?, email=?, location=?, sec_level=?, last_on=?, time_left=?, cur_mail_conf=?, cur_mail_area=?, cur_file_dir=?, cur_file_sub=?, times_on=?, bwavepktno=?, archiver=?, protocol=?,nodemsgs=?,codepage=?,exteditor=?,bwavestyle=?,signature=?,autosig=? where loginname LIKE ?";
 
- 	sprintf(buffer, "%s/users.sq3", conf.bbs_path);
+ 	snprintf(buffer, PATH_MAX, "%s/users.sq3", conf.bbs_path);
 
 	rc = sqlite3_open(buffer, &db);
 
@@ -99,7 +99,7 @@ int save_user(struct user_record *user) {
 
     if (rc == SQLITE_OK) {
         sqlite3_bind_text(res, 1, user->password, -1, 0);
-				sqlite3_bind_text(res, 2, user->salt, -1, 0);
+		sqlite3_bind_text(res, 2, user->salt, -1, 0);
         sqlite3_bind_text(res, 3, user->firstname, -1, 0);
         sqlite3_bind_text(res, 4, user->lastname, -1, 0);
         sqlite3_bind_text(res, 5, user->email, -1, 0);
@@ -128,13 +128,13 @@ int save_user(struct user_record *user) {
 
 
     rc = sqlite3_step(res);
-
     if (rc != SQLITE_DONE) {
-
+		sqlite3_finalize(res);
         dolog("execution failed: %s", sqlite3_errmsg(db));
 		sqlite3_close(db);
 		exit(1);
     }
+	sqlite3_finalize(res);
 	sqlite3_close(db);
 	return 1;
 
