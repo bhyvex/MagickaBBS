@@ -572,6 +572,6 @@ char * aha(char *input)
 	//Footer
 	if ((fc!=-1) || (bc!=-1) || (ul!=0) || (bo!=0) || (bl!=0))
         append_output(&output, "</span>\n", &size, &outat);
-	
+	free(unmangle_out);
 	return output;
 }

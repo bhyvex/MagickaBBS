@@ -128,6 +128,7 @@ void free_message_headers(struct msg_headers *msghs) {
 		if (msghs->msgs[i]->replyid != NULL) {
 			free(msghs->msgs[i]->replyid);
 		}
+		free(msghs->msgs[i]);
 	}
 	if (msghs->msg_count > 0) {
 		free(msghs->msgs);
@@ -354,9 +355,11 @@ struct msg_headers *read_message_headers(int msgconf, int msgarea, struct user_r
 
 	} else {
 		JAM_CloseMB(jb);
+		free(jb);
 		return NULL;
 	}
 	JAM_CloseMB(jb);
+	free(jb);
 	return msghs;
 }
 
@@ -1652,6 +1655,7 @@ int read_message(struct user_record *user, struct msg_headers *msghs, int mailno
 
 		if (tolower(c) == 'r') {
 			JAM_CloseMB(jb);
+			free(jb);
 			if (user->sec_level < conf.mail_conferences[user->cur_mail_conf]->mail_areas[user->cur_mail_area]->write_sec_level) {
 				s_printf(get_string(113));
 			} else {
@@ -1974,6 +1978,7 @@ int read_new_msgs(struct user_record *user, struct msg_headers *msghs) {
 				all_unread = 1;
 			}
 			JAM_CloseMB(jb);
+			free(jb);
 			if (all_unread == 0) {
 				k = jlr.HighReadMsg;
 				for (i=0;i<msghs->msg_count;i++) {
@@ -2023,6 +2028,7 @@ void read_mail(struct user_record *user) {
 				all_unread = 1;
 			}
 			JAM_CloseMB(jb);
+			free(jb);
 			s_printf(get_string(120), msghs->msg_count);
 
 			s_readstring(buffer, 6);
@@ -2287,6 +2293,7 @@ void post_message(struct user_record *user) {
 		}
 		if (z != 0) {
 			JAM_CloseMB(jb);
+			free(jb);
 			return;
 		}
 
@@ -2311,6 +2318,7 @@ void post_message(struct user_record *user) {
 		JAM_DelSubPacket(jsp);
 		free(msg);
 		JAM_CloseMB(jb);
+		free(jb);
 	}
 	free(to);
 	free(subject);
@@ -2349,6 +2357,7 @@ void list_messages(struct user_record *user) {
 				all_unread = 1;
 			}
 			JAM_CloseMB(jb);
+			free(jb);
 			s_printf(get_string(125), msghs->msg_count);
 
 			s_readstring(buffer, 6);
@@ -2577,6 +2586,7 @@ void list_messages(struct user_record *user) {
 							all_unread = 1;
 						}
 						JAM_CloseMB(jb);
+						free(jb);
 					}
 				}
 			}
@@ -2993,12 +3003,14 @@ void do_mail_scan(struct user_record *user, int oldscan) {
 				
 				if (JAM_ReadMBHeader(jb, &jbh) != 0) {
 					JAM_CloseMB(jb);
+					free(jb);
 					continue;
 				}
 				
 				if (JAM_ReadLastRead(jb, user->id, &jlr) == JAM_NO_USER) {
 					if (jbh.ActiveMsgs == 0) {
 						JAM_CloseMB(jb);
+						free(jb);
 						continue;
 					}
 					if (conf.mail_conferences[i]->mail_areas[j]->type == TYPE_NETMAIL_AREA) {
@@ -3117,10 +3129,12 @@ void do_mail_scan(struct user_record *user, int oldscan) {
 						}
 					} else {
 						JAM_CloseMB(jb);
+						free(jb);
 						continue;
 					}
 				}
 				JAM_CloseMB(jb);
+				free(jb);
 				if (res) {
 					break;
 				}
@@ -3257,6 +3271,7 @@ void msgbase_reset_pointers(int conference, int msgarea, int readm, int msgno) {
 
 	if (JAM_ReadMBHeader(jb, &jbh) != 0) {
 		JAM_CloseMB(jb);
+		free(jb);
 		return;
 	}
 
@@ -3301,6 +3316,7 @@ void msgbase_reset_pointers(int conference, int msgarea, int readm, int msgno) {
 		JAM_WriteLastRead(jb, gUser->id, &jlr);
 	}
 	JAM_CloseMB(jb);
+	free(jb);
 }
 
 void msgbase_reset_all_pointers(int readm) {
@@ -3326,11 +3342,13 @@ int new_messages(struct user_record *user, int conference, int area) {
 	}
 	if (JAM_ReadMBHeader(jb, &jbh) != 0) {
 		JAM_CloseMB(jb);
+		free(jb);
 		return 0;
 	}
 	if (JAM_ReadLastRead(jb, user->id, &jlr) == JAM_NO_USER) {
 		if (jbh.ActiveMsgs == 0) {
 			JAM_CloseMB(jb);
+			free(jb);
 			return 0;
 		}
 		if (conf.mail_conferences[conference]->mail_areas[area]->type == TYPE_NETMAIL_AREA) {
@@ -3362,5 +3380,6 @@ int new_messages(struct user_record *user, int conference, int area) {
 		}
 	}
 	JAM_CloseMB(jb);
+	free(jb);
 	return count;
 }

@@ -205,19 +205,21 @@ int l_messageFound(lua_State *L) {
 	if (z != 0) {
 		dolog("Failed to read msg header: %d Erro %d", z, JAM_Errno(jb));
 		JAM_CloseMB(jb);
+		free(jb);
 		lua_pushnumber(L, 0);
 		return 1;
 	}
 	if (jmh.Attribute & JAM_MSG_DELETED) {
 		JAM_DelSubPacket(jsp);
 		JAM_CloseMB(jb);
+		free(jb);
 		lua_pushnumber(L, 0);
 		return 1;
 	}
 	
 	JAM_DelSubPacket(jsp);
 	JAM_CloseMB(jb);
-	
+	free(jb);
 	lua_pushnumber(L, 1);
 	return 1;	
 }
@@ -247,9 +249,11 @@ int l_readMessageHdr(lua_State *L) {
 	if (z != 0) {
 		dolog("Failed to read msg header: %d Erro %d", z, JAM_Errno(jb));
 		JAM_CloseMB(jb);
+		free(jb);
 	} else if (jmh.Attribute & JAM_MSG_DELETED) {
 		JAM_DelSubPacket(jsp);
 		JAM_CloseMB(jb);
+		free(jb);
 	} else {
 		for (z=0;z<jsp->NumFields;z++) {
 			if (jsp->Fields[z]->LoID == JAMSFLD_SUBJECT) {
@@ -270,7 +274,8 @@ int l_readMessageHdr(lua_State *L) {
 
 		}
 		JAM_DelSubPacket(jsp);
-		JAM_CloseMB(jb);		
+		JAM_CloseMB(jb);
+		free(jb);	
 	}
 	if (subject == NULL) {
 		subject = strdup("(No Subject)");
@@ -318,9 +323,11 @@ int l_readMessage(lua_State *L) {
 	if (z != 0) {
 		dolog("Failed to read msg header: %d Erro %d", z, JAM_Errno(jb));
 		JAM_CloseMB(jb);
+		free(jb);
 		body = strdup("No Message");
 	} else if (jmh.Attribute & JAM_MSG_DELETED) {
 		JAM_CloseMB(jb);
+		free(jb);
 		body = strdup("No Message");
 	} else {
 		body = (char *)malloc(jmh.TxtLen + 1);
@@ -328,6 +335,7 @@ int l_readMessage(lua_State *L) {
 		body[jmh.TxtLen] = '\0';
 
 		JAM_CloseMB(jb);
+		free(jb);
 	}
 	lua_pushstring(L, body);
 
@@ -468,6 +476,7 @@ int l_postMessage(lua_State *L) {
 	} else if (conf.mail_conferences[confr]->mail_areas[area]->type == TYPE_NETMAIL_AREA) {
 		JAM_DelSubPacket(jsp);
 		JAM_CloseMB(jb);
+		free(jb);
 		return 0;
 	}
 
@@ -479,7 +488,8 @@ int l_postMessage(lua_State *L) {
 			sleep(1);
 		} else {
 			dolog("Failed to lock msg base!");
-			JAM_CloseMB(jb);			
+			JAM_CloseMB(jb);
+			free(jb);	
 			return 0;
 		}
 	}
@@ -533,6 +543,7 @@ int l_postMessage(lua_State *L) {
 
 		JAM_DelSubPacket(jsp);
 		JAM_CloseMB(jb);
+		free(jb);
 	}
 	free(msg);
 

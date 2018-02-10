@@ -282,6 +282,7 @@ int bwave_scan_area(int confr, int area, int areano, int totmsgs, FILE *fti_file
 		fwrite(&mix, sizeof(MIX_REC), 1, mix_file);
 	//}
 	JAM_CloseMB(jb);
+	free(jb);
 	free_message_headers(msghs);
 	return totmsgs;
 }
@@ -706,7 +707,8 @@ int bwave_add_message(int confr, int area, unsigned int dwritten, char *to, char
 			sleep(1);
 		} else {
 			dolog("Failed to lock msg base!");
-			JAM_CloseMB(jb);			
+			JAM_CloseMB(jb);
+			free(jb);	
 			return 1;
 		}
 	}
@@ -716,12 +718,14 @@ int bwave_add_message(int confr, int area, unsigned int dwritten, char *to, char
 		
 		JAM_DelSubPacket(jsp);
 		JAM_CloseMB(jb);
+		free(jb);
 		return -1;
 	} else {
 		JAM_UnlockMB(jb);
 
 		JAM_DelSubPacket(jsp);
 		JAM_CloseMB(jb);
+		free(jb);
 	}
 	return 0;
 }
