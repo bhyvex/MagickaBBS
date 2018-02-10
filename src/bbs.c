@@ -1022,7 +1022,7 @@ tryagain:
 }
 
 void do_logout() {
-	char buffer[256];
+	char buffer[PATH_MAX];
 	struct stat s;
 	lua_State *L;
 	int ret = 0;
