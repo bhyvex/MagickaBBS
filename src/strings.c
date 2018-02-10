@@ -10,7 +10,7 @@ char **strings;
 int string_count;
 
 void chomp(char *string) {
-	while ((string[strlen(string)-1] == '\r' || string[strlen(string)-1] == '\n') && strlen(string)) {
+	while (strlen(string) && (string[strlen(string)-1] == '\r' || string[strlen(string)-1] == '\n')) {
 		string[strlen(string)-1] = '\0';
 	}
 }
