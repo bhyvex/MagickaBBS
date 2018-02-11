@@ -203,7 +203,6 @@ int l_messageFound(lua_State *L) {
 	z = JAM_ReadMsgHeader(jb, id, &jmh, &jsp);
 
 	if (z != 0) {
-		dolog("Failed to read msg header: %d Erro %d", z, JAM_Errno(jb));
 		JAM_CloseMB(jb);
 		free(jb);
 		lua_pushnumber(L, 0);
